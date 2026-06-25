@@ -1,0 +1,789 @@
+/* ============================================================
+   Vizéa — chart.js
+   Builds the visualization from a project's scores.
+
+   Layout (line mode, the default):
+   - X axis: tests/subtests, GROUPED by cognitive function in the
+     canonical order. Within a group, points are connected by a line
+     (same-function trend). Groups are separated by vertical dotted
+     lines, with the function name as a section title above each group.
+   - Y axis: the active display scale (percentile / standard / scale /
+     Z / T), chosen by the user. Background shows the 7 classification
+     band stripes (from the AQNP table) recomputed for that scale.
+
+   Radar mode (optional toggle):
+   - One axis per cognitive function; each function's value is the mean
+     percentile of its points (radar needs one value per spoke).
+     Band rings drawn as concentric reference circles.
+
+   Depends on: ScoringEngine (scoring.js), VizeaConstants (constants.js),
+   VizeaDataModel (datamodel.js), and Plotly (global).
+   ============================================================ */
+
+(function () {
+  const FN_ORDER = (window.VizeaConstants && window.VizeaConstants.COGNITIVE_FUNCTIONS) || [];
+  const DEFAULT_COLORS = (window.VizeaConstants && window.VizeaConstants.DEFAULT_FUNCTION_COLORS) || {};
+  const EXTENDED_PALETTE = (window.VizeaConstants && window.VizeaConstants.EXTENDED_PALETTE) ||
+    ["#3D7EA6","#D0604F","#4E9E79","#E0A94E","#9A78C7","#4FB0AE","#CF6FA6"];
+
+  // Escape user/imported text before it is placed into any Plotly text field
+  // (titles, labels, hover, annotations). Plotly only renders a whitelist of
+  // formatting tags so scripts can't run, but escaping also stops a stray "<"
+  // in a name from breaking the intended <b>…</b> formatting — defence in depth.
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Display-name overrides: rename a function/scale for the chart only, without
+  // changing its identity (grouping, colour, score links stay keyed by the real name).
+  function displayFunc(func, settings) {
+    const m = settings && settings.functionLabels;
+    const v = m && m[func];
+    return (typeof v === "string" && v.trim()) ? v.trim() : func;
+  }
+  function displayScaleName(name, settings) {
+    const m = settings && settings.scaleLabels;
+    const v = m && m[name];
+    return (typeof v === "string" && v.trim()) ? v.trim() : name;
+  }
+  // loaded by the page). Centralized so all three charts stay consistent.
+  const FONT_BODY = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif";
+  const FONT_TITLE = "Fraunces, Georgia, serif";
+  const BAND_OPACITY = 0.13;
+
+  // When true, charts render with the light theme regardless of the page theme.
+  // Used so PNG exports are always on a white background with dark, legible text.
+  let _forceLight = false;
+
+  // Assign a colour to every function in display order: named/override colours
+  // first, then the extended cycle (skipping colours already taken) so a profile
+  // with many functions stays distinguishable.
+  function assignColors(funcs, settings) {
+    const overrides = (settings && settings.functionColors) || {};
+    const map = {}; const used = new Set();
+    funcs.forEach(f => {
+      const c = overrides[f] || DEFAULT_COLORS[f];
+      if (c) { map[f] = c; used.add(c.toLowerCase()); }
+    });
+    let i = 0;
+    funcs.forEach(f => {
+      if (map[f]) return;
+      let guard = 0;
+      while (used.has(EXTENDED_PALETTE[i % EXTENDED_PALETTE.length].toLowerCase()) && guard < EXTENDED_PALETTE.length) { i++; guard++; }
+      const c = EXTENDED_PALETTE[i % EXTENDED_PALETTE.length];
+      map[f] = c; used.add(c.toLowerCase()); i++;
+    });
+    return map;
+  }
+
+  // Meaningful data bounds per scale. Point Y positions are clamped to these
+  // so an impossible/extreme entry (e.g. a Z of 9) is plotted at the edge of
+  // the valid range instead of flying off the chart. Percentiles are naturally
+  // 0–100; the others use conventional clinical display bounds.
+  const DATA_RANGE = {
+    "Percentile":      [0, 100],
+    "Standard score":  [40, 160],
+    "Scale score":     [1, 19],
+    "Z-Score":         [-4, 4],
+    "T-Score":         [10, 90]
+  };
+
+  // The drawn axis range adds padding around the data range, so markers and
+  // their value labels near the extremes are never clipped by the plot edge.
+  // Band stripes fill this full padded range (their outer edges are ±Infinity,
+  // clamped to the axis range), so no white space appears.
+  const AXIS_RANGE = {
+    "Percentile":      [-3, 103],
+    "Standard score":  [54, 146],
+    "Scale score":     [1, 19],
+    "Z-Score":         [-3.1, 3.1],
+    "T-Score":         [19, 81]
+  };
+
+  // Explicit tick values keep the axis clean despite the padded range
+  // (so a percentile axis doesn't show -5 / 105, etc.).
+  const AXIS_TICKS = {
+    "Percentile":      [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    "Standard score":  [40, 55, 70, 85, 100, 115, 130, 145, 160],
+    "Scale score":     [1, 3, 5, 7, 9, 11, 13, 15, 17, 19],
+    "Z-Score":         [-4, -3, -2, -1, 0, 1, 2, 3, 4],
+    "T-Score":         [10, 20, 30, 40, 50, 60, 70, 80, 90]
+  };
+
+  // On a proportional (percentile-positioned) axis, evenly-spaced score values
+  // bunch up at the rare extremes and their labels collide. These spaced sets
+  // sit at roughly the 2/16/50/84/98 percentiles — comfortably separated.
+  const PROPORTIONAL_TICKS = {
+    "Standard score":  [70, 85, 100, 115, 130],
+    "Scale score":     [4, 7, 10, 13, 16],
+    "Z-Score":         [-2, -1, 0, 1, 2],
+    "T-Score":         [30, 40, 50, 60, 70]
+  };
+
+  // Pick the right tick score-values for the current axis mode.
+  function tickValuesFor(displayScale, proportional) {
+    if (proportional && displayScale !== "Percentile") {
+      return PROPORTIONAL_TICKS[displayScale] || AXIS_TICKS[displayScale] || [];
+    }
+    return AXIS_TICKS[displayScale] || [];
+  }
+
+  // Theme-aware colours so chart text/gridlines stay legible in dark mode.
+  function themeColors() {
+    const dark = !_forceLight && typeof document !== "undefined" &&
+      document.documentElement.getAttribute("data-theme") === "dark";
+    return dark
+      ? { text: "#e8eef4", textSoft: "#9db2c6", grid: "rgba(157,178,198,0.18)",
+          gridSoft: "rgba(157,178,198,0.12)", compare: "#aebccb", labelBg: "rgba(20,34,47,0.82)",
+          sep: "rgba(157,178,198,0.28)", markerFill: "#16242f" }
+      : { text: "#2b3a4a", textSoft: "#5d6b7a", grid: "rgba(20,50,90,0.16)",
+          gridSoft: "rgba(20,50,90,0.09)", compare: "#4a5a6a", labelBg: "rgba(255,255,255,0.8)",
+          sep: "rgba(20,50,90,0.22)", markerFill: "#ffffff" };
+  }
+
+  function colorForFunction(func, chartSettings) {
+    const overrides = (chartSettings && chartSettings.functionColors) || {};
+    return overrides[func] || DEFAULT_COLORS[func] || "#176bb5";
+  }
+
+  // Convert "#rrggbb" to an rgba() string at the given alpha.
+  function hexToRgba(hex, alpha) {
+    let h = (hex || "#176bb5").replace("#", "");
+    if (h.length === 3) h = h.split("").map(c => c + c).join("");
+    const n = parseInt(h, 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  // Convert a percentile to the active display scale value, clamped to the
+  // valid data range so the point always lands on-chart.
+  function percentileToDisplay(percentile, displayScale) {
+    const raw = displayScale === "Percentile"
+      ? percentile
+      : window.ScoringEngine.fromPercentile(percentile, displayScale);
+    const dr = DATA_RANGE[displayScale] || [0, 100];
+    return window.ScoringEngine.clamp(raw, dr[0], dr[1]);
+  }
+
+  // Compute the y-position of the comparison guide line in the active display
+  // scale, or null if no valid comparison value is set. Converts via percentile
+  // (the comparison value has its own score type) and clamps to the data range.
+  function comparisonDisplayValue(settings, displayScale) {
+    const v = settings.compareValue;
+    if (v === "" || v === null || v === undefined || isNaN(Number(v))) return null;
+    const pct = window.ScoringEngine.toPercentile(Number(v), settings.compareType || "Standard score");
+    if (pct === null) return null;
+    return percentileToDisplay(pct, displayScale);
+  }
+
+  /**
+   * Group flattened points by cognitive function, in canonical order.
+   * Returns ordered array: [{ func, points: [...] }], only for functions
+   * that actually have points (and pass the visibleFunctions filter).
+   */
+  function groupPointsByFunction(points, chartSettings) {
+    const visible = chartSettings && chartSettings.visibleFunctions; // null = all
+    const overrides = (chartSettings && chartSettings.pointOverrides) || {};
+    const pointOrder = (chartSettings && Array.isArray(chartSettings.pointOrder)) ? chartSettings.pointOrder : [];
+    const orderIndex = {};
+    pointOrder.forEach((pid, i) => { orderIndex[pid] = i; });
+
+    const byFunc = {};
+    points.forEach(p => {
+      if (visible && !visible.includes(p.func)) return;
+      const ov = overrides[p.pid];
+      if (ov && ov.hidden) return;                      // view-only hide
+      // view-only rename (does not touch the underlying project data)
+      const display = (ov && typeof ov.label === "string" && ov.label.trim()) ? ov.label.trim() : p.label;
+      const pp = Object.assign({}, p, { displayLabel: display });
+      if (!byFunc[p.func]) byFunc[p.func] = [];
+      byFunc[p.func].push(pp);
+    });
+
+    // Within each function group, honour the user's per-point order (drag); any
+    // point without a saved position keeps its natural order, appended after.
+    Object.keys(byFunc).forEach(func => {
+      byFunc[func].sort((a, b) => {
+        const ia = (a.pid in orderIndex) ? orderIndex[a.pid] : Infinity;
+        const ib = (b.pid in orderIndex) ? orderIndex[b.pid] : Infinity;
+        return ia - ib;
+      });
+    });
+
+    // Preferred display order: the user's custom order first (drag-to-reorder),
+    // then the canonical order, then anything else — each only if it has points.
+    const customOrder = (chartSettings && Array.isArray(chartSettings.functionOrder))
+      ? chartSettings.functionOrder : [];
+    const seen = new Set();
+    const ordered = [];
+    const pushFunc = (func) => {
+      if (!seen.has(func) && byFunc[func] && byFunc[func].length) {
+        ordered.push({ func, points: byFunc[func] });
+        seen.add(func);
+      }
+    };
+    customOrder.forEach(pushFunc);
+    FN_ORDER.forEach(pushFunc);
+    Object.keys(byFunc).forEach(pushFunc);
+    return ordered;
+  }
+
+  /**
+   * Build the LINE chart figure (traces + layout) for Plotly.
+   */
+  function buildLineFigure(project, opts) {
+    const settings = project.chartSettings || {};
+    const plotWidth = (opts && opts.plotWidth) || 900;
+    const displayScale = settings.displayScale || "Percentile";
+    // When the proportional axis is on, points are positioned by percentile
+    // (so band heights reflect rarity on every scale); the axis is then
+    // RE-LABELLED in the chosen display scale. Otherwise we position linearly
+    // in the display scale's own units.
+    const proportional = settings.proportionalAxis !== false;
+    const plotScale = proportional ? "Percentile" : displayScale;
+    const points = window.VizeaDataModel.flattenScores(project);
+    const groups = groupPointsByFunction(points, settings);
+
+    if (groups.length === 0) {
+      return { empty: true };
+    }
+
+    // Assign each point an x-axis index, grouped by function, in entry order
+    // within each group. Build x tick labels and remember group boundaries.
+    const xLabels = [];
+    const groupBoundaries = []; // x index where each new group starts
+    const groupCenters = [];    // for section titles
+    const traces = [];
+
+    const TC = themeColors();
+    const colorMap = assignColors(groups.map(g => g.func), settings);
+
+    let xIndex = 0;
+    groups.forEach((group, gi) => {
+      const startIndex = xIndex;
+      const xs = [];
+      const ys = [];
+      const texts = [];
+
+      const labelVals = [];
+      group.points.forEach(p => {
+        const lbl = p.displayLabel || p.label;
+        xLabels.push(lbl);
+        xs.push(xIndex);
+        ys.push(percentileToDisplay(p.percentile, plotScale));
+        // The on-point label always shows the value in the chosen display scale,
+        // even when the position is percentile-based.
+        labelVals.push(percentileToDisplay(p.percentile, displayScale));
+        texts.push(`${esc(lbl)}<br>${esc(p.func)}<br>${esc(p.rawValue)} (${esc(p.type)})<br>Percentile: ${p.percentile.toFixed(1)}`);
+        xIndex++;
+      });
+
+      const color = colorMap[group.func];
+      traces.push({
+        x: xs,
+        y: ys,
+        customdata: texts,
+        hovertemplate: "%{customdata}<extra></extra>",
+        mode: settings.showDataLabels ? "lines+markers+text" : "lines+markers",
+        text: settings.showDataLabels ? labelVals.map(v => (typeof v === "number" ? v.toFixed(0) : v)) : undefined,
+        textposition: "top center",
+        name: group.func,
+        line: { color, width: 2.6 },
+        marker: { color: TC.markerFill, size: 8, line: { color, width: 2.2 } },
+        showlegend: false // legend removed: function names shown as colored section titles
+      });
+
+      if (gi > 0) groupBoundaries.push(startIndex - 0.5);
+      groupCenters.push({ center: (startIndex + xIndex - 1) / 2, func: group.func, color, display: displayFunc(group.func, settings) });
+    });
+
+    const totalPoints = xIndex;
+    let range = (AXIS_RANGE[plotScale] || [0, 100]).slice();
+
+    // Optional user-defined axis limits, entered in the DISPLAY scale. They trim
+    // the axis (e.g. Z from -3 to 3) so the extreme bands don't dominate.
+    const aMin = settings.axisMin, aMax = settings.axisMax;
+    const hasLimits = aMin !== undefined && aMin !== null && aMin !== "" &&
+                      aMax !== undefined && aMax !== null && aMax !== "" &&
+                      Number(aMin) < Number(aMax);
+    if (hasLimits) {
+      const lo = Number(aMin), hi = Number(aMax);
+      if (proportional) {
+        // Convert display-scale bounds to percentile positions.
+        const pLo = displayScale === "Percentile" ? lo : window.ScoringEngine.toPercentile(lo, displayScale);
+        const pHi = displayScale === "Percentile" ? hi : window.ScoringEngine.toPercentile(hi, displayScale);
+        range = [Math.max(0, Math.min(pLo, pHi)), Math.min(100, Math.max(pLo, pHi))];
+      } else {
+        range = [lo, hi];
+      }
+    } else if (!proportional) {
+      // Keep the ±3 SD default, but never clip a real data point.
+      const dr = DATA_RANGE[plotScale] || range;
+      let lo = range[0], hi = range[1];
+      traces.forEach(t => (t.y || []).forEach(v => { if (typeof v === "number") { lo = Math.min(lo, v); hi = Math.max(hi, v); } }));
+      range = [Math.max(dr[0], lo), Math.min(dr[1], hi)];
+    }
+
+    // Band stripes as background shapes (full width, spanning y band edges).
+    // Bands use the PLOT scale, so on a proportional axis they're percentile
+    // bands — always sized by how common each band is.
+    const shapes = [];
+    if (settings.showBands !== false) {
+      const bands = window.ScoringEngine.getBandsForDisplayType(plotScale);
+      bands.forEach((b, bi) => {
+        let y0 = b.min === -Infinity ? range[0] : b.min;
+        let y1 = b.max === Infinity ? range[1] : b.max;
+        y0 = window.ScoringEngine.clamp(y0, range[0], range[1]);
+        y1 = window.ScoringEngine.clamp(y1, range[0], range[1]);
+        if (bi === 0) y0 = range[0];                  // fill to the very bottom
+        if (bi === bands.length - 1) y1 = range[1];   // and the very top
+        if (y1 <= y0) return;
+        shapes.push({
+          type: "rect", xref: "paper", yref: "y",
+          x0: 0, x1: 1, y0, y1,
+          fillcolor: b.color, opacity: BAND_OPACITY, line: { width: 0 }, layer: "below"
+        });
+      });
+    }
+
+    // Vertical dotted separators between function groups
+    groupBoundaries.forEach(xb => {
+      shapes.push({
+        type: "line", xref: "x", yref: "paper",
+        x0: xb, x1: xb, y0: 0, y1: 1,
+        line: { color: TC.sep, width: 1, dash: "dot" }, layer: "above"
+      });
+    });
+
+    // Optional comparison guide line (e.g. estimated FSIQ), positioned on the
+    // plot scale so it lands at the right height whatever the axis mode.
+    const compareY = comparisonDisplayValue(settings, plotScale);
+    const compareAnnotations = [];
+    if (compareY !== null) {
+      shapes.push({
+        type: "line", xref: "paper", yref: "y",
+        x0: 0, x1: 1, y0: compareY, y1: compareY,
+        line: { color: TC.compare, width: 1.6, dash: "dash" }, layer: "above"
+      });
+      // Label is optional: only annotate when the user typed one.
+      const lbl = (settings.compareLabel || "").trim();
+      if (lbl) {
+        compareAnnotations.push({
+          xref: "paper", yref: "y", x: 1, y: compareY,
+          xanchor: "right", yanchor: "bottom",
+          text: `<b>${esc(lbl)}</b>`,
+          showarrow: false, font: { size: 11, color: TC.text },
+          bgcolor: TC.labelBg, borderpad: 2
+        });
+      }
+    }
+
+    // Section titles (function name) above each group, colored to match the
+    // group's line (this replaces the legend). To avoid horizontal overlap when
+    // groups are narrow, titles are staggered across two stacked rows just above
+    // the plot area.
+    // --- Section titles (function names) without overlap ---------------------
+    // Estimate each title's horizontal half-width in x-axis data units, then
+    // greedily pack titles into stacked rows so none overlap, however narrow a
+    // group is. Uses the real plot width so the estimate is accurate.
+    const usableW = Math.max(200, plotWidth - 90);          // minus axis/margins
+    const pxPerXUnit = usableW / Math.max(1, totalPoints);  // px per x data unit
+    const CHAR_PX = 7.2;                                    // ~bold 11px Inter
+    const GAP_X = 0.6;                                      // min gap between titles (x units)
+    const rowRights = [];                                   // last right edge per row
+    const titleRows = groupCenters.map((gc) => {
+      const halfW = (gc.display.length * CHAR_PX) / 2 / pxPerXUnit;
+      const left = gc.center - halfW;
+      const right = gc.center + halfW;
+      let row = 0;
+      while (row < rowRights.length && left < rowRights[row] + GAP_X) row++;
+      rowRights[row] = right;
+      return row;
+    });
+    const rowsUsed = Math.max(1, rowRights.length);
+    const ROW_DY = 0.052;
+    const annotations = groupCenters.map((gc, i) => ({
+      x: gc.center, y: 1.012 + titleRows[i] * ROW_DY, xref: "x", yref: "paper",
+      text: `<b>${esc(gc.display)}</b>`, showarrow: false,
+      font: { size: 11, color: gc.color }, textangle: 0,
+      yanchor: "bottom", xanchor: "center"
+    })).concat(compareAnnotations);
+
+    const showTestLabels = settings.showTestLabels !== false;
+    const titleText = (settings.title || "").trim();
+    const hasTitle = titleText.length > 0;
+
+    // Top margin must clear the title (at container top) AND the two annotation
+    // rows just above the plot. When there's no title we only need room for the
+    // annotation rows.
+    const topMargin = (hasTitle ? 84 : 16) + rowsUsed * 30;
+
+    // Bottom margin sized to the longest label (drawn at -45°), so long test
+    // names get the room they need BELOW the plot rather than squeezing it.
+    const maxLabelLen = showTestLabels
+      ? xLabels.reduce((m, s) => Math.max(m, (s || "").length), 0) : 0;
+    const bottomMargin = showTestLabels
+      ? Math.min(340, Math.max(70, Math.round(maxLabelLen * 6.6 * 0.72) + 30))
+      : 46;
+    // Keep the actual plot drawing area constant; total height grows to fit
+    // labels + title rows. (renderChart applies this to the container.)
+    const PLOT_AREA = 520;
+    const figHeight = topMargin + PLOT_AREA + bottomMargin;
+
+    // Y-axis ticks: always show the chosen display scale's values. On a
+    // proportional axis they're placed at their percentile positions (so the
+    // spacing is non-linear but the bands reflect rarity); otherwise linearly.
+    const tickScoreValues = tickValuesFor(displayScale, proportional);
+    const yTickVals = proportional
+      ? tickScoreValues.map(v => percentileToDisplay(
+          displayScale === "Percentile" ? v : window.ScoringEngine.toPercentile(v, displayScale),
+          plotScale))
+      : tickScoreValues;
+    const yTickText = tickScoreValues.map(v => String(v));
+
+    const layout = {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      plot_bgcolor: "rgba(0,0,0,0)",
+      font: { color: TC.text, family: FONT_BODY },
+      xaxis: {
+        tickmode: "array",
+        tickvals: xLabels.map((_, i) => i),
+        ticktext: showTestLabels ? xLabels.map(esc) : xLabels.map(() => ""),
+        tickangle: -45,
+        range: [-0.5, totalPoints - 0.5],
+        showticklabels: showTestLabels,
+        ticks: showTestLabels ? "outside" : "",
+        tickfont: { color: TC.textSoft },
+        zeroline: false,        // <- removes the stray vertical line at x=0
+        showgrid: false,
+        automargin: false
+      },
+      yaxis: {
+        title: { text: displayScale, font: { color: TC.textSoft } },
+        range: range,
+        tickmode: "array",
+        tickvals: yTickVals,
+        ticktext: yTickText,
+        tickfont: { color: TC.textSoft },
+        gridcolor: TC.gridSoft,
+        zeroline: false
+      },
+      shapes,
+      annotations,
+      showlegend: false,
+      margin: { t: topMargin, b: bottomMargin },
+      hovermode: "closest"
+    };
+
+    // Only attach a title when the user actually wants one (empty = no title).
+    if (hasTitle) {
+      layout.title = {
+        text: esc(titleText),
+        x: 0.5, xanchor: "center",
+        y: 0.97, yanchor: "top", yref: "container",
+        font: { family: FONT_TITLE, size: 20, color: TC.text }
+      };
+    }
+
+    return { empty: false, traces, layout, height: figHeight };
+  }
+
+  /**
+   * Build the RADAR chart figure. One spoke per function; value = mean
+   * percentile across that function's points, converted to display scale.
+   */
+  function buildRadarFigure(project) {
+    const settings = project.chartSettings || {};
+    const displayScale = settings.displayScale || "Percentile";
+    const proportional = settings.proportionalAxis !== false;
+    const plotScale = proportional ? "Percentile" : displayScale;
+    const points = window.VizeaDataModel.flattenScores(project);
+    const groups = groupPointsByFunction(points, settings);
+
+    if (groups.length === 0) return { empty: true };
+
+    const theta = [];
+    const r = [];
+    const hover = [];
+    const labels = [];
+    groups.forEach(group => {
+      const meanPct = group.points.reduce((s, p) => s + p.percentile, 0) / group.points.length;
+      const pos = percentileToDisplay(meanPct, plotScale);     // radius position
+      const shown = percentileToDisplay(meanPct, displayScale); // label value
+      theta.push(esc(displayFunc(group.func, settings)));
+      r.push(pos);
+      labels.push(typeof shown === "number" ? shown.toFixed(0) : shown);
+      hover.push(`${esc(group.func)}<br>Moyenne percentile: ${meanPct.toFixed(1)}<br>(${group.points.length} score(s))`);
+    });
+    // Close the loop for a filled polygon
+    if (theta.length > 2) {
+      theta.push(theta[0]); r.push(r[0]); hover.push(hover[0]); labels.push(labels[0]);
+    }
+
+    // Radial axis spans the plot scale's data range (center = min, edge = max).
+    const dr = DATA_RANGE[plotScale] || [0, 100];
+    const rMin = dr[0], rMax = dr[1];
+
+    const traces = [];
+
+    // Interpretation bands are intentionally NOT drawn on the radar: as filled
+    // rings they sit over the centre and obscure the profile. The banded
+    // reading lives on the line chart; the radar is the clean global shape.
+
+    const TC = themeColors();
+    // Optional comparison guide as a dashed reference ring at the comparison
+    // radius. It must use the SAME categorical spokes (function names) as the
+    // profile — using numeric degrees would redefine the angular axis and
+    // disrupt the profile's positions and value labels.
+    const compareR = comparisonDisplayValue(settings, plotScale);
+    if (compareR !== null && theta.length) {
+      const ringTheta = theta.slice();          // same categories, already closed
+      const ringR = ringTheta.map(() => compareR);
+      traces.push({
+        type: "scatterpolar", mode: "lines",
+        theta: ringTheta, r: ringR,
+        line: { color: TC.compare, width: 1.6, dash: "dash", shape: "spline", smoothing: 1 },
+        hoverinfo: "skip", showlegend: false, fill: "none"
+      });
+    }
+
+    // --- The cognitive profile polygon (always the TOP layer) ---
+    const radarColor = settings.radarColor || "#2E8FB5";
+    const haloColor = TC.markerFill;
+    traces.push({
+      type: "scatterpolar",
+      mode: settings.showDataLabels ? "lines+markers+text" : "lines+markers",
+      r, theta,
+      text: settings.showDataLabels ? labels : undefined,
+      textposition: "top center",
+      textfont: { size: 11, color: TC.text },
+      customdata: hover,
+      hovertemplate: "%{customdata}<extra></extra>",
+      fill: settings.radarFill !== false ? "toself" : "none",
+      fillcolor: hexToRgba(radarColor, 0.16),
+      line: { color: radarColor, width: 2.8 },
+      // halo around each marker (matches surface) so points stay crisp
+      marker: { color: haloColor, size: 9, line: { color: radarColor, width: 2.2 } },
+      name: "Profil"
+    });
+
+    const radarTickScores = tickValuesFor(displayScale, proportional);
+    const radarTickVals = proportional
+      ? radarTickScores.map(v => percentileToDisplay(
+          displayScale === "Percentile" ? v : window.ScoringEngine.toPercentile(v, displayScale),
+          plotScale))
+      : radarTickScores;
+    const radarTickText = radarTickScores.map(v => String(v));
+
+    const titleText = (settings.title || "").trim();
+    const layout = {
+      paper_bgcolor: "rgba(0,0,0,0)",
+      font: { color: TC.text, family: FONT_BODY },
+      polar: {
+        bgcolor: "rgba(0,0,0,0)",
+        radialaxis: {
+          range: [rMin, rMax], visible: true, angle: (90 - 180 / Math.max(1, groups.length)),
+          tickmode: "array",
+          tickvals: radarTickVals,
+          ticktext: radarTickText,
+          gridcolor: TC.gridSoft, linecolor: TC.gridSoft,
+          tickfont: { size: 9, color: TC.textSoft }
+        },
+        angularaxis: {
+          direction: "clockwise",
+          tickfont: { size: 11, color: TC.text },
+          gridcolor: TC.gridSoft, linecolor: TC.grid
+        }
+      },
+      showlegend: false,
+      margin: { t: titleText ? 70 : 44, b: 44, l: 70, r: 70 }
+    };
+    if (titleText) {
+      layout.title = {
+        text: esc(titleText), x: 0.5, xanchor: "center",
+        font: { family: FONT_TITLE, size: 20, color: TC.text }
+      };
+    }
+
+    return { empty: false, traces, layout, height: 600 };
+  }
+
+  /**
+   * Build the ÉCHELLES (composite/IQ scales) figure: one connected line over
+   * the ACTIVE battery's entered scales. The axis works like the profile —
+   * proportional (percentile-positioned) or linear (standard-score units) — with
+   * optional Y-axis limits, interpretation bands, per-scale show/hide, a custom
+   * line colour and title. No comparison line here.
+   */
+  function buildScalesFigure(project) {
+    const settings = project.chartSettings || {};
+    const DM = window.VizeaDataModel;
+    let rows = DM ? DM.flattenScales(project) : [];
+    const hidden = Array.isArray(settings.hiddenScales) ? settings.hiddenScales : [];
+    rows = rows.filter(r => !hidden.includes(r.name));
+    // Apply the user-defined display order (drag-to-reorder); scales not in the
+    // order list keep their entry order, after the ordered ones.
+    const ord = Array.isArray(settings.scaleOrder) ? settings.scaleOrder : [];
+    if (ord.length) {
+      rows = rows.map((r, i) => ({ r, i }))
+        .sort((a, b) => {
+          const ia = ord.indexOf(a.r.name), ib = ord.indexOf(b.r.name);
+          return (ia < 0 ? 1e9 + a.i : ia) - (ib < 0 ? 1e9 + b.i : ib);
+        })
+        .map(x => x.r);
+    }
+    if (!rows.length) return { empty: true };
+
+    const displayScale = settings.scalesDisplay === "Percentile" ? "Percentile" : "Standard score";
+    const proportional = displayScale === "Percentile" ? true : (settings.proportionalAxis !== false);
+    const plotScale = proportional ? "Percentile" : displayScale;
+    const TC = themeColors();
+
+    const labels = rows.map(r => esc(displayScaleName(r.name, settings)));
+    // Each row's value -> percentile (universal), then to the plot position.
+    const percentiles = rows.map(r => r.scale === "Percentile"
+      ? window.ScoringEngine.clamp(Number(r.value), 0, 100)
+      : window.ScoringEngine.toPercentile(Number(r.value), "Standard score"));
+    const yvals = percentiles.map(p => percentileToDisplay(p, plotScale));
+    // On-point text = the value as entered (centile marked with "e").
+    const text = rows.map(r => r.scale === "Percentile" ? (r.value + "e") : String(r.value));
+
+    // Axis range: default (±3 SD via AXIS_RANGE) unless the user set limits.
+    let range = (AXIS_RANGE[plotScale] || [0, 100]).slice();
+    const aMin = settings.scalesAxisMin, aMax = settings.scalesAxisMax;
+    const hasLimits = aMin !== undefined && aMin !== null && aMin !== "" &&
+                      aMax !== undefined && aMax !== null && aMax !== "" &&
+                      Number(aMin) < Number(aMax);
+    if (hasLimits) {
+      const lo = Number(aMin), hi = Number(aMax);
+      if (proportional) {
+        const pLo = window.ScoringEngine.toPercentile(lo, displayScale);
+        const pHi = window.ScoringEngine.toPercentile(hi, displayScale);
+        range = [Math.max(0, Math.min(pLo, pHi)), Math.min(100, Math.max(pLo, pHi))];
+      } else {
+        range = [lo, hi];
+      }
+    } else if (!proportional) {
+      // Keep the ±3 default but never clip a real value.
+      const dr = DATA_RANGE[displayScale] || range;
+      let lo = range[0], hi = range[1];
+      yvals.forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); });
+      range = [Math.max(dr[0], lo), Math.min(dr[1], hi)];
+    }
+
+    const shapes = [];
+    if (settings.showBands !== false) {
+      const sbands = window.ScoringEngine.getBandsForDisplayType(plotScale);
+      sbands.forEach((b, bi) => {
+        let y0 = b.min === -Infinity ? range[0] : b.min;
+        let y1 = b.max === Infinity ? range[1] : b.max;
+        y0 = window.ScoringEngine.clamp(y0, range[0], range[1]);
+        y1 = window.ScoringEngine.clamp(y1, range[0], range[1]);
+        if (bi === 0) y0 = range[0];
+        if (bi === sbands.length - 1) y1 = range[1];
+        if (y1 <= y0) return;
+        shapes.push({ type: "rect", xref: "paper", yref: "y", x0: 0, x1: 1, y0, y1,
+          fillcolor: b.color, opacity: BAND_OPACITY, line: { width: 0 }, layer: "below" });
+      });
+    }
+
+    const lineColor = settings.scalesColor || "#1b7fb5";
+    const showLabels = settings.showDataLabels !== false;
+    const traces = [{
+      type: "scatter", mode: showLabels ? "lines+markers+text" : "lines+markers",
+      x: labels, y: yvals, text, textposition: "top center",
+      textfont: { color: TC.text, size: 12 },
+      line: { color: lineColor, width: 2.6 },
+      marker: { color: TC.markerFill, size: 9, line: { color: lineColor, width: 2.2 } },
+      hovertemplate: "%{x}: %{text}<extra></extra>",
+      cliponaxis: false
+    }];
+
+    // Y ticks: standard-score values, placed by percentile when proportional.
+    const tickScoreValues = tickValuesFor(displayScale, proportional);
+    const yTickVals = proportional
+      ? tickScoreValues.map(v => percentileToDisplay(
+          window.ScoringEngine.toPercentile(v, displayScale), plotScale))
+      : tickScoreValues;
+    const yTickText = tickScoreValues.map(v => String(v));
+
+    const titleText = (settings.scalesTitle || "").trim();
+    const layout = {
+      paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+      font: { color: TC.text, family: FONT_BODY },
+      xaxis: { type: "category", tickfont: { color: TC.textSoft }, zeroline: false, showgrid: false, automargin: true },
+      yaxis: { title: { text: displayScale, font: { color: TC.textSoft } }, range,
+        tickmode: "array", tickvals: yTickVals, ticktext: yTickText,
+        tickfont: { color: TC.textSoft }, gridcolor: TC.gridSoft, zeroline: false },
+      shapes, showlegend: false, margin: { t: titleText ? 60 : 30, b: 60, l: 60, r: 30 }, hovermode: "closest"
+    };
+    if (titleText) layout.title = { text: esc(titleText), x: 0.5, xanchor: "center",
+      y: 0.97, yanchor: "top", yref: "container",
+      font: { family: FONT_TITLE, size: 20, color: TC.text } };
+    return { empty: false, traces, layout, height: 560 };
+  }
+
+  function renderChart(project, elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const settings = project.chartSettings || {};
+    const plotWidth = el.clientWidth || 900;
+    const fig = settings.chartType === "radar"
+      ? buildRadarFigure(project)
+      : settings.chartType === "scales"
+        ? buildScalesFigure(project)
+        : buildLineFigure(project, { plotWidth });
+
+    if (fig.empty) {
+      // If a real plot was here, purge it cleanly before showing the message,
+      // so a later re-render starts fresh instead of reacting onto dead internals.
+      if (el.classList.contains("js-plotly-plot") && window.Plotly.purge) {
+        try { window.Plotly.purge(el); } catch (e) { /* noop */ }
+      }
+      const TC = themeColors();
+      el.innerHTML = "<p style='text-align:center;color:" + TC.textSoft + ";padding:40px'>Aucun score à afficher. Entrez des scores et associez-leur au moins une fonction cognitive.</p>";
+      return;
+    }
+    // First render builds the plot (newPlot); subsequent renders reuse it via
+    // react(), which diffs the figure instead of rebuilding from scratch — much
+    // faster for panel/colour/view changes, with an identical visual result.
+    const hadPlot = el.classList.contains("js-plotly-plot");
+    if (!hadPlot) el.innerHTML = "";
+    // Grow the container's total height to fit x-axis labels below, so the plot
+    // drawing area stays constant instead of being compressed.
+    if (fig.height) el.style.height = fig.height + "px";
+    else el.style.height = "";
+    const config = {
+      responsive: true,
+      toImageButtonOptions: { format: "png", filename: "vizea_profil", scale: 2 },
+      displaylogo: false
+    };
+    const draw = hadPlot && window.Plotly.react ? window.Plotly.react : window.Plotly.newPlot;
+    const plotPromise = draw(el, fig.traces, fig.layout, config);
+    plotPromise.then(() => {
+      // The container can change width (e.g. entering step 3 full-width, or the
+      // drawer opening/closing). Force a resize so the plot always fits.
+      if (window.Plotly.Plots && window.Plotly.Plots.resize) {
+        try { window.Plotly.Plots.resize(el); } catch (e) { /* noop */ }
+      }
+    });
+    return plotPromise;
+  }
+
+  const VizeaChart = {
+    buildLineFigure,
+    buildRadarFigure,
+    buildScalesFigure,
+    groupPointsByFunction,
+    renderChart,
+    setForceLight: (v) => { _forceLight = !!v; },
+    AXIS_RANGE
+  };
+
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = VizeaChart;
+  } else {
+    window.VizeaChart = VizeaChart;
+  }
+})();

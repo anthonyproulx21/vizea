@@ -1,0 +1,41 @@
+[
+  {
+    "date": "2026-06-25",
+    "titre": "Optimisations et réalignement des bandes de classification",
+    "infos": [
+      "Optimisations du code qui fait tout le travail derrière : la saisie des scores reste fluide même dans les gros projets, sans petits lags agaçants.",
+      "Réalignement des bandes de classification pour qu'elles tombent exactement, précisément, au poil près, aux bons endroits."
+    ]
+  },
+  {
+    "date": "2026-06-23",
+    "titre": "Démonstration, vue Tableau et plus",
+    "infos": [
+      "Nouvelle visite guidée « Démo ».",
+      "Vue Tableau : les scores regroupés par test ou par fonction, avec colonnes personnalisables et exportation en Excel.",
+      "Possibilité d'inverser un score lorsque « élevé = défavorable » (p.ex. temps de réponse, nombre d'erreurs).",
+      "Quatre nouveaux tests ajoutés à la banque : KABC-II, WNV, Leiter-3 et RBANS.",
+      "Tri des tests par récence : la version la plus récente d'une famille apparaît en premier."
+    ]
+  },
+  {
+    "date": "2026-06-21",
+    "titre": "Lancement officiel de Vizéa",
+    "infos": [
+      "Première version publique de l'outil.",
+      "Visualisation des profils cognitifs par fonction : vues Profil, Échelles et Radar.",
+      "Banque de tests neuropsychologiques avec ce que j'ai à ma disposition et les informations en ligne.",
+      "Personnalisation du graphique et exportation en image.",
+      "Enregistrement de modèles et de projets."
+    ]
+  },
+  {
+    "date": "2025-09-30",
+    "titre": "Première idée du concept",
+    "infos": [
+      "L'idée de départ est bien plus modeste que ce que Vizéa allait devenir : une simple intuition, encore floue et un brin farfelue.",
+      "Je n'ai aucune expérience en programmation de site web et, honnêtement, pas la moindre idée de ce dans quoi je m'embarque.",
+      "Je préfère garder le projet discret, au cas où il ne verrait jamais le jour."
+    ]
+  }
+]

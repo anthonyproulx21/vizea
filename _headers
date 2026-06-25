@@ -1,0 +1,16 @@
+# Security headers for all routes (served by Netlify).
+# CSP notes:
+#  - 'unsafe-eval' is required by the full Plotly bundle (a dependency uses the
+#    Function constructor). Inline scripts are NOT allowed ('unsafe-inline' is
+#    absent from script-src) — that is the main XSS protection.
+#  - PayPal needs *.paypal.com / *.paypalobjects.com / venmo across script,
+#    frame, connect and img. Style is 'unsafe-inline' (Plotly + PayPal inject
+#    inline styles; low risk).
+#  - The "Suggérer un test" form POSTs to a Google Apps Script web app.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.plot.ly https://*.paypal.com https://*.paypalobjects.com https://www.venmo.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.paypal.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.paypal.com https://*.paypalobjects.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://*.paypal.com https://*.paypalobjects.com https://www.venmo.com; frame-src https://*.paypal.com https://*.paypalobjects.com https://www.venmo.com; child-src https://*.paypal.com https://*.paypalobjects.com https://www.venmo.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests

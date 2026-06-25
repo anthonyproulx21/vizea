@@ -1,0 +1,2119 @@
+{
+  "BYI-II": {
+    "type": "batterie",
+    "subtests": {
+      "Image de soi": [
+        "Psychoaffectif"
+      ],
+      "Anxiété": [
+        "Psychoaffectif"
+      ],
+      "Dépression": [
+        "Psychoaffectif"
+      ],
+      "Colère": [
+        "Psychoaffectif"
+      ],
+      "Troubles du comportement": [
+        "Psychoaffectif"
+      ]
+    },
+    "recency": 2
+  },
+  "BYI": {
+    "type": "batterie",
+    "subtests": {
+      "Image de soi": [
+        "Psychoaffectif"
+      ],
+      "Anxiété": [
+        "Psychoaffectif"
+      ],
+      "Dépression": [
+        "Psychoaffectif"
+      ],
+      "Colère": [
+        "Psychoaffectif"
+      ],
+      "Troubles du comportement": [
+        "Psychoaffectif"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "BDI-II": {
+    "type": "test",
+    "default_functions": [
+      "Psychoaffectif"
+    ],
+    "subtests": {}
+  },
+  "BAI": {
+    "type": "test",
+    "default_functions": [
+      "Psychoaffectif"
+    ],
+    "subtests": {}
+  },
+  "Chapman-Cook": {
+    "type": "test",
+    "default_functions": [
+      "Langage écrit"
+    ],
+    "subtests": {}
+  },
+  "L2MA-2": {
+    "type": "batterie",
+    "subtests": {
+      "Utilisation de la souris": [
+        "Moteur"
+      ],
+      "Dénomination d'images": [
+        "Langage oral"
+      ],
+      "Mots catégoriels": [
+        "Langage oral"
+      ],
+      "Répétition de pseudo-mots": [
+        "Mémoire de travail"
+      ],
+      "Morphosyntaxe": [
+        "Langage oral"
+      ],
+      "Répétition de phrases": [
+        "Mémoire de travail",
+        "Langage oral"
+      ],
+      "Compréhension de consignes et de concepts": [
+        "Langage oral"
+      ],
+      "Répétition de chiffres": [
+        "Mémoire de travail"
+      ],
+      "Stratégie de lecture": [
+        "Langage écrit"
+      ],
+      "Lecture flash": [
+        "Langage écrit"
+      ],
+      "Dictée de phrases": [
+        "Langage écrit"
+      ],
+      "Dictée Le corbeau": [
+        "Langage écrit"
+      ],
+      "Conscience phonologique": [
+        "Langage oral"
+      ],
+      "Antonymes": [
+        "Langage oral"
+      ],
+      "Désignation d'images": [
+        "Langage oral"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ],
+      "Maitrise des graphèmes": [
+        "Langage écrit"
+      ],
+      "Fluence phonétique et sémantique": [
+        "Langage oral"
+      ],
+      "Lecture silencieuse": [
+        "Langage écrit"
+      ],
+      "Narration": [
+        "Langage oral"
+      ],
+      "Dictée de logatomes et de mots": [
+        "Langage écrit"
+      ],
+      "Les ours (compréhension et récit)": [
+        "Langage écrit"
+      ],
+      "Liste de mots": [
+        "Mémoire"
+      ],
+      "Attention continue": [
+        "Attention"
+      ],
+      "Figures géométriques": [
+        "Moteur"
+      ]
+    }
+  },
+  "EVALAD": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de mots réguliers": [
+        "Langage écrit"
+      ],
+      "Lecture de mots irréguliers": [
+        "Langage écrit"
+      ],
+      "Lecture de texte": [
+        "Langage écrit"
+      ],
+      "Lecture de non-mots": [
+        "Langage écrit"
+      ],
+      "Rappel immédiat de mots": [
+        "Mémoire"
+      ],
+      "Conscience phonologique": [
+        "Langage oral"
+      ],
+      "Rappel différé de mots": [
+        "Mémoire"
+      ],
+      "Dictée de mots réguliers": [
+        "Langage écrit"
+      ],
+      "Dictée de mots irréguliers": [
+        "Langage écrit"
+      ],
+      "Dictée de texte": [
+        "Langage écrit"
+      ],
+      "Dictée de non-mots": [
+        "Langage écrit"
+      ],
+      "Empan envers": [
+        "Mémoire de travail"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ]
+    }
+  },
+  "TRF (orthographe)": {
+    "type": "test",
+    "default_functions": [
+      "Langage écrit"
+    ],
+    "subtests": {}
+  },
+  "TELEQ": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de mots irréguliers": [
+        "Langage écrit"
+      ],
+      "Lecture de pseudomots": [
+        "Langage écrit"
+      ],
+      "Dictée de mots irréguliers": [
+        "Langage écrit"
+      ],
+      "Dictée de pseudomots": [
+        "Langage écrit"
+      ],
+      "Compréhension de lecture": [
+        "Langage écrit"
+      ]
+    }
+  },
+  "RAN / RAS": {
+    "type": "test",
+    "default_functions": [
+      "Langage oral"
+    ],
+    "subtests": {}
+  },
+  "Petite EVAC": {
+    "type": "batterie",
+    "subtests": {
+      "Séquences": [
+        "Langage oral"
+      ],
+      "Concepts mathématiques": [
+        "Mathématiques"
+      ],
+      "Jeu d'écoute": [
+        "Langage oral"
+      ],
+      "Concepts d'espace": [
+        "Langage oral"
+      ],
+      "Concepts de temps": [
+        "Langage oral"
+      ],
+      "Images mentales": [
+        "Langage oral"
+      ],
+      "Devinettes": [
+        "Langage oral"
+      ],
+      "Expressions métaphoriques": [
+        "Langage oral"
+      ],
+      "Comprehension syntaxique": [
+        "Langage oral"
+      ],
+      "Connaissances lexicales": [
+        "Langage oral"
+      ]
+    }
+  },
+  "ODEDYS-2": {
+    "type": "batterie",
+    "subtests": {
+      "L'Alouette": [
+        "Langage écrit"
+      ],
+      "Lecture de mots fréquents": [
+        "Langage écrit"
+      ],
+      "Lecture de mots non-fréquents": [
+        "Langage écrit"
+      ],
+      "Comparaison de séquences de lettres": [
+        "Langage écrit"
+      ],
+      "Dictée de phrases (Petit garçon)": [
+        "Langage écrit"
+      ],
+      "Répétition de mots et de logatomes": [
+        "Mémoire de travail"
+      ],
+      "Suppression du phonème initial": [
+        "Langage oral"
+      ],
+      "Fusion de phonèmes": [
+        "Langage oral"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ],
+      "Dictée de mots": [
+        "Langage écrit"
+      ],
+      "Mémoire": [
+        "Mémoire de travail"
+      ],
+      "Les cloches": [
+        "Attention"
+      ]
+    }
+  },
+  "PRIMO-3e cycle": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de pseudo-mots": [
+        "Langage écrit"
+      ],
+      "Lecture de mots": [
+        "Langage écrit"
+      ],
+      "Lecture de texte": [
+        "Langage écrit"
+      ],
+      "Dictée de pseudo-mots": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - Morpho": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - Inconsistants": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - RégO": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - Total": [
+        "Langage écrit"
+      ]
+    }
+  },
+  "PRIMO-2e cycle": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de pseudo-mots": [
+        "Langage écrit"
+      ],
+      "Lecture de mots": [
+        "Langage écrit"
+      ],
+      "Lecture de texte": [
+        "Langage écrit"
+      ],
+      "Dictée de phrases": [
+        "Langage écrit"
+      ],
+      "Dictée de pseudo-mots": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - Morpho": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - Inconsistants": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - RégO": [
+        "Langage écrit"
+      ],
+      "Dictée de mots - Total": [
+        "Langage écrit"
+      ]
+    }
+  },
+  "BELO": {
+    "type": "batterie",
+    "subtests": {
+      "Graphèmes simples": [
+        "Langage écrit"
+      ],
+      "Syllabes simples": [
+        "Langage écrit"
+      ],
+      "Syllabes complexes": [
+        "Langage écrit"
+      ],
+      "Graphies complexes": [
+        "Langage écrit"
+      ],
+      "Répétition de mots": [
+        "Mémoire de travail"
+      ],
+      "Répétition de chiffres": [
+        "Mémoire de travail"
+      ],
+      "Lecture de mots réguliers": [
+        "Langage écrit"
+      ],
+      "Lecture de mots irréguliers": [
+        "Langage écrit"
+      ],
+      "Tests visuo-attentionnels": [
+        "Attention"
+      ],
+      "Lecture de texte": [
+        "Langage écrit"
+      ],
+      "Conscience phonologique": [
+        "Langage oral"
+      ],
+      "Dictée de syllabes": [
+        "Langage écrit"
+      ],
+      "Dictée de mots réguliers": [
+        "Langage écrit"
+      ],
+      "Dictée de phrases": [
+        "Langage écrit"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ]
+    }
+  },
+  "BEELE": {
+    "type": "batterie",
+    "subtests": {
+      "Épreuve de Marie": [
+        "Langage écrit"
+      ],
+      "L'Alouette-R": [
+        "Langage écrit"
+      ],
+      "Test visuo-attentionnel": [
+        "Attention"
+      ],
+      "Analyse de séquences de lettres": [
+        "Langage écrit"
+      ],
+      "Dénomination de lettres": [
+        "Langage écrit"
+      ],
+      "Son des graphèmes": [
+        "Langage écrit"
+      ],
+      "Lecture de syllabes simples et complexes": [
+        "Langage écrit"
+      ],
+      "Lecture orale de pseudomots": [
+        "Langage écrit"
+      ],
+      "Décision lexicale": [
+        "Langage écrit"
+      ],
+      "Lecture orale de mots réguliers": [
+        "Langage écrit"
+      ],
+      "Lecture orale de mots irréguliers": [
+        "Langage écrit"
+      ],
+      "Repérage et corrections de l'anomalie orthographique": [
+        "Langage écrit"
+      ],
+      "Production orthographique": [
+        "Langage écrit"
+      ],
+      "Définition de mots": [
+        "Langage écrit"
+      ],
+      "Dénomination rapide de dessins": [
+        "Langage oral"
+      ],
+      "Dénomination rapide de lettres": [
+        "Langage écrit"
+      ],
+      "Identification du premier phonème": [
+        "Langage oral"
+      ],
+      "Soustraction phonémique": [
+        "Langage oral"
+      ],
+      "Soustraction syllabique": [
+        "Langage oral"
+      ],
+      "Répétition de non-mots": [
+        "Mémoire de travail"
+      ]
+    }
+  },
+  "ELFE": {
+    "type": "batterie",
+    "subtests": {
+      "Monsieur Petit": [
+        "Langage écrit"
+      ],
+      "Géant égoïste": [
+        "Langage écrit"
+      ]
+    }
+  },
+  "PPVT-4": {
+    "type": "batterie",
+    "subtests": {}
+  },
+  "SDMT": {
+    "type": "test",
+    "default_functions": [
+      "Vitesse de traitement"
+    ],
+    "subtests": {}
+  },
+  "PASAT": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {}
+  },
+  "Boston Cancellation Test": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {}
+  },
+  "ACT (Brown-Peterson)": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {}
+  },
+  "Blocs de Corsi": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire de travail"
+    ],
+    "subtests": {}
+  },
+  "Mesulam": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {}
+  },
+  "TEA-Ch-2": {
+    "type": "batterie",
+    "subtests": {
+      "Balloon hunt": [
+        "Attention"
+      ],
+      "Hector cancellation": [
+        "Attention"
+      ],
+      "Troy dual task": [
+        "Attention"
+      ],
+      "Hide & seek visual": [
+        "Attention"
+      ],
+      "Hecuba visual search": [
+        "Attention"
+      ],
+      "Barking": [
+        "Attention"
+      ],
+      "Vigil": [
+        "Attention"
+      ],
+      "SART": [
+        "Attention"
+      ],
+      "Simple RT": [
+        "Fonctions exécutives"
+      ],
+      "Hide & seek auditory": [
+        "Attention"
+      ],
+      "Cerebus": [
+        "Attention"
+      ],
+      "Red & blues, bags & shoes": [
+        "Fonctions exécutives"
+      ]
+    },
+    "recency": 1
+  },
+  "TEA": {
+    "type": "batterie",
+    "iq_scales": [],
+    "subtests": {
+      "Map search": [
+        "Attention"
+      ],
+      "Elevator counting": [
+        "Attention"
+      ],
+      "Elevator counting with reversal": [
+        "Attention"
+      ],
+      "Visual elevator": [
+        "Attention"
+      ],
+      "Telephone search": [
+        "Attention"
+      ],
+      "Telephone search while counting": [
+        "Attention"
+      ],
+      "Lottery": [
+        "Attention"
+      ]
+    }
+  },
+  "TOVA": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {}
+  },
+  "WIAT-III": {
+    "type": "batterie",
+    "subtests": {
+      "Listening comprehension": [
+        "Langage oral"
+      ],
+      "Early reading skills": [
+        "Langage écrit"
+      ],
+      "Reading comprehension": [
+        "Langage écrit"
+      ],
+      "Math problem solving": [
+        "Mathématiques"
+      ],
+      "Alphabet writing fluency": [
+        "Langage écrit"
+      ],
+      "Sentence composition": [
+        "Langage écrit"
+      ],
+      "Word reading": [
+        "Langage écrit"
+      ],
+      "Essay composition": [
+        "Langage écrit"
+      ],
+      "Pseudoword decoding": [
+        "Langage écrit"
+      ],
+      "Numerical operations": [
+        "Mathématiques"
+      ],
+      "Oral expression": [
+        "Langage oral"
+      ],
+      "Oral reading fluency": [
+        "Langage écrit"
+      ],
+      "Spelling": [
+        "Langage écrit"
+      ],
+      "Math fluency": [
+        "Mathématiques"
+      ]
+    },
+    "recency": 2
+  },
+  "WIAT-II": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de mots": [
+        "Langage écrit"
+      ],
+      "Opérations numériques": [
+        "Mathématiques"
+      ],
+      "Compréhension de lecture": [
+        "Langage écrit"
+      ],
+      "Orthographe": [
+        "Langage écrit"
+      ],
+      "Raisonnement mathématiques": [
+        "Mathématiques"
+      ],
+      "Expression écrite": [
+        "Langage écrit"
+      ],
+      "Compréhension orale": [
+        "Langage oral"
+      ],
+      "Expression orale": [
+        "Langage oral"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "Key-Math-3": {
+    "type": "batterie",
+    "subtests": {
+      "Numeration": [
+        "Mathématiques"
+      ],
+      "Algebra": [
+        "Mathématiques"
+      ],
+      "Geometry": [
+        "Mathématiques"
+      ],
+      "Measurement": [
+        "Mathématiques"
+      ],
+      "Data analysis and probability": [
+        "Mathématiques"
+      ],
+      "Mental computation and estimation": [
+        "Mathématiques"
+      ],
+      "Addition and substraction": [
+        "Mathématiques"
+      ],
+      "Multiplication and division": [
+        "Mathématiques"
+      ],
+      "Foundation of problem solving": [
+        "Mathématiques"
+      ],
+      "Applied problem solving": [
+        "Mathématiques"
+      ]
+    }
+  },
+  "Zareki-R": {
+    "type": "batterie",
+    "subtests": {
+      "Dénombrement de points": [
+        "Mathématiques"
+      ],
+      "Comptage oral à rebours": [
+        "Mathématiques"
+      ],
+      "Dictée de nombres": [
+        "Mathématiques"
+      ],
+      "Calcul mental oral": [
+        "Mathématiques"
+      ],
+      "Lecture de nombres": [
+        "Mathématiques"
+      ],
+      "Positionnement sur une échelle verticale": [
+        "Mathématiques"
+      ],
+      "Comparaison de deux nombres (oral)": [
+        "Mathématiques"
+      ],
+      "Estimation visuelle de quantité": [
+        "Mathématiques"
+      ],
+      "Estimation de quantité en contexte": [
+        "Mathématiques"
+      ],
+      "Problèmes arithmétiques présentés oralement": [
+        "Mathématiques"
+      ],
+      "Comparaison de deux nombres (écrit)": [
+        "Mathématiques"
+      ],
+      "Répétition de chiffres": [
+        "Mémoire de travail"
+      ]
+    }
+  },
+  "BEM144": {
+    "type": "batterie",
+    "subtests": {
+      "24 phrases": [
+        "Mémoire"
+      ],
+      "Histoire": [
+        "Mémoire"
+      ],
+      "Liste de mots": [
+        "Mémoire"
+      ],
+      "Span auditivo-verbal": [
+        "Mémoire de travail"
+      ],
+      "Paires associées verbales": [
+        "Mémoire"
+      ],
+      "24 figures": [
+        "Mémoire"
+      ],
+      "Figure géométrique": [
+        "Mémoire"
+      ],
+      "Liste de signes graphiques": [
+        "Mémoire"
+      ],
+      "Span visuo-visuel": [
+        "Mémoire de travail"
+      ],
+      "Paires associées visuelles": [
+        "Mémoire"
+      ]
+    }
+  },
+  "BVRT": {
+    "type": "test",
+    "default_functions": [],
+    "subtests": {}
+  },
+  "BVMT-R": {
+    "type": "test",
+    "default_functions": [],
+    "subtests": {}
+  },
+  "Buschke": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {}
+  },
+  "WISC-IV": {
+    "type": "batterie",
+    "iq_scales": [
+      "ICV",
+      "IRP",
+      "IMT",
+      "IVT",
+      "QIT"
+    ],
+    "subtests": {
+      "Similitudes": [
+        "Langage oral"
+      ],
+      "Vocabulaire": [
+        "Langage oral"
+      ],
+      "Blocs": [
+        "Raisonnement fluide"
+      ],
+      "Concepts en images": [
+        "Raisonnement fluide"
+      ],
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Séquences de chiffres": [
+        "Mémoire de travail"
+      ],
+      "Séquences lettres-chiffres": [
+        "Mémoire de travail"
+      ],
+      "Code": [
+        "Vitesse de traitement"
+      ],
+      "Repérage de symboles": [
+        "Vitesse de traitement"
+      ],
+      "Compréhension": [
+        "Langage oral"
+      ],
+      "Connaissances": [
+        "Langage oral"
+      ],
+      "Raisonnement verbal": [
+        "Langage oral"
+      ],
+      "Images à compléter": [
+        "Raisonnement fluide"
+      ],
+      "Arithmétique": [
+        "Mémoire de travail"
+      ],
+      "Annulation": [
+        "Vitesse de traitement"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "WISC-IV intégré (supplémentaires)": {
+    "type": "batterie",
+    "iq_scales": [],
+    "subtests": {
+      "Similitudes (choix multiples)": [
+        "Langage oral"
+      ],
+      "Vocabulaire (choix multiples)": [
+        "Langage oral"
+      ],
+      "Connaissances (choix multiples)": [
+        "Langage oral"
+      ],
+      "Compréhension (choix multiples)": [
+        "Langage oral"
+      ],
+      "Blocs (choix multiples)": [
+        "Raisonnement fluide"
+      ],
+      "Blocs (approche procédurale)": [
+        "Raisonnement fluide"
+      ],
+      "Séquences de chiffres (visuel)": [
+        "Mémoire de travail"
+      ],
+      "Séquences spatiales": [
+        "Mémoire de travail"
+      ],
+      "Séquences de lettres": [
+        "Mémoire de travail"
+      ],
+      "Séquences lettres-chiffres (approche procédurale)": [
+        "Mémoire de travail"
+      ],
+      "Arithmétique (approche procédurale)": [
+        "Mémoire de travail"
+      ],
+      "Arithmétique (écrit)": [
+        "Mémoire de travail"
+      ],
+      "Copie de code": [
+        "Vitesse de traitement"
+      ],
+      "Mémoire de code": [
+        "Mémoire"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "WISC-V": {
+    "type": "batterie",
+    "iq_scales": [
+      "ICV",
+      "IVS",
+      "IRF",
+      "IMT",
+      "IVT",
+      "EGQI"
+    ],
+    "subtests": {
+      "Blocs": [
+        "Visuospatial"
+      ],
+      "Similitudes": [
+        "Langage oral"
+      ],
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Séquences de chiffres": [
+        "Mémoire de travail"
+      ],
+      "Code": [
+        "Vitesse de traitement"
+      ],
+      "Vocabulaire": [
+        "Langage oral"
+      ],
+      "Balances": [
+        "Raisonnement fluide"
+      ],
+      "Casse-têtes visuels": [
+        "Visuospatial"
+      ],
+      "Séquences d'images": [
+        "Mémoire de travail"
+      ],
+      "Repérage de symboles": [
+        "Vitesse de traitement"
+      ],
+      "Connaissances": [
+        "Langage oral"
+      ],
+      "Concepts en images": [
+        "Raisonnement fluide"
+      ],
+      "Séquences lettres-chiffres": [
+        "Mémoire de travail"
+      ],
+      "Annulation": [
+        "Vitesse de traitement"
+      ],
+      "Compréhension": [
+        "Langage oral"
+      ],
+      "Arithmétique": [
+        "Raisonnement fluide"
+      ],
+      "Vitesse de dénomination littératie": [
+        "Langage oral"
+      ],
+      "Vitesse de dénomination quantité": [
+        "Langage oral"
+      ]
+    },
+    "recency": 2
+  },
+  "WISC-V intégré (supplémentaires)": {
+    "type": "batterie",
+    "iq_scales": [],
+    "subtests": {
+      "Similitudes (choix multiples)": [
+        "Langage oral"
+      ],
+      "Vocabulaire (choix multiples)": [
+        "Langage oral"
+      ],
+      "Vocabulaire en images (choix multiples)": [
+        "Langage oral"
+      ],
+      "Connaissances (choix multiples)": [
+        "Langage oral"
+      ],
+      "Compréhension (choix multiples)": [
+        "Langage oral"
+      ],
+      "Balances (choix multiples)": [
+        "Raisonnement fluide"
+      ],
+      "Arithmétique (approche procédurale)": [
+        "Raisonnement fluide"
+      ],
+      "Arithmétique (écrit)": [
+        "Raisonnement fluide"
+      ],
+      "Blocs (choix multiples)": [
+        "Visuospatial"
+      ],
+      "Annulation (abstrait)": [
+        "Vitesse de traitement"
+      ],
+      "Séquences spatiales": [
+        "Mémoire de travail"
+      ],
+      "Mémoire de phrases": [
+        "Mémoire de travail"
+      ],
+      "Mémoire de code": [
+        "Mémoire"
+      ],
+      "Copie de code": [
+        "Vitesse de traitement",
+        "Moteur"
+      ]
+    },
+    "recency": 2
+  },
+  "WAIS-IV": {
+    "type": "batterie",
+    "iq_scales": [
+      "ICV",
+      "IRP",
+      "IMT",
+      "IVT",
+      "EGQI"
+    ],
+    "subtests": {
+      "Blocs": [
+        "Visuospatial"
+      ],
+      "Similitudes": [
+        "Langage oral"
+      ],
+      "Séquences des chiffres": [
+        "Mémoire de travail"
+      ],
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Vocabulaire": [
+        "Langage oral"
+      ],
+      "Arithmétique": [
+        "Mémoire de travail",
+        "Mathématiques"
+      ],
+      "Repérage de symboles": [
+        "Vitesse de traitement"
+      ],
+      "Casse-têtes visuels": [
+        "Visuospatial"
+      ],
+      "Connaissances": [
+        "Langage oral"
+      ],
+      "Code": [
+        "Vitesse de traitement"
+      ],
+      "Séquence lettres-chiffres": [
+        "Mémoire de travail"
+      ],
+      "Balances": [
+        "Raisonnement fluide"
+      ],
+      "Compréhension": [
+        "Langage oral"
+      ],
+      "Annulation": [
+        "Vitesse de traitement"
+      ],
+      "Images à compléter": [
+        "Visuospatial"
+      ]
+    }
+  },
+  "WASI-II": {
+    "type": "batterie",
+    "iq_scales": [
+      "ICV",
+      "IRP",
+      "FSIQ-2",
+      "FSIQ-4"
+    ],
+    "subtests": {
+      "Vocabulaire": [
+        "Langage oral"
+      ],
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Similitudes": [
+        "Langage oral"
+      ],
+      "Blocs": [
+        "Visuospatial"
+      ]
+    },
+    "recency": 2
+  },
+  "WASI": {
+    "type": "batterie",
+    "iq_scales": [
+      "ICV",
+      "IRP",
+      "FSIQ-2",
+      "FSIQ-4"
+    ],
+    "subtests": {
+      "Vocabulaire": [
+        "Langage oral"
+      ],
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Similitudes": [
+        "Langage oral"
+      ],
+      "Blocs": [
+        "Visuospatial"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "WPPSI-IV": {
+    "type": "batterie",
+    "iq_scales": [
+      "ICV",
+      "IVS",
+      "IRF",
+      "IMT",
+      "IVT",
+      "EGQI"
+    ],
+    "subtests": {
+      "Blocs": [
+        "Visuospatial"
+      ],
+      "Connaissances": [
+        "Langage oral"
+      ],
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Repérage d'insectes": [
+        "Vitesse de traitement"
+      ],
+      "Reconnaissance d'images": [
+        "Mémoire de travail"
+      ],
+      "Similitudes": [
+        "Langage oral"
+      ],
+      "Concepts en images": [
+        "Raisonnement fluide"
+      ],
+      "Annulation": [
+        "Vitesse de traitement"
+      ],
+      "Mémoire spatiale": [
+        "Mémoire de travail"
+      ],
+      "Assemblage d'objets": [
+        "Visuospatial"
+      ],
+      "Vocabulaire": [
+        "Langage oral"
+      ],
+      "Codage d'animaux": [
+        "Vitesse de traitement"
+      ],
+      "Compréhension": [
+        "Langage oral"
+      ],
+      "Vocabulaire réceptif": [
+        "Langage oral"
+      ],
+      "Identification d'images": [
+        "Langage oral"
+      ]
+    }
+  },
+  "KABC-II": {
+    "type": "batterie",
+    "iq_scales": [
+      "Séquentiel",
+      "Simultané",
+      "Apprentissage",
+      "Planification",
+      "Connaissances",
+      "IFC",
+      "IPM",
+      "INV"
+    ],
+    "subtests": {
+      "Mémoire de chiffres": [
+        "Mémoire de travail"
+      ],
+      "Suites de mots": [
+        "Mémoire de travail"
+      ],
+      "Mouvements de main": [
+        "Mémoire de travail"
+      ],
+      "Triangles": [
+        "Visuospatial"
+      ],
+      "Fermeture gestaltiste": [
+        "Visuospatial"
+      ],
+      "Reconnaissance de visages": [
+        "Visuospatial"
+      ],
+      "Dénombrement de cubes": [
+        "Visuospatial"
+      ],
+      "Raisonnement conceptuel": [
+        "Visuospatial"
+      ],
+      "Rover": [
+        "Visuospatial"
+      ],
+      "Atlantis": [
+        "Mémoire"
+      ],
+      "Rébus": [
+        "Mémoire"
+      ],
+      "Histoire à compléter": [
+        "Raisonnement fluide"
+      ],
+      "Séquences logiques": [
+        "Raisonnement fluide"
+      ],
+      "Dénomination": [
+        "Langage oral"
+      ],
+      "Devinettes": [
+        "Langage oral"
+      ],
+      "Connaissances verbales": [
+        "Langage oral"
+      ]
+    }
+  },
+  "WNV": {
+    "type": "batterie",
+    "iq_scales": [
+      "Full Scale Score"
+    ],
+    "subtests": {
+      "Matrices": [
+        "Raisonnement fluide"
+      ],
+      "Code": [
+        "Vitesse de traitement"
+      ],
+      "Assemblage d'objets": [
+        "Visuospatial"
+      ],
+      "Reconnaissance": [
+        "Mémoire de travail"
+      ],
+      "Mémoire spatiale": [
+        "Mémoire de travail"
+      ],
+      "Arrangement d'images": [
+        "Raisonnement fluide"
+      ]
+    }
+  },
+  "Leiter-3": {
+    "type": "batterie",
+    "iq_scales": [
+      "QI non verbal",
+      "Mémoire non verbale",
+      "Vitesse de traitement"
+    ],
+    "subtests": {
+      "Figure-fond": [
+        "Visuospatial"
+      ],
+      "Complètement de figures": [
+        "Visuospatial"
+      ],
+      "Classification et analogies": [
+        "Raisonnement fluide"
+      ],
+      "Ordre séquentiel": [
+        "Raisonnement fluide"
+      ],
+      "Patrons visuels": [
+        "Visuospatial"
+      ],
+      "Mémoire directe": [
+        "Mémoire de travail"
+      ],
+      "Mémoire inversée": [
+        "Mémoire de travail"
+      ],
+      "Attention soutenue": [
+        "Attention"
+      ],
+      "Attention divisée": [
+        "Attention",
+        "Fonctions exécutives"
+      ],
+      "Stroop non verbal": [
+        "Fonctions exécutives"
+      ]
+    }
+  },
+  "RBANS": {
+    "type": "batterie",
+    "iq_scales": [
+      "Mémoire immédiate",
+      "Visuospatial/constructif",
+      "Langage",
+      "Attention",
+      "Mémoire différée",
+      "Indice total"
+    ],
+    "subtests": {
+      "Apprentissage de liste": [
+        "Mémoire"
+      ],
+      "Mémoire d'un récit": [
+        "Mémoire"
+      ],
+      "Copie de figure": [
+        "Visuospatial"
+      ],
+      "Orientation de lignes": [
+        "Visuospatial"
+      ],
+      "Dénomination d'images": [
+        "Langage oral"
+      ],
+      "Fluence sémantique": [
+        "Langage oral"
+      ],
+      "Mémoire des chiffres": [
+        "Mémoire de travail"
+      ],
+      "Code": [
+        "Vitesse de traitement"
+      ],
+      "Rappel de la liste": [
+        "Mémoire"
+      ],
+      "Reconnaissance de la liste": [
+        "Mémoire"
+      ],
+      "Rappel du récit": [
+        "Mémoire"
+      ],
+      "Rappel de la figure": [
+        "Mémoire"
+      ]
+    }
+  },
+  "NEPSY-I": {
+    "type": "batterie",
+    "subtests": {
+      "Attention auditive et réponses associées": [
+        "Attention",
+        "Fonctions exécutives"
+      ],
+      "Fluidité de dessins": [
+        "Fonctions exécutives"
+      ],
+      "Cogner - Frapper": [
+        "Fonctions exécutives"
+      ],
+      "Statue": [
+        "Fonctions exécutives"
+      ],
+      "Tour": [
+        "Fonctions exécutives"
+      ],
+      "Attention visuelle": [
+        "Attention"
+      ],
+      "Identification de parties du corps": [
+        "Langage oral"
+      ],
+      "Compréhension de consignes": [
+        "Langage oral"
+      ],
+      "Séquences oromotrices": [
+        "Langage oral"
+      ],
+      "Processus phonologiques": [
+        "Langage oral"
+      ],
+      "Répétition de pseudo-mots": [
+        "Langage oral"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ],
+      "Fluidité verbale": [
+        "Langage oral"
+      ],
+      "Discimination digitale": [
+        "Moteur"
+      ],
+      "Tapping": [
+        "Moteur"
+      ],
+      "Imitation de positions de mains": [
+        "Moteur"
+      ],
+      "Séquences motrices manuelles": [
+        "Moteur"
+      ],
+      "Précision visuomotrice": [
+        "Moteur"
+      ],
+      "Copie de dessins": [
+        "Visuospatial"
+      ],
+      "Flèches": [
+        "Visuospatial"
+      ],
+      "Blocs": [
+        "Visuospatial"
+      ],
+      "Orientation": [
+        "Visuospatial"
+      ],
+      "Liste de mots": [
+        "Mémoire"
+      ],
+      "Mémoire de visages": [
+        "Mémoire",
+        "Cognition sociale"
+      ],
+      "Mémoire de noms": [
+        "Mémoire"
+      ],
+      "Mémoire narrative": [
+        "Mémoire"
+      ],
+      "Répétition de phrases": [
+        "Mémoire de travail"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "NEPSY-II": {
+    "type": "batterie",
+    "subtests": {
+      "Attention auditive et réponses associées": [
+        "Attention",
+        "Fonctions exécutives"
+      ],
+      "Catégorisation": [
+        "Fonctions exécutives"
+      ],
+      "Compréhension de consignes": [
+        "Langage oral"
+      ],
+      "Copie de figures": [
+        "Visuospatial"
+      ],
+      "Cubes": [
+        "Visuospatial"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ],
+      "Flèches": [
+        "Visuospatial"
+      ],
+      "Fluidité de dessins": [
+        "Fonctions exécutives"
+      ],
+      "Horloges": [
+        "Fonctions exécutives"
+      ],
+      "Imitation de positions de mains": [
+        "Moteur"
+      ],
+      "Inhibition": [
+        "Fonctions exécutives"
+      ],
+      "Interférence de listes de mots": [
+        "Mémoire"
+      ],
+      "Mémoire de liste de mots": [
+        "Mémoire"
+      ],
+      "Mémoire des figures": [
+        "Mémoire"
+      ],
+      "Mémoire des prénoms": [
+        "Mémoire"
+      ],
+      "Mémoire des visages": [
+        "Mémoire",
+        "Cognition sociale"
+      ],
+      "Mémoire narrative": [
+        "Mémoire"
+      ],
+      "Orientation": [
+        "Visuospatial"
+      ],
+      "Précision visuomotrice": [
+        "Moteur"
+      ],
+      "Processus phonologiques": [
+        "Langage oral"
+      ],
+      "Production de mots": [
+        "Langage oral",
+        "Fonctions exécutives"
+      ],
+      "Puzzles géométriques": [
+        "Visuospatial"
+      ],
+      "Puzzles d'images": [
+        "Visuospatial"
+      ],
+      "Reconnaissance d'affects": [
+        "Cognition sociale"
+      ],
+      "Répétition de phrases": [
+        "Mémoire de travail"
+      ],
+      "Répétition de pseudo-mots": [
+        "Langage oral"
+      ],
+      "Séquences motrices manuelles": [
+        "Moteur"
+      ],
+      "Séquences oromotrices": [
+        "Langage oral"
+      ],
+      "Statue": [
+        "Fonctions exécutives"
+      ],
+      "Tapping": [
+        "Moteur"
+      ],
+      "Théorie de l'esprit": [
+        "Cognition sociale"
+      ]
+    },
+    "recency": 2
+  },
+  "Matrices de Raven": {
+    "type": "test",
+    "default_functions": [
+      "Raisonnement fluide"
+    ],
+    "subtests": {}
+  },
+  "Figure complexe de Rey-Osterrieth": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {}
+  },
+  "Figure de Taylor": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {}
+  },
+  "15 mots de Rey": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {}
+  },
+  "15 items de Rey": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {}
+  },
+  "CMS": {
+    "type": "batterie",
+    "subtests": {
+      "Localisation de points": [
+        "Mémoire"
+      ],
+      "Histoires": [
+        "Mémoire"
+      ],
+      "Reconnaissance de visages": [
+        "Mémoire",
+        "Cognition sociale"
+      ],
+      "Mots couplés": [
+        "Mémoire"
+      ],
+      "Scènes de famille": [
+        "Mémoire"
+      ],
+      "Liste de mots": [
+        "Mémoire"
+      ],
+      "Mémoire des chiffres": [
+        "Mémoire de travail"
+      ],
+      "Séquences": [
+        "Mémoire"
+      ],
+      "Localisation d'images": [
+        "Mémoire de travail"
+      ]
+    }
+  },
+  "WMS-III": {
+    "type": "batterie",
+    "subtests": {
+      "Logical memory": [
+        "Mémoire"
+      ],
+      "Face recognition": [
+        "Mémoire",
+        "Cognition sociale"
+      ],
+      "Verbal paired associates": [
+        "Mémoire"
+      ],
+      "Family pictures": [
+        "Mémoire"
+      ],
+      "Letter-number sequences": [
+        "Mémoire"
+      ],
+      "Spatial span": [
+        "Mémoire"
+      ]
+    },
+    "recency": 1,
+    "superseded": true
+  },
+  "WMS-IV": {
+    "type": "batterie",
+    "subtests": {
+      "Logical memory": [
+        "Mémoire"
+      ],
+      "Verbal paired associates": [
+        "Mémoire"
+      ],
+      "Designs": [
+        "Mémoire"
+      ],
+      "Visual reproduction": [
+        "Mémoire"
+      ],
+      "Spatial addition": [
+        "Mémoire de travail"
+      ],
+      "Symbol span": [
+        "Mémoire de travail"
+      ]
+    },
+    "recency": 2
+  },
+  "MEM-IV": {
+    "type": "batterie",
+    "subtests": {
+      "Mémoire logique": [
+        "Mémoire"
+      ],
+      "Mots couplés": [
+        "Mémoire"
+      ],
+      "Dessins": [
+        "Mémoire"
+      ],
+      "Reproduction visuelle": [
+        "Mémoire"
+      ],
+      "Addition spatiale": [
+        "Mémoire de travail"
+      ],
+      "Mémoire de symboles": [
+        "Mémoire de travail"
+      ]
+    },
+    "recency": 2
+  },
+  "CVLT": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {},
+    "recency": 1,
+    "superseded": true
+  },
+  "CVLT-II": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {},
+    "recency": 2,
+    "superseded": true
+  },
+  "CVLT-III": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {},
+    "recency": 3
+  },
+  "CVLT-C": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {},
+    "recency": 1
+  },
+  "D-KEFS / DKEFS": {
+    "type": "batterie",
+    "subtests": {
+      "Trail making test": [
+        "Fonctions exécutives"
+      ],
+      "Verbal fluency": [
+        "Fonctions exécutives"
+      ],
+      "Color-word interference": [
+        "Fonctions exécutives"
+      ],
+      "Design fluency": [
+        "Fonctions exécutives"
+      ],
+      "20 questions": [
+        "Fonctions exécutives"
+      ],
+      "Tower test": [
+        "Fonctions exécutives"
+      ],
+      "Sorting test": [
+        "Fonctions exécutives"
+      ],
+      "Word context": [
+        "Fonctions exécutives"
+      ],
+      "Proverb test": [
+        "Fonctions exécutives"
+      ]
+    }
+  },
+  "BADS": {
+    "type": "batterie",
+    "subtests": {
+      "Playing cards tests": [
+        "Fonctions exécutives"
+      ],
+      "Water test": [
+        "Fonctions exécutives"
+      ],
+      "Key search test": [
+        "Fonctions exécutives"
+      ],
+      "Zoo map test 1": [
+        "Fonctions exécutives"
+      ],
+      "Zoo map test 2": [
+        "Fonctions exécutives"
+      ],
+      "Six part test": [
+        "Fonctions exécutives"
+      ]
+    }
+  },
+  "TEA-Ch": {
+    "type": "batterie",
+    "subtests": {
+      "Recherche dans le ciel": [
+        "Attention"
+      ],
+      "Coups de fusil": [
+        "Attention"
+      ],
+      "Petits hommes verts": [
+        "Attention",
+        "Fonctions exécutives"
+      ],
+      "Faire 2 choses à la fois": [
+        "Attention"
+      ],
+      "Carte géographique": [
+        "Attention"
+      ],
+      "Écouter 2 choses à la fois": [
+        "Attention"
+      ],
+      "Marche-Arrête": [
+        "Attention"
+      ],
+      "Mondes contraires": [
+        "Attention"
+      ],
+      "Transmission de codes": [
+        "Attention"
+      ]
+    },
+    "recency": 2
+  },
+  "WCST": {
+    "type": "test",
+    "default_functions": [
+      "Fonctions exécutives"
+    ],
+    "subtests": {}
+  },
+  "Test des commissions": {
+    "type": "test",
+    "default_functions": [
+      "Fonctions exécutives"
+    ],
+    "subtests": {}
+  },
+  "Tour de Londres": {
+    "type": "test",
+    "default_functions": [
+      "Fonctions exécutives"
+    ],
+    "subtests": {}
+  },
+  "D2": {
+    "type": "test",
+    "default_functions": [
+      "Attention",
+      "Vitesse de traitement"
+    ],
+    "subtests": {}
+  },
+  "Ruff 2&7": {
+    "type": "test",
+    "default_functions": [
+      "Attention",
+      "Vitesse de traitement"
+    ],
+    "subtests": {}
+  },
+  "CPT-3": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {},
+    "recency": 2
+  },
+  "CPT-2": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {},
+    "recency": 1,
+    "superseded": true
+  },
+  "CATA": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
+    ],
+    "subtests": {}
+  },
+  "DO-80": {
+    "type": "test",
+    "default_functions": [
+      "Langage oral"
+    ],
+    "subtests": {}
+  },
+  "TDQ-60": {
+    "type": "test",
+    "default_functions": [
+      "Langage oral"
+    ],
+    "subtests": {}
+  },
+  "Boston Naming Test": {
+    "type": "test",
+    "default_functions": [
+      "Langage oral"
+    ],
+    "subtests": {}
+  },
+  "EVIP": {
+    "type": "test",
+    "default_functions": [
+      "Langage oral"
+    ],
+    "subtests": {}
+  },
+  "CELF": {
+    "type": "batterie",
+    "subtests": {
+      "Concepts et exécution de directives": [
+        "Langage oral"
+      ],
+      "Morphologie": [
+        "Langage oral"
+      ],
+      "Répétition de phrases": [
+        "Langage oral"
+      ],
+      "Concepts de base": [
+        "Langage oral"
+      ],
+      "Formulation de phrases": [
+        "Langage oral"
+      ],
+      "Famille de mots": [
+        "Langage oral"
+      ],
+      "Définition de mots": [
+        "Langage oral"
+      ],
+      "Structure de phrases": [
+        "Langage oral"
+      ],
+      "Vocabulaire expressif": [
+        "Langage oral"
+      ],
+      "Compréhension de paragraphes à l'oral": [
+        "Langage oral"
+      ],
+      "Construction de phrases": [
+        "Langage oral"
+      ],
+      "Relations sémantiques": [
+        "Langage oral"
+      ],
+      "Conscience phonologique": [
+        "Langage oral"
+      ],
+      "Association de mots": [
+        "Langage oral"
+      ],
+      "Répétition de nombres": [
+        "Mémoire de travail"
+      ],
+      "Séquences familières": [
+        "Mémoire"
+      ],
+      "Dénomination automatique rapide": [
+        "Langage oral"
+      ],
+      "Profil pragmatique": [
+        "Langage oral"
+      ]
+    }
+  },
+  "Alouette": {
+    "type": "test",
+    "default_functions": [
+      "Langage écrit"
+    ],
+    "subtests": {}
+  },
+  "Adolexie": {
+    "type": "batterie",
+    "subtests": {
+      "Production de mots / non-mots écrits": [
+        "Langage écrit"
+      ],
+      "Lecture orale du texte Marie": [
+        "Langage écrit"
+      ],
+      "Segmentation lexicale": [
+        "Langage écrit"
+      ],
+      "Identification de graphèmes isolés": [
+        "Langage écrit"
+      ],
+      "Identification de mots / non-mots isolés": [
+        "Langage écrit"
+      ],
+      "Contepèteries": [
+        "Langage écrit"
+      ]
+    }
+  },
+  "BALE": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de texte": [
+        "Langage écrit"
+      ],
+      "Lecture de mots fréquents et peu fréquents": [
+        "Langage écrit"
+      ],
+      "Lecture phonologique": [
+        "Langage écrit"
+      ],
+      "Conversion graphème-phonème": [
+        "Langage écrit"
+      ],
+      "Lecture de lettres": [
+        "Langage écrit"
+      ],
+      "Lecture de chiffres arabes": [
+        "Langage écrit"
+      ],
+      "Compréhension de l'écrit": [
+        "Langage écrit"
+      ],
+      "Dictée de mots et de non-mots": [
+        "Langage écrit"
+      ],
+      "Dictée de phrases": [
+        "Langage écrit"
+      ],
+      "Répétition de mots, pseudomots et logatomes": [
+        "Langage oral"
+      ],
+      "Fluence verbale phonologique": [
+        "Langage oral"
+      ],
+      "Langage oral spontané": [
+        "Langage oral"
+      ],
+      "Test de vocabulaire actif et passif (TVAP)": [
+        "Langage oral"
+      ],
+      "Compréhension orale E.C.O.S.S.E": [
+        "Langage oral"
+      ],
+      "Discimination phonémique": [
+        "Langage oral"
+      ],
+      "Dénomination rapide": [
+        "Langage oral"
+      ],
+      "Rimes": [
+        "Langage oral"
+      ],
+      "Suppression syllabique": [
+        "Langage oral"
+      ],
+      "Fusion des premiers phonèmes": [
+        "Langage oral"
+      ],
+      "Identification de la consonne initiale": [
+        "Langage oral"
+      ],
+      "Segmentation phonémique": [
+        "Langage oral"
+      ],
+      "Suppression du phonème initial ou final": [
+        "Langage oral"
+      ],
+      "Repérage des formes phonémiques": [
+        "Langage oral"
+      ],
+      "Barrage de cloches": [
+        "Attention"
+      ],
+      "Comparaison de séquences de lettres": [
+        "Langage écrit"
+      ],
+      "Recherche d'indices verbeaux": [
+        "Attention"
+      ],
+      "Perception visuelle": [
+        "Visuospatial"
+      ],
+      "Mémoire phonologique à court terme": [
+        "Mémoire de travail"
+      ]
+    }
+  },
+  "RMET": {
+    "type": "test",
+    "default_functions": [
+      "Cognition sociale"
+    ],
+    "subtests": {}
+  }
+}
