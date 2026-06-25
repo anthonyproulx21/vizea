@@ -1,0 +1,20 @@
+# Cruft de système
+.DS_Store
+Thumbs.db
+._*
+__MACOSX/
+
+# Archives / sauvegardes (on ne versionne pas un zip de son propre code)
+*.zip
+
+# Dépendances / outils (le projet n'en a pas besoin pour tourner)
+node_modules/
+package-lock.json
+
+# Éditeurs
+.vscode/
+.idea/
+
+# Divers
+*.log
+.netlify/
