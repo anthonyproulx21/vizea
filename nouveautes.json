@@ -1,21 +1,21 @@
 [
   {
     "date": "2026-06-25",
-    "titre": "Optimisations et réalignement des bandes de classification",
+    "titre": "Optimisations et précision des bandes de classification",
     "infos": [
-      "Optimisations du code qui fait tout le travail derrière : la saisie des scores reste fluide même dans les gros projets, sans petits lags agaçants.",
-      "Réalignement des bandes de classification pour qu'elles tombent exactement, précisément, au poil près, aux bons endroits."
+      "Optimisations internes : la saisie des scores demeure fluide, même dans les projets comportant un grand nombre de tests.",
+      "Réalignement des bandes de classification afin qu'elles correspondent précisément aux seuils attendus, quel que soit le type de score affiché."
     ]
   },
   {
     "date": "2026-06-23",
-    "titre": "Démonstration, vue Tableau et plus",
+    "titre": "Démonstration guidée, vue Tableau et ajouts à la banque",
     "infos": [
-      "Nouvelle visite guidée « Démo ».",
-      "Vue Tableau : les scores regroupés par test ou par fonction, avec colonnes personnalisables et exportation en Excel.",
-      "Possibilité d'inverser un score lorsque « élevé = défavorable » (p.ex. temps de réponse, nombre d'erreurs).",
-      "Quatre nouveaux tests ajoutés à la banque : KABC-II, WNV, Leiter-3 et RBANS.",
-      "Tri des tests par récence : la version la plus récente d'une famille apparaît en premier."
+      "Ajout d'une démonstration guidée présentant l'outil étape par étape.",
+      "Nouvelle vue Tableau : scores regroupés par test ou par fonction, colonnes personnalisables et exportation vers Excel.",
+      "Option permettant d'inverser un score lorsqu'un résultat élevé est défavorable (p. ex. temps de réponse, nombre d'erreurs).",
+      "Ajout de quatre tests à la banque : KABC-II, WNV, Leiter-3 et RBANS.",
+      "Tri des tests par récence : l'édition la plus récente d'une famille apparaît en premier."
     ]
   },
   {
@@ -24,18 +24,17 @@
     "infos": [
       "Première version publique de l'outil.",
       "Visualisation des profils cognitifs par fonction : vues Profil, Échelles et Radar.",
-      "Banque de tests neuropsychologiques avec ce que j'ai à ma disposition et les informations en ligne.",
+      "Banque de tests neuropsychologiques évolutive.",
       "Personnalisation du graphique et exportation en image.",
-      "Enregistrement de modèles et de projets."
+      "Enregistrement de modèles et de projets réutilisables."
     ]
   },
   {
     "date": "2025-09-30",
-    "titre": "Première idée du concept",
+    "titre": "Genèse du projet",
     "infos": [
-      "L'idée de départ est bien plus modeste que ce que Vizéa allait devenir : une simple intuition, encore floue et un brin farfelue.",
-      "Je n'ai aucune expérience en programmation de site web et, honnêtement, pas la moindre idée de ce dans quoi je m'embarque.",
-      "Je préfère garder le projet discret, au cas où il ne verrait jamais le jour."
+      "Première esquisse du concept : un outil pour visualiser et interpréter plus clairement les profils cognitifs.",
+      "Début du développement, mené en parallèle des études doctorales."
     ]
   }
 ]

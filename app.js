@@ -514,7 +514,15 @@
     $$(".step-content").forEach((s) => s.classList.remove("active"));
     $$(".btn-step").forEach((b) => b.classList.remove("active"));
     $(`step-${stepIndex}-content`)?.classList.add("active");
-    document.querySelector(`.btn-step[data-step="${stepIndex}"]`)?.classList.add("active");
+    const activeStepBtn = document.querySelector(`.btn-step[data-step="${stepIndex}"]`);
+    if (activeStepBtn) {
+      activeStepBtn.classList.add("active");
+      // Re-trigger a short pulse so the step change is visually obvious (helps
+      // during the guided demo, and everyday navigation between steps).
+      activeStepBtn.classList.remove("step-pulse");
+      void activeStepBtn.offsetWidth; // force reflow to restart the animation
+      activeStepBtn.classList.add("step-pulse");
+    }
 
     const stepnav = $("stepnav");
     if (stepnav) stepnav.style.display = stepIndex === 0 ? "none" : "block";
@@ -2633,10 +2641,10 @@
       i++;
       input.value = text.slice(0, i);
       input.dispatchEvent(new Event("input", { bubbles: true }));
-      if (i < text.length) _demo.typer = setTimeout(tick, 60);
+      if (i < text.length) _demo.typer = setTimeout(tick, 100);
       else { _demo.typer = null; if (done) done(); }
     };
-    _demo.typer = setTimeout(tick, 220);
+    _demo.typer = setTimeout(tick, 320);
   }
 
   function demoCleanup(toHome) {
@@ -2736,6 +2744,7 @@
   function demoSteps() {
     const onStep = (n) => { if (currentStep !== n) showStep(n); };
     const ensureStep0 = () => { goToPage("page-new"); showStep(0); };
+    const setView = (v) => { const b = document.querySelector('#viewSwitch button[data-view="' + v + '"]'); if (b) b.click(); };
     return [
       {
         target: "#homeLogo",
@@ -2827,37 +2836,65 @@
       {
         target: "#viewSwitch",
         title: "4 · Le graphique",
-        body: "Voici le profil cognitif. Basculez entre Profil, Échelles, Radar et Tableau.",
-        before: () => onStep(3),
-        wait: 320
+        body: "Voici le profil cognitif : chaque point est placé selon son rang centile, sur des bandes d'interprétation. Le sélecteur en haut bascule entre quatre visualisations — suivons-les une à une.",
+        before: () => { onStep(3); setView("line"); },
+        wait: 340
+      },
+      {
+        target: "#viewSwitch",
+        title: "Vue Échelles",
+        body: "La vue « Échelles » présente les indices composites (ICV, IRP, IMT, IVT…) plutôt que les sous-tests individuels.",
+        before: () => { onStep(3); setView("scales"); },
+        wait: 300
+      },
+      {
+        target: "#viewSwitch",
+        title: "Vue Radar",
+        body: "La vue « Radar » dispose les fonctions en étoile — pratique pour saisir la forme générale du profil d'un coup d'œil.",
+        before: () => { onStep(3); setView("radar"); },
+        wait: 300
       },
       {
         target: "#panelToggle",
         title: "Personnaliser le graphique",
         body: "Le bouton « Personnaliser » ouvre un panneau pour ajuster les couleurs, l'ordre des fonctions, les bandes d'interprétation et les axes.",
-        before: () => onStep(3),
-        wait: 160
+        before: () => { onStep(3); setView("line"); },
+        wait: 220
       },
       {
         target: "#vaImageBtn",
         title: "Exporter — Image (PNG)",
-        body: "Exporte le graphique en image PNG haute résolution, prête à être utilisée.",
-        before: () => onStep(3),
-        wait: 160
+        body: "Depuis une vue graphique, ce bouton exporte une image PNG haute résolution, prête à être utilisée.",
+        before: () => { onStep(3); setView("line"); },
+        wait: 200
+      },
+      {
+        target: "#viewSwitch",
+        title: "Vue Tableau",
+        body: "La vue « Tableau » liste les scores — regroupés par test ou par fonction — avec, pour chacun, la valeur, le rang centile et la classification.",
+        before: () => { onStep(3); setView("table"); },
+        wait: 320
+      },
+      {
+        target: "#vaExcelBtn",
+        title: "Exporter — Excel",
+        body: "En vue Tableau, ce bouton exporte le tableau vers Excel, prêt à intégrer dans un rapport.",
+        before: () => { onStep(3); setView("table"); },
+        wait: 220
       },
       {
         target: "#vaTemplateBtn",
         title: "Exporter — Modèle",
         body: "Enregistre les tests choisis et vos préférences graphiques comme modèle réutilisable, pour gagner du temps aux prochaines évaluations.",
         before: () => onStep(3),
-        wait: 140
+        wait: 160
       },
       {
         target: "#vaProjectBtn",
         title: "Exporter — Projet (.json)",
         body: "Exporte tout le projet dans un fichier que vous pourrez réimporter plus tard pour le compléter ou le partager.",
         before: () => onStep(3),
-        wait: 140
+        wait: 160
       },
       {
         target: null,

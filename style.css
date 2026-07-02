@@ -829,3 +829,11 @@ footer { flex: none; margin-top: 24px; padding: 26px clamp(16px, 4vw, 44px); bor
 .footer-links a { color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid transparent; }
 .footer-links a:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
 .footer-dot { color: var(--ink-soft); opacity: .5; }
+
+/* ===== Step-change pulse (makes switching steps visible, incl. during the demo) ===== */
+@keyframes stepPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(37, 150, 190, 0.55); }
+  60%  { box-shadow: 0 0 0 9px rgba(37, 150, 190, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 150, 190, 0); }
+}
+.btn-step.step-pulse { animation: stepPulse 0.7s ease-out 1; }

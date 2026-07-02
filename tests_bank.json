@@ -1,4 +1,103 @@
 {
+  "Chronodictées": {
+    "type": "test",
+    "default_functions": [
+      "Langage écrit"
+    ],
+    "subtests": {}
+  },
+  "UDN-3": {
+    "type": "batterie",
+    "subtests": {
+      "Cubes": [
+        "Raisonnement fluide"
+      ],
+      "Classification de cartes": [
+        "Raisonnement fluide"
+      ],
+      "Sériation de baguettes": [
+        "Raisonnement fluide"
+      ],
+      "Inclusion": [
+        "Raisonnement fluide"
+      ],
+      "Connecteurs logiques": [
+        "Raisonnement fluide"
+      ],
+      "Combinaison de critères": [
+        "Raisonnement fluide"
+      ],
+      "Cartes jetons": [
+        "Mathématiques"
+      ],
+      "Poupées": [
+        "Mathématiques"
+      ],
+      "Comparaisons et modifications": [
+        "Mathématiques"
+      ],
+      "Tomates-carottes": [
+        "Mathématiques"
+      ],
+      "Subitizing": [
+        "Mathématiques"
+      ],
+      "Estimation de quantités": [
+        "Mathématiques"
+      ],
+      "Remplir marmite": [
+        "Mathématiques"
+      ],
+      "Quantités discontinues": [
+        "Mathématiques"
+      ],
+      "Substance": [
+        "Mathématiques"
+      ],
+      "Longueurs": [
+        "Mathématiques"
+      ],
+      "Poids": [
+        "Mathématiques"
+      ],
+      "Poids-Volume": [
+        "Mathématiques"
+      ],
+      "Aires": [
+        "Mathématiques"
+      ],
+      "Ruban": [
+        "Mathématiques"
+      ],
+      "Bandes de papier": [
+        "Mathématiques"
+      ],
+      "Vocabulaire numérique": [
+        "Mathématiques"
+      ],
+      "Suite numérique": [
+        "Mathématiques"
+      ],
+      "Signes des opérations": [
+        "Mathématiques"
+      ],
+      "Lecture des nombres": [
+        "Mathématiques"
+      ],
+      "Transcription des nombres": [
+        "Mathématiques"
+      ],
+      "Problèmes de Mialaret": [
+        "Mathématiques"
+      ],
+      "Timbres": [
+        "Mathématiques"
+      ],
+      "Fractions": [
+        "Mathématiques"
+      ]
+    }
+  },
   "BYI-II": {
     "type": "batterie",
     "subtests": {
@@ -17,8 +116,7 @@
       "Troubles du comportement": [
         "Psychoaffectif"
       ]
-    },
-    "recency": 2
+    }
   },
   "BYI": {
     "type": "batterie",
@@ -38,9 +136,7 @@
       "Troubles du comportement": [
         "Psychoaffectif"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
   "BDI-II": {
     "type": "test",
@@ -570,8 +666,7 @@
       "Red & blues, bags & shoes": [
         "Fonctions exécutives"
       ]
-    },
-    "recency": 1
+    }
   },
   "TEA": {
     "type": "batterie",
@@ -652,8 +747,7 @@
       "Math fluency": [
         "Mathématiques"
       ]
-    },
-    "recency": 2
+    }
   },
   "WIAT-II": {
     "type": "batterie",
@@ -682,9 +776,7 @@
       "Expression orale": [
         "Langage oral"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
   "Key-Math-3": {
     "type": "batterie",
@@ -869,11 +961,9 @@
       "Annulation": [
         "Vitesse de traitement"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
-  "WISC-IV intégré (supplémentaires)": {
+  "WISC-IV intégré (sous-tests supplémentaires)": {
     "type": "batterie",
     "iq_scales": [],
     "subtests": {
@@ -919,9 +1009,7 @@
       "Mémoire de code": [
         "Mémoire"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
   "WISC-V": {
     "type": "batterie",
@@ -988,10 +1076,9 @@
       "Vitesse de dénomination quantité": [
         "Langage oral"
       ]
-    },
-    "recency": 2
+    }
   },
-  "WISC-V intégré (supplémentaires)": {
+  "WISC-V intégré (sous-tests supplémentaires)": {
     "type": "batterie",
     "iq_scales": [],
     "subtests": {
@@ -1038,8 +1125,7 @@
         "Vitesse de traitement",
         "Moteur"
       ]
-    },
-    "recency": 2
+    }
   },
   "WAIS-IV": {
     "type": "batterie",
@@ -1120,8 +1206,7 @@
       "Blocs": [
         "Visuospatial"
       ]
-    },
-    "recency": 2
+    }
   },
   "WASI": {
     "type": "batterie",
@@ -1144,9 +1229,7 @@
       "Blocs": [
         "Visuospatial"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
   "WPPSI-IV": {
     "type": "batterie",
@@ -1203,185 +1286,6 @@
       ],
       "Identification d'images": [
         "Langage oral"
-      ]
-    }
-  },
-  "KABC-II": {
-    "type": "batterie",
-    "iq_scales": [
-      "Séquentiel",
-      "Simultané",
-      "Apprentissage",
-      "Planification",
-      "Connaissances",
-      "IFC",
-      "IPM",
-      "INV"
-    ],
-    "subtests": {
-      "Mémoire de chiffres": [
-        "Mémoire de travail"
-      ],
-      "Suites de mots": [
-        "Mémoire de travail"
-      ],
-      "Mouvements de main": [
-        "Mémoire de travail"
-      ],
-      "Triangles": [
-        "Visuospatial"
-      ],
-      "Fermeture gestaltiste": [
-        "Visuospatial"
-      ],
-      "Reconnaissance de visages": [
-        "Visuospatial"
-      ],
-      "Dénombrement de cubes": [
-        "Visuospatial"
-      ],
-      "Raisonnement conceptuel": [
-        "Visuospatial"
-      ],
-      "Rover": [
-        "Visuospatial"
-      ],
-      "Atlantis": [
-        "Mémoire"
-      ],
-      "Rébus": [
-        "Mémoire"
-      ],
-      "Histoire à compléter": [
-        "Raisonnement fluide"
-      ],
-      "Séquences logiques": [
-        "Raisonnement fluide"
-      ],
-      "Dénomination": [
-        "Langage oral"
-      ],
-      "Devinettes": [
-        "Langage oral"
-      ],
-      "Connaissances verbales": [
-        "Langage oral"
-      ]
-    }
-  },
-  "WNV": {
-    "type": "batterie",
-    "iq_scales": [
-      "Full Scale Score"
-    ],
-    "subtests": {
-      "Matrices": [
-        "Raisonnement fluide"
-      ],
-      "Code": [
-        "Vitesse de traitement"
-      ],
-      "Assemblage d'objets": [
-        "Visuospatial"
-      ],
-      "Reconnaissance": [
-        "Mémoire de travail"
-      ],
-      "Mémoire spatiale": [
-        "Mémoire de travail"
-      ],
-      "Arrangement d'images": [
-        "Raisonnement fluide"
-      ]
-    }
-  },
-  "Leiter-3": {
-    "type": "batterie",
-    "iq_scales": [
-      "QI non verbal",
-      "Mémoire non verbale",
-      "Vitesse de traitement"
-    ],
-    "subtests": {
-      "Figure-fond": [
-        "Visuospatial"
-      ],
-      "Complètement de figures": [
-        "Visuospatial"
-      ],
-      "Classification et analogies": [
-        "Raisonnement fluide"
-      ],
-      "Ordre séquentiel": [
-        "Raisonnement fluide"
-      ],
-      "Patrons visuels": [
-        "Visuospatial"
-      ],
-      "Mémoire directe": [
-        "Mémoire de travail"
-      ],
-      "Mémoire inversée": [
-        "Mémoire de travail"
-      ],
-      "Attention soutenue": [
-        "Attention"
-      ],
-      "Attention divisée": [
-        "Attention",
-        "Fonctions exécutives"
-      ],
-      "Stroop non verbal": [
-        "Fonctions exécutives"
-      ]
-    }
-  },
-  "RBANS": {
-    "type": "batterie",
-    "iq_scales": [
-      "Mémoire immédiate",
-      "Visuospatial/constructif",
-      "Langage",
-      "Attention",
-      "Mémoire différée",
-      "Indice total"
-    ],
-    "subtests": {
-      "Apprentissage de liste": [
-        "Mémoire"
-      ],
-      "Mémoire d'un récit": [
-        "Mémoire"
-      ],
-      "Copie de figure": [
-        "Visuospatial"
-      ],
-      "Orientation de lignes": [
-        "Visuospatial"
-      ],
-      "Dénomination d'images": [
-        "Langage oral"
-      ],
-      "Fluence sémantique": [
-        "Langage oral"
-      ],
-      "Mémoire des chiffres": [
-        "Mémoire de travail"
-      ],
-      "Code": [
-        "Vitesse de traitement"
-      ],
-      "Rappel de la liste": [
-        "Mémoire"
-      ],
-      "Reconnaissance de la liste": [
-        "Mémoire"
-      ],
-      "Rappel du récit": [
-        "Mémoire"
-      ],
-      "Rappel de la figure": [
-        "Mémoire"
       ]
     }
   },
@@ -1471,9 +1375,7 @@
       "Répétition de phrases": [
         "Mémoire de travail"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
   "NEPSY-II": {
     "type": "batterie",
@@ -1574,8 +1476,7 @@
       "Théorie de l'esprit": [
         "Cognition sociale"
       ]
-    },
-    "recency": 2
+    }
   },
   "Matrices de Raven": {
     "type": "test",
@@ -1667,9 +1568,7 @@
       "Spatial span": [
         "Mémoire"
       ]
-    },
-    "recency": 1,
-    "superseded": true
+    }
   },
   "WMS-IV": {
     "type": "batterie",
@@ -1692,8 +1591,7 @@
       "Symbol span": [
         "Mémoire de travail"
       ]
-    },
-    "recency": 2
+    }
   },
   "MEM-IV": {
     "type": "batterie",
@@ -1716,42 +1614,35 @@
       "Mémoire de symboles": [
         "Mémoire de travail"
       ]
-    },
-    "recency": 2
+    }
   },
   "CVLT": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {},
-    "recency": 1,
-    "superseded": true
+    "subtests": {}
   },
   "CVLT-II": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {},
-    "recency": 2,
-    "superseded": true
+    "subtests": {}
   },
   "CVLT-III": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {},
-    "recency": 3
+    "subtests": {}
   },
   "CVLT-C": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {},
-    "recency": 1
+    "subtests": {}
   },
   "D-KEFS / DKEFS": {
     "type": "batterie",
@@ -1839,8 +1730,7 @@
       "Transmission de codes": [
         "Attention"
       ]
-    },
-    "recency": 2
+    }
   },
   "WCST": {
     "type": "test",
@@ -1884,17 +1774,14 @@
     "default_functions": [
       "Attention"
     ],
-    "subtests": {},
-    "recency": 2
+    "subtests": {}
   },
   "CPT-2": {
     "type": "test",
     "default_functions": [
       "Attention"
     ],
-    "subtests": {},
-    "recency": 1,
-    "superseded": true
+    "subtests": {}
   },
   "CATA": {
     "type": "test",
