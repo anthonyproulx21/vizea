@@ -837,3 +837,130 @@ footer { flex: none; margin-top: 24px; padding: 26px clamp(16px, 4vw, 44px); bor
   100% { box-shadow: 0 0 0 0 rgba(37, 150, 190, 0); }
 }
 .btn-step.step-pulse { animation: stepPulse 0.7s ease-out 1; }
+
+/* ===== "Save As" rename dialog input ===== */
+.modal-input {
+  width: 100%; box-sizing: border-box; margin: 4px 0 2px;
+  padding: 10px 12px; font-size: 1rem; font-family: inherit;
+  color: var(--ink); background: var(--white);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.modal-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(37,150,190,.15); }
+
+/* ===== Install (PWA) invitation ===== */
+.install-hero-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.install-hero-btn svg { width: 18px; height: 18px; }
+
+.install-popup {
+  position: fixed; z-index: 9500; right: 20px; bottom: 20px; width: 380px; max-width: calc(100vw - 32px);
+  background: var(--white); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: 0 18px 48px rgba(8, 20, 35, .22); padding: 18px 18px 16px;
+  animation: installIn .28s ease-out;
+}
+@keyframes installIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.install-close {
+  position: absolute; top: 8px; right: 10px; border: none; background: transparent;
+  font-size: 1.5rem; line-height: 1; color: var(--ink-soft); cursor: pointer; padding: 2px 6px; border-radius: 6px;
+}
+.install-close:hover { background: var(--blue-050); color: var(--ink); }
+.install-popup-main { display: flex; gap: 14px; align-items: flex-start; }
+.install-popup-icon svg { width: 44px; height: 44px; border-radius: 11px; flex-shrink: 0; display: block; }
+.install-popup-text h3 { margin: 2px 0 6px; font-family: "Fraunces", Georgia, serif; font-size: 1.12rem; color: var(--ink); }
+.install-popup-text p { margin: 0 0 8px; font-size: .9rem; line-height: 1.45; color: var(--ink-soft); }
+.install-privacy { font-size: .8rem !important; color: var(--ink-soft); opacity: .95; border-left: 2px solid var(--blue-300); padding-left: 10px; }
+.install-popup-actions { display: flex; gap: 10px; margin-top: 12px; }
+.install-popup-actions .btn-primary, .install-popup-actions .btn-ghost { padding: 9px 16px; font-size: .92rem; }
+@media (max-width: 620px) {
+  .install-popup { right: 12px; left: 12px; bottom: 12px; width: auto; }
+}
+
+/* ===== Drag & drop a .vizea project onto the app ===== */
+.drop-hint {
+  display: none; position: fixed; inset: 0; z-index: 9600;
+  align-items: center; justify-content: center;
+  background: rgba(13, 59, 102, .28);
+}
+body.dragging-file .drop-hint { display: flex; }
+.drop-hint-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--white); color: var(--ink);
+  border: 2px dashed var(--cyan); border-radius: var(--radius);
+  padding: 22px 30px; font-size: 1.05rem;
+  box-shadow: 0 18px 48px rgba(8, 20, 35, .22);
+}
+.drop-hint-card svg { width: 26px; height: 26px; color: var(--cyan); flex-shrink: 0; }
+
+/* ===== Install page (benefits + how-to) ===== */
+.install-now { display: inline-flex; margin: 4px 0 24px; padding: 12px 26px; font-size: 1rem; }
+.install-benefits { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 8px 0 28px; }
+.install-benefit { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); }
+.install-benefit h3 { margin: 0 0 6px; font-family: "Fraunces", Georgia, serif; font-size: 1.05rem; color: var(--ink); }
+.install-benefit p { margin: 0; font-size: .9rem; line-height: 1.45; color: var(--ink-soft); }
+.install-how-title { font-family: "Fraunces", Georgia, serif; font-size: 1.12rem; color: var(--ink); margin: 8px 0 10px; }
+.install-how { margin: 0 0 24px; padding-left: 18px; }
+.install-how li { margin: 8px 0; line-height: 1.5; color: var(--ink-soft); }
+.install-how li strong { color: var(--ink); }
+.install-privacy-note { font-size: .85rem; color: var(--ink-soft); font-style: italic; border-left: 2px solid var(--blue-300); padding-left: 12px; }
+@media (max-width: 620px) { .install-benefits { grid-template-columns: 1fr; } }
+
+/* ===== Hero secondary button row (Découvrir + Installer) ===== */
+.hero-secondary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.hero-secondary .btn-link {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; height: 48px; box-sizing: border-box; margin: 0;
+}
+.hero-secondary .btn-link svg { width: 17px; height: 17px; flex-shrink: 0; }
+@media (max-width: 620px) { .hero-secondary { grid-template-columns: 1fr; } }
+
+/* ===== Install page: tailored step-by-step ===== */
+.install-detected { font-weight: 600; color: var(--ink); margin: 0 0 12px; }
+.install-steps-wrap { margin-bottom: 8px; }
+.install-steps ol { margin: 0; padding-left: 22px; }
+.install-steps li { margin: 12px 0; line-height: 1.7; color: var(--ink-soft); }
+.install-steps li strong { color: var(--ink); }
+.install-now-inline {
+  display: inline-flex; align-items: center; vertical-align: middle;
+  padding: 8px 18px; font-size: .95rem; margin: 2px 2px;
+}
+.install-hint { margin: 12px 0 0; font-size: .85rem; }
+.install-others { margin: 8px 0 22px; }
+.install-others summary { cursor: pointer; color: var(--blue-700); font-size: .9rem; width: fit-content; }
+.install-others summary:hover { text-decoration: underline; }
+.install-others .install-how { margin-top: 12px; }
+
+/* ===== Install page: warning + status callouts ===== */
+.install-warning {
+  background: rgba(224, 147, 47, .10); border-left: 3px solid #e0932f;
+  border-radius: var(--radius-sm); padding: 12px 14px; margin: 0 0 16px;
+  font-size: .92rem; line-height: 1.55; color: var(--ink);
+}
+.install-warning strong { color: var(--ink); }
+.install-status {
+  background: var(--blue-050); border-left: 3px solid var(--blue-300);
+  border-radius: var(--radius-sm); padding: 12px 14px; margin: 14px 0 0;
+  font-size: .9rem; line-height: 1.55; color: var(--ink-soft);
+}
+.install-note-ios { font-size: .85rem; color: var(--ink-soft); margin: 0 0 12px; }
+
+/* ===== Home hero — 4 uniform stacked buttons (authoritative) ===== */
+.hero-buttons {
+  display: grid; grid-auto-flow: row; grid-template-columns: max-content;
+  justify-items: stretch; justify-content: start; gap: 12px;
+}
+.hero-buttons > .hero-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; height: 54px; box-sizing: border-box; margin: 0; padding: 0 24px;
+  font-family: inherit; font-size: 1rem; font-weight: 600; line-height: 1;
+  border-radius: var(--radius-sm); white-space: nowrap;
+}
+.hero-buttons > .hero-btn svg { width: 18px; height: 18px; flex: none; }
+.hero-buttons > .btn-outline {
+  background: var(--white); color: var(--blue-900); border: 1px solid var(--line);
+  text-decoration: none; cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+}
+.hero-buttons > .btn-outline:hover {
+  border-color: var(--cyan); background: var(--blue-050);
+  box-shadow: 0 4px 14px rgba(23, 107, 181, .12);
+}
+@media (max-width: 620px) { .hero-buttons { grid-template-columns: 1fr; } }

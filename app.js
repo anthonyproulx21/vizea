@@ -132,6 +132,7 @@
     setupThemeToggle();
     setupDemo();
     setupNews();
+    setupFileOpen();
     // Close the open function menu on an outside click. O(1): we only touch the
     // single open menu, instead of scanning every row's menu on every click
     // (which got slow with many scores).
@@ -428,7 +429,10 @@
     if (!hasUnsavedScores()) { proceed(); return; }
     const choice = await askLeaveGuard();
     if (choice === "cancel") return;
-    if (choice === "export") exportCurrentProject();
+    if (choice === "export") {
+      const saved = await exportCurrentProject();
+      if (!saved) return; // save cancelled → stay on the project
+    }
     // Leaving discards the in-memory project's scores by design.
     proceed();
   }
@@ -601,27 +605,71 @@
       toast("Modèle supprimé.");
     });
 
-    // Import project (.json)
+    // Import project (.vizea or legacy .json)
     const importBtn = $("importProjectBtn");
     const importInput = $("importProjectInput");
     importBtn?.addEventListener("click", () => importInput.click());
     importInput?.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const proj = DM.importProjectFromJSON(reader.result);
-          DM.syncScoresWithSelectedTests(proj, testsBank);
-          startProject(proj);
-          toast(`Projet « ${proj.title} » importé.`);
-          showStep(1);
-        } catch (err) {
-          toast("Fichier invalide : " + err.message);
-        }
-      };
-      reader.readAsText(file);
+      loadProjectFromFile(e.target.files[0]);
       importInput.value = "";
+    });
+  }
+
+  // Load a project from raw JSON text (shared by: Import button, drag & drop,
+  // and opening a .vizea file when installed as an app).
+  function loadProjectFromText(text) {
+    try {
+      const proj = DM.importProjectFromJSON(text);
+      DM.syncScoresWithSelectedTests(proj, testsBank);
+      startProject(proj);
+      toast(`Projet « ${proj.title} » importé.`);
+      showStep(1);
+      return true;
+    } catch (err) {
+      toast("Fichier invalide : " + (err && err.message ? err.message : err));
+      return false;
+    }
+  }
+  function loadProjectFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => loadProjectFromText(reader.result);
+    reader.readAsText(file);
+  }
+
+  // Open .vizea files two ways: double-click (installed app, via the File
+  // Handling API) and drag & drop (works in every browser).
+  function setupFileOpen() {
+    if ("launchQueue" in window && "LaunchParams" in window && window.LaunchParams &&
+        "files" in window.LaunchParams.prototype) {
+      window.launchQueue.setConsumer((launchParams) => {
+        if (!launchParams || !launchParams.files || !launchParams.files.length) return;
+        launchParams.files.forEach((handle) => {
+          Promise.resolve(handle.getFile())
+            .then((file) => file.text())
+            .then((text) => loadProjectFromText(text))
+            .catch(() => {});
+        });
+      });
+    }
+
+    const hasFiles = (e) => e.dataTransfer &&
+      Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") !== -1;
+    window.addEventListener("dragover", (e) => {
+      if (!hasFiles(e)) return;                 // ignore internal drags (row reorder)
+      e.preventDefault();
+      document.body.classList.add("dragging-file");
+    });
+    window.addEventListener("dragleave", (e) => {
+      if (e.relatedTarget === null) document.body.classList.remove("dragging-file");
+    });
+    window.addEventListener("drop", (e) => {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      document.body.classList.remove("dragging-file");
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file && /\.(vizea|json)$/i.test(file.name)) loadProjectFromFile(file);
+      else if (file) toast("Déposez un fichier de projet .vizea.");
     });
   }
 
@@ -1684,6 +1732,94 @@
       '<h3 style="font-family:Calibri,Arial,sans-serif">' + title + '</h3>' + h + foot + '</body></html>';
   }
 
+  // Convert a data: URL (e.g. a Plotly PNG) into a Blob.
+  function dataUrlToBlob(dataUrl) {
+    const parts = String(dataUrl).split(",");
+    const mime = (parts[0].match(/:(.*?);/) || [])[1] || "application/octet-stream";
+    const bin = atob(parts[1] || "");
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
+  // Ask the user for a filename before downloading (fallback for browsers with
+  // no native "Save As" picker — Firefox/Safari). Resolves to the chosen name,
+  // or null if cancelled. Reuses the app's modal styling.
+  function promptFileName(suggestedName) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      const card = document.createElement("div");
+      card.className = "modal-card";
+      card.setAttribute("role", "dialog");
+      card.setAttribute("aria-modal", "true");
+      const h = document.createElement("h3");
+      h.textContent = "Enregistrer sous";
+      const p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = "Nommez le fichier avant de le télécharger. Il ira dans le dossier de téléchargement de votre navigateur.";
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "modal-input";
+      input.value = suggestedName;
+      const actions = document.createElement("div");
+      actions.className = "modal-actions";
+      const save = document.createElement("button");
+      save.type = "button"; save.className = "btn-primary"; save.textContent = "Enregistrer";
+      const cancel = document.createElement("button");
+      cancel.type = "button"; cancel.className = "btn-ghost"; cancel.textContent = "Annuler";
+      let done = false;
+      const onKey = (e) => {
+        if (e.key === "Escape") close(null);
+        else if (e.key === "Enter" && document.activeElement === input) { e.preventDefault(); confirm(); }
+      };
+      function close(val) { if (done) return; done = true; document.removeEventListener("keydown", onKey); overlay.remove(); resolve(val); }
+      function confirm() { const v = input.value.trim(); close(v || suggestedName); }
+      save.addEventListener("click", confirm);
+      cancel.addEventListener("click", () => close(null));
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); });
+      document.addEventListener("keydown", onKey);
+      actions.append(save, cancel);
+      card.append(h, p, input, actions);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      // Focus and pre-select the name (without extension) for quick renaming.
+      setTimeout(() => {
+        try { input.focus(); const dot = input.value.lastIndexOf("."); input.setSelectionRange(0, dot > 0 ? dot : input.value.length); } catch (e) {}
+      }, 30);
+    });
+  }
+
+  // Save a Blob. On browsers with the File System Access API (Chromium-based),
+  // this opens a real "Save As" dialog so the user picks the folder AND the
+  // filename. Elsewhere (Firefox/Safari), it asks for a filename, then downloads
+  // to the browser's download folder. Resolves true if saved, false if cancelled.
+  async function saveBlob(blob, suggestedName, opts) {
+    opts = opts || {};
+    if (window.showSaveFilePicker) {
+      try {
+        const options = { suggestedName };
+        if (opts.accept) options.types = [{ description: opts.description || "Fichier", accept: opts.accept }];
+        const handle = await window.showSaveFilePicker(options);
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return true;
+      } catch (e) {
+        if (e && e.name === "AbortError") return false; // user cancelled the picker
+        // otherwise fall through to the download fallback
+      }
+    }
+    const name = await promptFileName(suggestedName);
+    if (name === null) return false;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    return true;
+  }
+
   function tableDownload(content, type, filename) {
     const blob = new Blob([content], { type: type });
     const url = URL.createObjectURL(blob);
@@ -1693,8 +1829,9 @@
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   }
   function exportTableExcel() {
-    tableDownload("\ufeff" + tableToOfficeHTML(), "application/vnd.ms-excel", tableProjBase() + ".xls");
-    toast("Tableau exporté en Excel (.xls).");
+    const blob = new Blob(["\ufeff" + tableToOfficeHTML()], { type: "application/vnd.ms-excel" });
+    saveBlob(blob, tableProjBase() + ".xls", { description: "Classeur Excel", accept: { "application/vnd.ms-excel": [".xls"] } })
+      .then((saved) => { if (saved) toast("Tableau exporté en Excel (.xls)."); });
   }
 
 
@@ -1927,8 +2064,8 @@
       if (!el || !window.Plotly || !window.VizeaChart) return;
       // Always export light: white background + dark, legible text, even when the
       // app is in dark mode. We re-render the chart with the light theme forced
-      // (page theme untouched, so no visible flash of the whole UI), grab the
-      // PNG, then restore the on-screen chart to the current theme.
+      // (page theme untouched), grab the PNG, restore the on-screen chart, then
+      // let the user choose where to save it / rename it.
       const finish = () => {
         window.VizeaChart.setForceLight(false);
         window.VizeaChart.renderChart(currentProject, "vizPlot");
@@ -1936,8 +2073,13 @@
       window.VizeaChart.setForceLight(true);
       Promise.resolve(window.VizeaChart.renderChart(currentProject, "vizPlot"))
         .then(() => window.Plotly.relayout(el, { paper_bgcolor: "#ffffff", plot_bgcolor: "#ffffff" }))
-        .then(() => window.Plotly.downloadImage(el, { format: "png", filename: "vizea", scale: 2, width: 1400, height: 800 }))
-        .then(finish, finish);
+        .then(() => window.Plotly.toImage(el, { format: "png", scale: 2, width: 1400, height: 800 }))
+        .then((dataUrl) => {
+          finish(); // restore the on-screen chart right away
+          return saveBlob(dataUrlToBlob(dataUrl), tableProjBase() + ".png", { description: "Image PNG", accept: { "image/png": [".png"] } });
+        })
+        .then((saved) => { if (saved) toast("Image exportée (PNG)."); })
+        .catch(() => finish());
     });
 
     $("saveTemplateBtn")?.addEventListener("click", () => {
@@ -1962,18 +2104,14 @@
   }
 
   function exportCurrentProject() {
-    if (!currentProject) return;
+    if (!currentProject) return Promise.resolve(false);
     const json = DM.exportProjectToJSON(currentProject);
     const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const safe = (currentProject.title || "projet").replace(/[^\w\-]+/g, "_");
-    a.href = url;
-    a.download = `vizea_${safe}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    dirty = false;
-    toast("Projet exporté.");
+    return saveBlob(blob, tableProjBase() + ".vizea", { description: "Projet Vizéa", accept: { "application/vizea+json": [".vizea"] } })
+      .then((saved) => {
+        if (saved) { dirty = false; toast("Projet exporté."); }
+        return saved;
+      });
   }
 
   // Generic drag-to-reorder for `.fn-row` items inside a container. Calls
@@ -2891,8 +3029,8 @@
       },
       {
         target: "#vaProjectBtn",
-        title: "Exporter — Projet (.json)",
-        body: "Exporte tout le projet dans un fichier que vous pourrez réimporter plus tard pour le compléter ou le partager.",
+        title: "Exporter — Projet (.vizea)",
+        body: "Exporte tout le projet dans un fichier .vizea. Une fois Vizéa installée, un double-clic sur ce fichier rouvre le projet; sinon, on le glisse sur la fenêtre ou on l'importe.",
         before: () => onStep(3),
         wait: 160
       },

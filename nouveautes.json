@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-07-02",
+    "titre": "Application installable et utilisation hors ligne",
+    "infos": [
+      "Vizéa peut désormais s'installer comme une application, avec sa propre fenêtre et un accès en un clic (Chrome et Edge; ajout au Dock sur Safari Mac).",
+      "Une fois installée, l'application fonctionne hors ligne, sans connexion Internet.",
+      "Les projets s'exportent maintenant au format .vizea et se rouvrent par simple glisser-déposer — ou par double-clic lorsque l'application est installée (Chrome / Edge).",
+      "Les exportations (image, tableau, projet) permettent de choisir le dossier de destination et de renommer le fichier avant l'enregistrement."
+    ]
+  },
+  {
     "date": "2026-06-25",
     "titre": "Optimisations et précision des bandes de classification",
     "infos": [

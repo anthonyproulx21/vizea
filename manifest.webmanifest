@@ -1,0 +1,26 @@
+{
+  "name": "Vizéa",
+  "short_name": "Vizéa",
+  "description": "Outil québécois gratuit pour visualiser des profils cognitifs regroupés par fonction cognitive. Aucune donnée clinique n'est conservée.",
+  "lang": "fr-CA",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d3b66",
+  "orientation": "any",
+  "categories": ["medical", "education", "productivity"],
+  "icons": [
+    { "src": "favicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "favicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": { "application/vizea+json": [".vizea"] },
+      "icons": [
+        { "src": "favicon-192.png", "sizes": "192x192", "type": "image/png" }
+      ]
+    }
+  ]
+}
