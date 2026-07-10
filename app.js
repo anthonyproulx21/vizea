@@ -383,11 +383,26 @@
     resize();
     if (reduced) { drawStatic(); return; }
 
-    // Always animate (it's a site-wide background); pause only when tab hidden.
-    start();
-    document.addEventListener("visibilitychange", () => {
-      document.hidden ? stop() : start();
-    });
+    // The animation is a decorative background for the HOME page only. Running it
+    // on other pages is wasteful and, on the (very tall) scores page, causes
+    // serious scroll/typing lag — the full-document canvas is redrawn every frame
+    // with O(nodes²) link math. So it runs only when the home page is showing and
+    // the tab is visible; it's paused everywhere else.
+    let onHomePage = true;
+    function updateRunning() {
+      if (reduced) return;
+      if (onHomePage && !document.hidden) start(); else stop();
+    }
+    // Navigation calls this to pause/resume as the user moves between pages.
+    // We also hide the canvas off-home: it spans the whole (tall) document, so
+    // even a static one is needless compositing work while scrolling scores.
+    window.__vizeaNeuralSetActive = function (on) {
+      onHomePage = !!on;
+      canvas.style.display = on ? "" : "none";
+      updateRunning();
+    };
+    updateRunning();
+    document.addEventListener("visibilitychange", updateRunning);
   }
 
   // =========================================================================
@@ -483,8 +498,12 @@
     // or slow PayPal SDK can never affect the rest of the app.
     if (target === "page-donate") initPayPalLazy();
 
-    // Page heights differ; re-fit the full-document background canvas.
-    if (window.__vizeaResizeNeural) setTimeout(window.__vizeaResizeNeural, 60);
+    // The animated background belongs to the home page only. Pause + hide it
+    // elsewhere (it's a big full-document canvas — a major scroll-lag source on
+    // the long scores page), and only re-fit it when it's actually showing.
+    const isHome = target === "page-home";
+    if (window.__vizeaNeuralSetActive) window.__vizeaNeuralSetActive(isHome);
+    if (isHome && window.__vizeaResizeNeural) setTimeout(window.__vizeaResizeNeural, 60);
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
