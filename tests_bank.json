@@ -116,7 +116,8 @@
       "Troubles du comportement": [
         "Psychoaffectif"
       ]
-    }
+    },
+    "recency": 2
   },
   "BYI": {
     "type": "batterie",
@@ -136,7 +137,9 @@
       "Troubles du comportement": [
         "Psychoaffectif"
       ]
-    }
+    },
+    "recency": 1,
+    "superseded": true
   },
   "BDI-II": {
     "type": "test",
@@ -666,7 +669,8 @@
       "Red & blues, bags & shoes": [
         "Fonctions exécutives"
       ]
-    }
+    },
+    "recency": 2
   },
   "TEA": {
     "type": "batterie",
@@ -747,7 +751,8 @@
       "Math fluency": [
         "Mathématiques"
       ]
-    }
+    },
+    "recency": 3
   },
   "WIAT-II": {
     "type": "batterie",
@@ -776,7 +781,9 @@
       "Expression orale": [
         "Langage oral"
       ]
-    }
+    },
+    "recency": 2,
+    "superseded": true
   },
   "Key-Math-3": {
     "type": "batterie",
@@ -961,7 +968,9 @@
       "Annulation": [
         "Vitesse de traitement"
       ]
-    }
+    },
+    "recency": 2,
+    "superseded": true
   },
   "WISC-IV intégré (sous-tests supplémentaires)": {
     "type": "batterie",
@@ -1009,7 +1018,9 @@
       "Mémoire de code": [
         "Mémoire"
       ]
-    }
+    },
+    "recency": 2,
+    "superseded": true
   },
   "WISC-V": {
     "type": "batterie",
@@ -1076,7 +1087,8 @@
       "Vitesse de dénomination quantité": [
         "Langage oral"
       ]
-    }
+    },
+    "recency": 3
   },
   "WISC-V intégré (sous-tests supplémentaires)": {
     "type": "batterie",
@@ -1125,7 +1137,8 @@
         "Vitesse de traitement",
         "Moteur"
       ]
-    }
+    },
+    "recency": 3
   },
   "WAIS-IV": {
     "type": "batterie",
@@ -1206,7 +1219,8 @@
       "Blocs": [
         "Visuospatial"
       ]
-    }
+    },
+    "recency": 2
   },
   "WASI": {
     "type": "batterie",
@@ -1229,7 +1243,9 @@
       "Blocs": [
         "Visuospatial"
       ]
-    }
+    },
+    "recency": 1,
+    "superseded": true
   },
   "WPPSI-IV": {
     "type": "batterie",
@@ -1375,7 +1391,9 @@
       "Répétition de phrases": [
         "Mémoire de travail"
       ]
-    }
+    },
+    "recency": 1,
+    "superseded": true
   },
   "NEPSY-II": {
     "type": "batterie",
@@ -1476,7 +1494,8 @@
       "Théorie de l'esprit": [
         "Cognition sociale"
       ]
-    }
+    },
+    "recency": 2
   },
   "Matrices de Raven": {
     "type": "test",
@@ -1568,7 +1587,9 @@
       "Spatial span": [
         "Mémoire"
       ]
-    }
+    },
+    "recency": 2,
+    "superseded": true
   },
   "WMS-IV": {
     "type": "batterie",
@@ -1591,7 +1612,8 @@
       "Symbol span": [
         "Mémoire de travail"
       ]
-    }
+    },
+    "recency": 3
   },
   "MEM-IV": {
     "type": "batterie",
@@ -1621,28 +1643,34 @@
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {}
+    "subtests": {},
+    "recency": 1,
+    "superseded": true
   },
   "CVLT-II": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {}
+    "subtests": {},
+    "recency": 2,
+    "superseded": true
   },
   "CVLT-III": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {}
+    "subtests": {},
+    "recency": 3
   },
   "CVLT-C": {
     "type": "test",
     "default_functions": [
       "Mémoire"
     ],
-    "subtests": {}
+    "subtests": {},
+    "recency": 1
   },
   "D-KEFS / DKEFS": {
     "type": "batterie",
@@ -1730,7 +1758,9 @@
       "Transmission de codes": [
         "Attention"
       ]
-    }
+    },
+    "recency": 1,
+    "superseded": true
   },
   "WCST": {
     "type": "test",
@@ -1774,14 +1804,17 @@
     "default_functions": [
       "Attention"
     ],
-    "subtests": {}
+    "subtests": {},
+    "recency": 3
   },
   "CPT-2": {
     "type": "test",
     "default_functions": [
       "Attention"
     ],
-    "subtests": {}
+    "subtests": {},
+    "recency": 2,
+    "superseded": true
   },
   "CATA": {
     "type": "test",

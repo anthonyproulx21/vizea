@@ -550,6 +550,12 @@
     const stepnav = $("stepnav");
     if (stepnav) stepnav.style.display = stepIndex === 0 ? "none" : "block";
 
+    if (stepIndex === 1) {
+      // Re-render so the checkboxes reflect the current selection — e.g. after a
+      // test was removed via the "×" on the scores step.
+      renderTestList($("testSearch") ? $("testSearch").value : "");
+      renderSelectedTests();
+    }
     if (stepIndex === 2) {
       DM.syncScoresWithSelectedTests(currentProject, testsBank);
       resolveActiveScaleTest();
@@ -961,7 +967,10 @@
       const keys = Object.keys(subtestsMap);
       const isStandalone = keys.length === 1 && keys[0] === DM.STANDALONE_KEY;
       if (isStandalone) {
-        body.appendChild(buildConditionList(subtestsMap[DM.STANDALONE_KEY]));
+        body.appendChild(buildConditionList(subtestsMap[DM.STANDALONE_KEY], {
+          label: testName,
+          remove: () => removeScoreEntry(testName, DM.STANDALONE_KEY)
+        }));
       } else {
         keys.forEach((subName) => {
           const sub = document.createElement("div");
@@ -970,7 +979,10 @@
           st.className = "subtest-title";
           st.textContent = subName;
           sub.appendChild(st);
-          sub.appendChild(buildConditionList(subtestsMap[subName]));
+          sub.appendChild(buildConditionList(subtestsMap[subName], {
+            label: subName,
+            remove: () => removeScoreEntry(testName, subName)
+          }));
           body.appendChild(sub);
         });
       }
@@ -1101,7 +1113,64 @@
     return sec;
   }
 
-  function buildConditionList(conditionArray) {
+  // Small confirmation dialog (reuses the modal styling). Resolves true/false.
+  function confirmDialog(opts) {
+    opts = opts || {};
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      const card = document.createElement("div");
+      card.className = "modal-card";
+      card.setAttribute("role", "dialog");
+      card.setAttribute("aria-modal", "true");
+      const h = document.createElement("h3");
+      h.textContent = opts.title || "Confirmer";
+      const p = document.createElement("p");
+      p.className = "muted";
+      p.textContent = opts.message || "";
+      const actions = document.createElement("div");
+      actions.className = "modal-actions";
+      const yes = document.createElement("button");
+      yes.type = "button"; yes.className = "btn-primary"; yes.textContent = opts.confirmText || "Confirmer";
+      const no = document.createElement("button");
+      no.type = "button"; no.className = "btn-ghost"; no.textContent = opts.cancelText || "Annuler";
+      let done = false;
+      const onKey = (e) => { if (e.key === "Escape") close(false); };
+      function close(v) { if (done) return; done = true; document.removeEventListener("keydown", onKey); overlay.remove(); resolve(v); }
+      yes.addEventListener("click", () => close(true));
+      no.addEventListener("click", () => close(false));
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) close(false); });
+      document.addEventListener("keydown", onKey);
+      actions.append(yes, no);
+      card.append(h, p, actions);
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      setTimeout(() => { try { no.focus(); } catch (e) {} }, 30);
+    });
+  }
+
+  // Remove a whole score entry (a subtest, or a standalone test) from the
+  // project, keeping the selection in sync so it doesn't reappear on re-sync.
+  function removeScoreEntry(testName, subtestKey) {
+    const scores = currentProject.scores || {};
+    if (scores[testName]) {
+      delete scores[testName][subtestKey];
+      if (Object.keys(scores[testName]).length === 0) delete scores[testName];
+    }
+    const sel = currentProject.selectedTests || {};
+    if (sel[testName]) {
+      if (subtestKey === DM.STANDALONE_KEY) {
+        delete sel[testName];
+      } else {
+        sel[testName] = sel[testName].filter((s) => s !== subtestKey);
+        if (sel[testName].length === 0) delete sel[testName];
+      }
+    }
+    markDirty();
+    renderStep2();
+  }
+
+  function buildConditionList(conditionArray, entry) {
     const wrapper = document.createElement("div");
     const list = document.createElement("div");
     list.className = "conditions-container";
@@ -1115,7 +1184,7 @@
       list.innerHTML = "";
       conditionArray.forEach((cond, idx) => {
         if (!cond.functions) cond.functions = [];
-        list.appendChild(createConditionRow(cond, conditionArray, idx, render));
+        list.appendChild(createConditionRow(cond, conditionArray, idx, render, entry));
       });
     }
 
@@ -1133,7 +1202,7 @@
     return wrapper;
   }
 
-  function createConditionRow(cond, conditionArray, index, onChange) {
+  function createConditionRow(cond, conditionArray, index, onChange, entry) {
     const row = document.createElement("div");
     row.className = "condition-row";
 
@@ -1310,7 +1379,17 @@
     removeBtn.title = "Supprimer ce score";
     removeBtn.addEventListener("click", () => {
       if (conditionArray.length === 1) {
-        // keep at least one empty row
+        // Only score of this test/subtest: removing it removes the entry, so warn.
+        if (entry && typeof entry.remove === "function") {
+          confirmDialog({
+            title: "Retirer ce test ?",
+            message: "« " + (entry.label || "Ce test") + " » n'a qu'un seul score. Le retirer enlèvera ce test du projet.",
+            confirmText: "Retirer",
+            cancelText: "Annuler"
+          }).then((confirmed) => { if (confirmed) entry.remove(); });
+          return;
+        }
+        // Fallback (no context): keep one empty row.
         conditionArray[0] = DM.createEmptyCondition(cond.functions || []);
         conditionArray[0].functions = [];
       } else {
