@@ -132,6 +132,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "extremely_low",
     label: "Score extrêmement bas",
+    short: "Extrêmement bas",
     color: "#C25A50",
     percentile: { min: 0, max: BAND_PCT_CUTS[0] },
     standard:   { min: -Infinity, max: 69 },
@@ -141,6 +142,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "below_average",
     label: "Score inférieur à la moyenne",
+    short: "Inférieur à la moyenne",
     color: "#D98E5A",
     percentile: { min: BAND_PCT_CUTS[0], max: BAND_PCT_CUTS[1] },
     standard:   { min: 70, max: 79 },
@@ -150,6 +152,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "low_average",
     label: "Score dans la basse moyenne",
+    short: "Basse moyenne",
     color: "#E3C173",
     percentile: { min: BAND_PCT_CUTS[1], max: BAND_PCT_CUTS[2] },
     standard:   { min: 80, max: 89 },
@@ -159,6 +162,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "average",
     label: "Score dans la moyenne",
+    short: "Moyenne",
     color: "#93C088",
     percentile: { min: BAND_PCT_CUTS[2], max: BAND_PCT_CUTS[3] },
     standard:   { min: 90, max: 109 },
@@ -168,6 +172,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "high_average",
     label: "Score dans la haute moyenne",
+    short: "Haute moyenne",
     color: "#6BA9C4",
     percentile: { min: BAND_PCT_CUTS[3], max: BAND_PCT_CUTS[4] },
     standard:   { min: 110, max: 119 },
@@ -177,6 +182,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "superior",
     label: "Score supérieur à la moyenne",
+    short: "Supérieur à la moyenne",
     color: "#8E92C9",
     percentile: { min: BAND_PCT_CUTS[4], max: BAND_PCT_CUTS[5] },
     standard:   { min: 120, max: 129 },
@@ -186,6 +192,7 @@ const CLASSIFICATION_BANDS = [
   {
     key: "extremely_high",
     label: "Score extrêmement élevé",
+    short: "Extrêmement élevé",
     color: "#C285B4",
     percentile: { min: BAND_PCT_CUTS[5], max: 100 },
     standard:   { min: 130, max: Infinity },
@@ -228,6 +235,7 @@ function getBandsInScale(scaleKey) {
   return CLASSIFICATION_BANDS.map(b => ({
     key: b.key,
     label: b.label,
+    short: b.short,
     color: b.color,
     min: b[scaleKey].min,
     max: b[scaleKey].max
@@ -252,7 +260,7 @@ function getBandsForDisplayType(type) {
   return CLASSIFICATION_BANDS.map(b => {
     const minVal = b.percentile.min === 0 ? -Infinity : fromPercentile(b.percentile.min, type);
     const maxVal = b.percentile.max === 100 ? Infinity : fromPercentile(b.percentile.max, type);
-    return { key: b.key, label: b.label, color: b.color, min: minVal, max: maxVal };
+    return { key: b.key, label: b.label, short: b.short, color: b.color, min: minVal, max: maxVal };
   });
 }
 

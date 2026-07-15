@@ -2072,7 +2072,32 @@
       });
     });
 
-    $("opt-showBands")?.addEventListener("change", (e) => { s().showBands = e.target.checked; renderChart(); });
+    $("opt-showBands")?.addEventListener("change", (e) => {
+      s().showBands = e.target.checked;
+      syncBandOptionsVisibility();
+      renderChart();
+    });
+    $("opt-showBandLabels")?.addEventListener("change", (e) => { s().showBandLabels = e.target.checked; renderChart(); });
+    $("opt-fontScale")?.addEventListener("input", (e) => {
+      const pct = Number(e.target.value);
+      s().fontScale = pct / 100;
+      const out = $("fontScaleValue");
+      if (out) out.textContent = pct + " %";
+      renderChartDebounced();
+    });
+    $("opt-bandOpacity")?.addEventListener("input", (e) => {
+      const pct = Number(e.target.value);
+      s().bandOpacity = pct / 100;
+      const out = $("bandOpacityValue");
+      if (out) out.textContent = pct + " %";
+      renderChartDebounced();
+    });
+    $("bandLabelsReset")?.addEventListener("click", () => {
+      s().bandLabels = {};
+      buildBandLabelList();
+      markDirty();
+      renderChart();
+    });
     $("opt-proportionalAxis")?.addEventListener("change", (e) => { s().proportionalAxis = e.target.checked; renderChart(); });
     $("opt-showTestLabels")?.addEventListener("change", (e) => { s().showTestLabels = e.target.checked; renderChart(); });
     $("opt-showDataLabels")?.addEventListener("change", (e) => { s().showDataLabels = e.target.checked; renderChart(); });
@@ -2251,11 +2276,80 @@
 
   // Build the per-project controls (function visibility + colors) each time
   // we enter step 3, since they depend on which functions are present.
+  // Band options (labels + colour intensity) only make sense when the bands are
+  // actually drawn — i.e. shown, and on a view that draws them (not radar/table).
+  function syncBandOptionsVisibility() {
+    const wrap = $("bandOptions");
+    if (!wrap) return;
+    const s = currentProject?.chartSettings || {};
+    const type = s.chartType || "line";
+    const drawsBands = type === "line" || type === "scales";
+    wrap.style.display = (drawsBands && s.showBands !== false) ? "" : "none";
+  }
+
+  // Editable band display names. Renaming is display-only: classification and
+  // colours stay keyed by the band's real identity.
+  function buildBandLabelList() {
+    const list = $("bandLabelList");
+    if (!list || !window.ScoringEngine) return;
+    const settings = currentProject.chartSettings;
+    if (!settings.bandLabels) settings.bandLabels = {};
+    list.innerHTML = "";
+    // Highest band first, matching how they read on the chart (top to bottom).
+    const bands = window.ScoringEngine.CLASSIFICATION_BANDS.slice().reverse();
+    bands.forEach((b) => {
+      const row = document.createElement("div");
+      row.className = "band-row";
+
+      const base = b.short || b.label;   // default display name (short form)
+
+      const swatch = document.createElement("span");
+      swatch.className = "band-swatch";
+      swatch.style.background = b.color;
+      swatch.title = b.label;            // full classification name as tooltip
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "band-rename-input";
+      input.value = settings.bandLabels[b.key] || base;
+      input.title = b.label + " — renommer pour l'affichage (n'affecte pas la classification)";
+      input.addEventListener("focus", () => input.select());
+      input.addEventListener("blur", () => {
+        if (!settings.bandLabels[b.key]) input.value = base;
+      });
+      input.addEventListener("input", () => {
+        const v = input.value.trim();
+        if (!v || v === base) delete settings.bandLabels[b.key];
+        else settings.bandLabels[b.key] = v;
+        markDirty();
+        renderChartDebounced();
+      });
+
+      row.append(swatch, input);
+      list.appendChild(row);
+    });
+  }
+
   function buildPanelDynamicControls() {
     const settings = currentProject.chartSettings;
     // sync static controls to settings
     $("opt-displayScale").value = settings.displayScale;
     $("opt-showBands").checked = settings.showBands !== false;
+    if ($("opt-showBandLabels")) $("opt-showBandLabels").checked = !!settings.showBandLabels;
+    if ($("opt-bandOpacity")) {
+      const pct = Math.round(((settings.bandOpacity ?? 0.13)) * 100);
+      $("opt-bandOpacity").value = String(Math.max(3, Math.min(45, pct)));
+      const out = $("bandOpacityValue");
+      if (out) out.textContent = $("opt-bandOpacity").value + " %";
+    }
+    if ($("opt-fontScale")) {
+      const fpct = Math.round((settings.fontScale ?? 1) * 100);
+      $("opt-fontScale").value = String(Math.max(75, Math.min(160, fpct)));
+      const fout = $("fontScaleValue");
+      if (fout) fout.textContent = $("opt-fontScale").value + " %";
+    }
+    buildBandLabelList();
+    syncBandOptionsVisibility();
     if ($("opt-proportionalAxis")) $("opt-proportionalAxis").checked = settings.proportionalAxis !== false;
     syncProportionalLock();
     $("opt-showTestLabels").checked = settings.showTestLabels !== false;
@@ -2621,6 +2715,8 @@
       if (fnLabel && fnLabel.classList.contains("panel-label")) setVis(fnLabel, true);
       setVis(scalesExtras, false);
     }
+    // Band options follow the bands themselves (hidden on radar/table).
+    syncBandOptionsVisibility();
   }
 
   // =========================================================================

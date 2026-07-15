@@ -355,10 +355,32 @@
                   <button type="button" data-type="radar">Radar</button>
                 </div>
 
+                <label class="panel-label" for="opt-fontScale">Taille du texte</label>
+                <div class="band-opacity-row">
+                  <input type="range" id="opt-fontScale" min="75" max="160" step="5" value="100">
+                  <span id="fontScaleValue" class="band-opacity-value">100 %</span>
+                </div>
+
                 <label class="panel-toggle" data-only="line">
                   <input type="checkbox" id="opt-showBands" checked>
                   <span>Bandes d'interprétation</span>
                 </label>
+                <div id="bandOptions" class="band-options">
+                  <label class="panel-toggle">
+                    <input type="checkbox" id="opt-showBandLabels">
+                    <span>Nom des bandes sur le graphique</span>
+                  </label>
+                  <label class="panel-label" for="opt-bandOpacity">Intensité des couleurs</label>
+                  <div class="band-opacity-row">
+                    <input type="range" id="opt-bandOpacity" min="3" max="45" step="1" value="13">
+                    <span id="bandOpacityValue" class="band-opacity-value">13 %</span>
+                  </div>
+                  <details class="band-rename">
+                    <summary>Renommer les bandes</summary>
+                    <div id="bandLabelList" class="band-label-list"></div>
+                    <button type="button" id="bandLabelsReset" class="btn-ghost btn-mini">Rétablir les noms d'origine</button>
+                  </details>
+                </div>
                 <label class="panel-toggle">
                   <input type="checkbox" id="opt-proportionalAxis" checked>
                   <span>Espacement proportionnel à la rareté</span>

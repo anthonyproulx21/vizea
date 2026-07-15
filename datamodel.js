@@ -60,6 +60,10 @@ function getDefaultChartSettings() {
     displayScale: "Percentile",       // one of SCORE_TYPE_OPTIONS
     chartType: "line",                // "line" | "radar"
     showBands: true,
+    showBandLabels: false,            // draw each band's name on the chart
+    bandLabels: {},                   // display-name overrides per band key (e.g. "average" -> "Moyenne")
+    bandOpacity: 0.13,                // colour intensity of the interpretation bands (0.03–0.45)
+    fontScale: 1,                     // text size multiplier for the chart (0.75–1.6)
     proportionalAxis: true,           // y-position by percentile (rarity) on every scale
     axisMin: null,                    // optional axis lower limit (display scale)
     axisMax: null,                    // optional axis upper limit (display scale)

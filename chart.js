@@ -51,6 +51,26 @@
   const FONT_BODY = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif";
   const FONT_TITLE = "Fraunces, Georgia, serif";
   const BAND_OPACITY = 0.13;
+  // Band names are drawn in the RIGHT margin (the left one already holds the
+  // axis title + tick labels). Gap = pixels between the plot edge and the name.
+  const BAND_LABEL_GAP = 12;
+  // Drawing height of the plot area, used to tell whether a band is tall enough
+  // to fit its name without colliding with its neighbours.
+  const PLOT_AREA_PX = 520;
+
+  // Blend a hex colour toward `target` ([r,g,b]) by `amount` (0-1).
+  function mixHex(hex, target, amount) {
+    const h = String(hex).replace("#", "");
+    if (h.length !== 6) return hex;
+    const c = [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+    const to2 = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+    return "#" + c.map((v, i) => to2(v + (target[i] - v) * amount)).join("");
+  }
+  // Band name colour: the band's own hue, pushed dark (light theme) or light
+  // (dark theme) so it stays legible while still tying the name to its stripe.
+  function bandTextColor(hex, dark) {
+    return dark ? mixHex(hex, [255, 255, 255], 0.42) : mixHex(hex, [0, 0, 0], 0.45);
+  }
 
   // When true, charts render with the light theme regardless of the page theme.
   // Used so PNG exports are always on a white background with dark, legible text.
@@ -130,17 +150,50 @@
   }
 
   // Theme-aware colours so chart text/gridlines stay legible in dark mode.
-  function themeColors() {
-    const dark = !_forceLight && typeof document !== "undefined" &&
+  function isDarkTheme() {
+    return !_forceLight && typeof document !== "undefined" &&
       document.documentElement.getAttribute("data-theme") === "dark";
+  }
+
+  function themeColors() {
+    const dark = isDarkTheme();
     return dark
       ? { text: "#e8eef4", textSoft: "#9db2c6", grid: "rgba(157,178,198,0.18)",
           gridSoft: "rgba(157,178,198,0.12)", compare: "#aebccb", labelBg: "rgba(20,34,47,0.82)",
-          sep: "rgba(157,178,198,0.28)", markerFill: "#16242f" }
+          sep: "rgba(157,178,198,0.28)", markerFill: "#16242f", bandLabel: "#9db2c6" }
       : { text: "#2b3a4a", textSoft: "#5d6b7a", grid: "rgba(20,50,90,0.16)",
           gridSoft: "rgba(20,50,90,0.09)", compare: "#4a5a6a", labelBg: "rgba(255,255,255,0.8)",
-          sep: "rgba(20,50,90,0.22)", markerFill: "#ffffff" };
+          sep: "rgba(20,50,90,0.22)", markerFill: "#ffffff", bandLabel: "#5d6b7a" };
   }
+
+  // Band display helpers ------------------------------------------------------
+  // Colour intensity of the interpretation stripes, user-adjustable in the panel.
+  // Clamped to a sane range so bands can never hide the data or vanish entirely.
+  function bandOpacityOf(settings) {
+    const v = settings && settings.bandOpacity;
+    if (v === null || v === undefined || isNaN(v)) return BAND_OPACITY;
+    return Math.max(0.03, Math.min(0.45, Number(v)));
+  }
+  // Band name shown on the chart: a user override, else the short classification
+  // name ("Basse moyenne") rather than the full sentence used in the table.
+  // Overrides are display-only and never change classification.
+  function bandLabelOf(settings, band) {
+    const over = settings && settings.bandLabels && settings.bandLabels[band.key];
+    if (over !== undefined && over !== null && String(over).trim() !== "") return String(over).trim();
+    return band.short || band.label;
+  }
+
+  // User-adjustable text size for the chart, as a multiplier of the base sizes.
+  // Clamped so labels can't vanish or swamp the plot.
+  function fontScaleOf(settings) {
+    const v = settings && settings.fontScale;
+    if (v === null || v === undefined || isNaN(v)) return 1;
+    return Math.max(0.75, Math.min(1.6, Number(v)));
+  }
+  // Scale a base size and round to a crisp integer.
+  function fs(base, scale) { return Math.round(base * scale); }
+  // Rough pixel width of a string at a given font size (Inter ≈ 0.55em/char).
+  function textWidthPx(str, size) { return String(str).length * size * 0.55; }
 
   function colorForFunction(func, chartSettings) {
     const overrides = (chartSettings && chartSettings.functionColors) || {};
@@ -257,6 +310,7 @@
     const traces = [];
 
     const TC = themeColors();
+    const fontScale = fontScaleOf(settings);
     const colorMap = assignColors(groups.map(g => g.func), settings);
 
     let xIndex = 0;
@@ -288,6 +342,7 @@
         mode: settings.showDataLabels ? "lines+markers+text" : "lines+markers",
         text: settings.showDataLabels ? labelVals.map(v => (typeof v === "number" ? v.toFixed(0) : v)) : undefined,
         textposition: "top center",
+        textfont: { size: fs(11, fontScale), color: TC.text, family: FONT_BODY },
         name: group.func,
         line: { color, width: 2.6 },
         marker: { color: TC.markerFill, size: 8, line: { color, width: 2.2 } },
@@ -329,8 +384,10 @@
     // Bands use the PLOT scale, so on a proportional axis they're percentile
     // bands — always sized by how common each band is.
     const shapes = [];
+    const bandLabelAnnotations = [];
     if (settings.showBands !== false) {
       const bands = window.ScoringEngine.getBandsForDisplayType(plotScale);
+      const bandAlpha = bandOpacityOf(settings);
       bands.forEach((b, bi) => {
         let y0 = b.min === -Infinity ? range[0] : b.min;
         let y1 = b.max === Infinity ? range[1] : b.max;
@@ -342,8 +399,22 @@
         shapes.push({
           type: "rect", xref: "paper", yref: "y",
           x0: 0, x1: 1, y0, y1,
-          fillcolor: b.color, opacity: BAND_OPACITY, line: { width: 0 }, layer: "below"
+          fillcolor: b.color, opacity: bandAlpha, line: { width: 0 }, layer: "below"
         });
+        // Optional band name, drawn in the RIGHT margin, vertically centred on
+        // its stripe. Skipped when the stripe is shorter than the text, so names
+        // can never overlap each other (e.g. thin extreme bands at large sizes).
+        if (settings.showBandLabels) {
+          const txt = bandLabelOf(settings, b);
+          const size = fs(10, fontScale);
+          const bandPx = ((y1 - y0) / (range[1] - range[0])) * PLOT_AREA_PX;
+          if (txt && bandPx >= size * 1.35) bandLabelAnnotations.push({
+            xref: "paper", yref: "y", x: 1, y: (y0 + y1) / 2,
+            text: txt, showarrow: false,
+            xanchor: "left", yanchor: "middle", xshift: BAND_LABEL_GAP,
+            font: { size, color: bandTextColor(b.color, isDarkTheme()), family: FONT_BODY }
+          });
+        }
       });
     }
 
@@ -373,7 +444,7 @@
           xref: "paper", yref: "y", x: 1, y: compareY,
           xanchor: "right", yanchor: "bottom",
           text: `<b>${esc(lbl)}</b>`,
-          showarrow: false, font: { size: 11, color: TC.text },
+          showarrow: false, font: { size: fs(11, fontScale), color: TC.text },
           bgcolor: TC.labelBg, borderpad: 2
         });
       }
@@ -389,7 +460,8 @@
     // group is. Uses the real plot width so the estimate is accurate.
     const usableW = Math.max(200, plotWidth - 90);          // minus axis/margins
     const pxPerXUnit = usableW / Math.max(1, totalPoints);  // px per x data unit
-    const CHAR_PX = 7.2;                                    // ~bold 11px Inter
+    const TITLE_SIZE = fs(11, fontScale);                   // function titles (bold)
+    const CHAR_PX = TITLE_SIZE * 0.66;                      // bold Inter ≈ 0.66em/char
     const GAP_X = 0.6;                                      // min gap between titles (x units)
     const rowRights = [];                                   // last right edge per row
     const titleRows = groupCenters.map((gc) => {
@@ -402,13 +474,14 @@
       return row;
     });
     const rowsUsed = Math.max(1, rowRights.length);
-    const ROW_DY = 0.052;
+    // Row spacing must grow with the text, or stacked titles collide vertically.
+    const ROW_DY = Math.max(0.052, (TITLE_SIZE * 2.4) / PLOT_AREA_PX);
     const annotations = groupCenters.map((gc, i) => ({
       x: gc.center, y: 1.012 + titleRows[i] * ROW_DY, xref: "x", yref: "paper",
       text: `<b>${esc(gc.display)}</b>`, showarrow: false,
-      font: { size: 11, color: gc.color }, textangle: 0,
+      font: { size: fs(11, fontScale), color: gc.color }, textangle: 0,
       yanchor: "bottom", xanchor: "center"
-    })).concat(compareAnnotations);
+    })).concat(compareAnnotations).concat(bandLabelAnnotations);
 
     const showTestLabels = settings.showTestLabels !== false;
     const titleText = (settings.title || "").trim();
@@ -417,19 +490,29 @@
     // Top margin must clear the title (at container top) AND the two annotation
     // rows just above the plot. When there's no title we only need room for the
     // annotation rows.
-    const topMargin = (hasTitle ? 84 : 16) + rowsUsed * 30;
+    const topMargin = (hasTitle ? 84 : 16) + rowsUsed * Math.max(30, Math.round(TITLE_SIZE * 2.7));
 
     // Bottom margin sized to the longest label (drawn at -45°), so long test
-    // names get the room they need BELOW the plot rather than squeezing it.
+    // names get the room they need BELOW the plot rather than overflowing the
+    // container (and landing on the export buttons). Height of a label rotated
+    // 45° ≈ its width × sin(45°); width ≈ chars × 0.55em. Both track the text
+    // size, so this stays correct at every zoom level.
+    const TICK_SIZE = fs(12, fontScale);
+    // Guard: a name so long that even the cap can't fit it would spill out of the
+    // figure (onto the export buttons). Trim it to what the margin can display.
+    const MAX_BOTTOM = 600;
+    const BOTTOM_PAD = 30;
+    const maxTickChars = Math.max(8, Math.floor((MAX_BOTTOM - BOTTOM_PAD) / (0.55 * TICK_SIZE * 0.72)));
+    const xLabelsFit = xLabels.map((s) =>
+      (s && s.length > maxTickChars) ? s.slice(0, maxTickChars - 1) + "…" : s);
     const maxLabelLen = showTestLabels
-      ? xLabels.reduce((m, s) => Math.max(m, (s || "").length), 0) : 0;
+      ? xLabelsFit.reduce((m, s) => Math.max(m, (s || "").length), 0) : 0;
     const bottomMargin = showTestLabels
-      ? Math.min(340, Math.max(70, Math.round(maxLabelLen * 6.6 * 0.72) + 30))
+      ? Math.min(MAX_BOTTOM, Math.max(70, Math.round(maxLabelLen * 0.55 * TICK_SIZE * 0.72) + BOTTOM_PAD))
       : 46;
     // Keep the actual plot drawing area constant; total height grows to fit
     // labels + title rows. (renderChart applies this to the container.)
-    const PLOT_AREA = 520;
-    const figHeight = topMargin + PLOT_AREA + bottomMargin;
+    const figHeight = topMargin + PLOT_AREA_PX + bottomMargin;
 
     // Y-axis ticks: always show the chosen display scale's values. On a
     // proportional axis they're placed at their percentile positions (so the
@@ -442,6 +525,16 @@
       : tickScoreValues;
     const yTickText = tickScoreValues.map(v => String(v));
 
+    // Right margin: the band names live here. Widen it to the longest name so
+    // nothing is clipped; leave the default when they're off.
+    const bandLabelWidth = bandLabelAnnotations.reduce(
+      (m, a) => Math.max(m, textWidthPx(a.text, a.font.size)), 0);
+    const rightMargin = bandLabelWidth ? Math.round(BAND_LABEL_GAP + bandLabelWidth + 16) : 30;
+    // Left margin: axis title + the widest y tick, both of which grow with the
+    // text size. Never below Plotly's default so the look is unchanged at 100 %.
+    const maxTickW = yTickText.reduce((m, t) => Math.max(m, textWidthPx(t, TICK_SIZE)), 0);
+    const leftMargin = Math.max(80, Math.round(fs(13, fontScale) * 1.7 + maxTickW + 18));
+
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
@@ -449,30 +542,30 @@
       xaxis: {
         tickmode: "array",
         tickvals: xLabels.map((_, i) => i),
-        ticktext: showTestLabels ? xLabels.map(esc) : xLabels.map(() => ""),
+        ticktext: showTestLabels ? xLabelsFit.map(esc) : xLabelsFit.map(() => ""),
         tickangle: -45,
         range: [-0.5, totalPoints - 0.5],
         showticklabels: showTestLabels,
         ticks: showTestLabels ? "outside" : "",
-        tickfont: { color: TC.textSoft },
+        tickfont: { color: TC.textSoft, size: fs(12, fontScale) },
         zeroline: false,        // <- removes the stray vertical line at x=0
         showgrid: false,
         automargin: false
       },
       yaxis: {
-        title: { text: displayScale, font: { color: TC.textSoft } },
+        title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } },
         range: range,
         tickmode: "array",
         tickvals: yTickVals,
         ticktext: yTickText,
-        tickfont: { color: TC.textSoft },
+        tickfont: { color: TC.textSoft, size: fs(12, fontScale) },
         gridcolor: TC.gridSoft,
         zeroline: false
       },
       shapes,
       annotations,
       showlegend: false,
-      margin: { t: topMargin, b: bottomMargin },
+      margin: { t: topMargin, b: bottomMargin, l: leftMargin, r: rightMargin },
       hovermode: "closest"
     };
 
@@ -532,6 +625,7 @@
     // reading lives on the line chart; the radar is the clean global shape.
 
     const TC = themeColors();
+    const fontScale = fontScaleOf(settings);
     // Optional comparison guide as a dashed reference ring at the comparison
     // radius. It must use the SAME categorical spokes (function names) as the
     // profile — using numeric degrees would redefine the angular axis and
@@ -557,7 +651,7 @@
       r, theta,
       text: settings.showDataLabels ? labels : undefined,
       textposition: "top center",
-      textfont: { size: 11, color: TC.text },
+      textfont: { size: fs(11, fontScale), color: TC.text },
       customdata: hover,
       hovertemplate: "%{customdata}<extra></extra>",
       fill: settings.radarFill !== false ? "toself" : "none",
@@ -588,11 +682,11 @@
           tickvals: radarTickVals,
           ticktext: radarTickText,
           gridcolor: TC.gridSoft, linecolor: TC.gridSoft,
-          tickfont: { size: 9, color: TC.textSoft }
+          tickfont: { size: fs(9, fontScale), color: TC.textSoft }
         },
         angularaxis: {
           direction: "clockwise",
-          tickfont: { size: 11, color: TC.text },
+          tickfont: { size: fs(11, fontScale), color: TC.text },
           gridcolor: TC.gridSoft, linecolor: TC.grid
         }
       },
@@ -639,6 +733,7 @@
     const proportional = displayScale === "Percentile" ? true : (settings.proportionalAxis !== false);
     const plotScale = proportional ? "Percentile" : displayScale;
     const TC = themeColors();
+    const fontScale = fontScaleOf(settings);
 
     const labels = rows.map(r => esc(displayScaleName(r.name, settings)));
     // Each row's value -> percentile (universal), then to the plot position.
@@ -673,8 +768,10 @@
     }
 
     const shapes = [];
+    const sBandLabels = [];
     if (settings.showBands !== false) {
       const sbands = window.ScoringEngine.getBandsForDisplayType(plotScale);
+      const sAlpha = bandOpacityOf(settings);
       sbands.forEach((b, bi) => {
         let y0 = b.min === -Infinity ? range[0] : b.min;
         let y1 = b.max === Infinity ? range[1] : b.max;
@@ -684,7 +781,18 @@
         if (bi === sbands.length - 1) y1 = range[1];
         if (y1 <= y0) return;
         shapes.push({ type: "rect", xref: "paper", yref: "y", x0: 0, x1: 1, y0, y1,
-          fillcolor: b.color, opacity: BAND_OPACITY, line: { width: 0 }, layer: "below" });
+          fillcolor: b.color, opacity: sAlpha, line: { width: 0 }, layer: "below" });
+        if (settings.showBandLabels) {
+          const txt = bandLabelOf(settings, b);
+          const size = fs(10, fontScale);
+          const bandPx = ((y1 - y0) / (range[1] - range[0])) * PLOT_AREA_PX;
+          if (txt && bandPx >= size * 1.35) sBandLabels.push({
+            xref: "paper", yref: "y", x: 1, y: (y0 + y1) / 2,
+            text: txt, showarrow: false, xanchor: "left", yanchor: "middle",
+            xshift: BAND_LABEL_GAP,
+            font: { size, color: bandTextColor(b.color, isDarkTheme()), family: FONT_BODY }
+          });
+        }
       });
     }
 
@@ -693,7 +801,7 @@
     const traces = [{
       type: "scatter", mode: showLabels ? "lines+markers+text" : "lines+markers",
       x: labels, y: yvals, text, textposition: "top center",
-      textfont: { color: TC.text, size: 12 },
+      textfont: { color: TC.text, size: fs(12, fontScale) },
       line: { color: lineColor, width: 2.6 },
       marker: { color: TC.markerFill, size: 9, line: { color: lineColor, width: 2.2 } },
       hovertemplate: "%{x}: %{text}<extra></extra>",
@@ -709,14 +817,18 @@
     const yTickText = tickScoreValues.map(v => String(v));
 
     const titleText = (settings.scalesTitle || "").trim();
+    // Band names sit in the right margin (same rule as the profile view).
+    const sBandWidth = sBandLabels.reduce((m, a) => Math.max(m, textWidthPx(a.text, a.font.size)), 0);
+    const sRightMargin = sBandWidth ? Math.round(BAND_LABEL_GAP + sBandWidth + 16) : 30;
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: TC.text, family: FONT_BODY },
-      xaxis: { type: "category", tickfont: { color: TC.textSoft }, zeroline: false, showgrid: false, automargin: true },
-      yaxis: { title: { text: displayScale, font: { color: TC.textSoft } }, range,
+      xaxis: { type: "category", tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, zeroline: false, showgrid: false, automargin: true },
+      yaxis: { title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } }, range,
         tickmode: "array", tickvals: yTickVals, ticktext: yTickText,
-        tickfont: { color: TC.textSoft }, gridcolor: TC.gridSoft, zeroline: false },
-      shapes, showlegend: false, margin: { t: titleText ? 60 : 30, b: 60, l: 60, r: 30 }, hovermode: "closest"
+        tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, gridcolor: TC.gridSoft, zeroline: false },
+      shapes, annotations: sBandLabels, showlegend: false,
+      margin: { t: titleText ? 60 : 30, b: 60, l: 60, r: sRightMargin }, hovermode: "closest"
     };
     if (titleText) layout.title = { text: esc(titleText), x: 0.5, xanchor: "center",
       y: 0.97, yanchor: "top", yref: "container",

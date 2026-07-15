@@ -398,11 +398,6 @@ label { font-weight: 500; }
 /* ---------- Step 2 ---------- */
 .test-card {
   margin-bottom: 18px;
-  /* Browsers that support it skip layout/paint for off-screen cards and isolate
-     each card's reflow, so typing/scrolling stays fast with many tests. Ignored
-     gracefully where unsupported. */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 300px;
 }
 .test-card > h3 { margin-top: 0; }
 .subtest-card { background: var(--blue-050); border-radius: var(--radius-sm); padding: 12px 14px; margin: 10px 0; }
@@ -964,3 +959,28 @@ body.dragging-file .drop-hint { display: flex; }
   box-shadow: 0 4px 14px rgba(23, 107, 181, .12);
 }
 @media (max-width: 620px) { .hero-buttons { grid-template-columns: 1fr; } }
+
+/* ===== Interpretation band options (labels + colour intensity) ===== */
+.band-options {
+  margin: 2px 0 14px 6px; padding-left: 10px;
+  border-left: 2px solid var(--line);
+}
+.band-opacity-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.band-opacity-row input[type="range"] { flex: 1; accent-color: var(--cyan); }
+.band-opacity-value { font-size: .8rem; color: var(--ink-soft); min-width: 42px; text-align: right; }
+.band-rename { margin-top: 6px; }
+.band-rename > summary { cursor: pointer; font-size: .85rem; color: var(--blue-700); width: fit-content; }
+.band-rename > summary:hover { text-decoration: underline; }
+.band-label-list { margin: 10px 0 8px; display: flex; flex-direction: column; gap: 6px; }
+.band-row { display: flex; align-items: center; gap: 8px; }
+.band-swatch {
+  width: 14px; height: 14px; border-radius: 3px; flex: none;
+  border: 1px solid rgba(0, 0, 0, .12);
+}
+.band-rename-input {
+  flex: 1; min-width: 0; padding: 5px 8px; font-size: .84rem; font-family: inherit;
+  color: var(--ink); background: var(--white);
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+}
+.band-rename-input:focus { outline: none; border-color: var(--cyan); }
+.btn-mini { padding: 5px 10px; font-size: .78rem; }
