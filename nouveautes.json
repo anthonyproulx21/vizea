@@ -1,7 +1,15 @@
 [
+   {
+    "date": "2026-07-15",
+    "titre": "V1.5 : Intensité des couleurs et libellés des bandes de classification",
+    "infos": [
+      "Possibilité d'ajuster l'intensité des couleurs des bandes de classification, de les renommer, et d'afficher les libellés à la droite du graphique.",
+      "Amélioration de la suppression d'un test en appuyant sur le X dans l'onglet d'entrée des scores."
+    ]
+  },
   {
     "date": "2026-07-02",
-    "titre": "Application installable et utilisation hors ligne",
+    "titre": "V1.4 : Application installable et utilisation hors ligne",
     "infos": [
       "Vizéa peut désormais s'installer comme une application, avec sa propre fenêtre et un accès en un clic (Chrome et Edge; ajout au Dock sur Safari Mac).",
       "Une fois installée, l'application fonctionne hors ligne, sans connexion Internet.",
@@ -11,7 +19,7 @@
   },
   {
     "date": "2026-06-25",
-    "titre": "Optimisations et précision des bandes de classification",
+    "titre": "V1.3 : Optimisations et précision des bandes de classification",
     "infos": [
       "Optimisations internes : la saisie des scores demeure fluide, même dans les projets comportant un grand nombre de tests.",
       "Réalignement des bandes de classification afin qu'elles correspondent précisément aux seuils attendus, quel que soit le type de score affiché."
@@ -19,7 +27,7 @@
   },
   {
     "date": "2026-06-23",
-    "titre": "Démonstration guidée, vue Tableau et ajouts à la banque",
+    "titre": "V1.2 : Démonstration guidée, vue Tableau et ajouts à la banque",
     "infos": [
       "Ajout d'une démonstration guidée présentant l'outil étape par étape.",
       "Nouvelle vue Tableau : scores regroupés par test ou par fonction, colonnes personnalisables et exportation vers Excel.",
@@ -30,7 +38,7 @@
   },
   {
     "date": "2026-06-21",
-    "titre": "Lancement officiel de Vizéa",
+    "titre": "V1.1 : Lancement officiel de Vizéa",
     "infos": [
       "Première version publique de l'outil.",
       "Visualisation des profils cognitifs par fonction : vues Profil, Échelles et Radar.",
@@ -41,10 +49,10 @@
   },
   {
     "date": "2025-09-30",
-    "titre": "Genèse du projet",
+    "titre": "V0 : Genèse du projet",
     "infos": [
       "Première esquisse du concept : un outil pour visualiser et interpréter plus clairement les profils cognitifs.",
-      "Début du développement, mené en parallèle des études doctorales."
+      "Début du développement, à temps perdu, en parallèle des études."
     ]
   }
 ]

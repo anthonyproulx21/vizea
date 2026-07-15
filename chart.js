@@ -51,9 +51,6 @@
   const FONT_BODY = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif";
   const FONT_TITLE = "Fraunces, Georgia, serif";
   const BAND_OPACITY = 0.13;
-  // Band names are drawn in the RIGHT margin (the left one already holds the
-  // axis title + tick labels). Gap = pixels between the plot edge and the name.
-  const BAND_LABEL_GAP = 12;
   // Drawing height of the plot area, used to tell whether a band is tall enough
   // to fit its name without colliding with its neighbours.
   const PLOT_AREA_PX = 520;
@@ -69,7 +66,36 @@
   // Band name colour: the band's own hue, pushed dark (light theme) or light
   // (dark theme) so it stays legible while still tying the name to its stripe.
   function bandTextColor(hex, dark) {
-    return dark ? mixHex(hex, [255, 255, 255], 0.42) : mixHex(hex, [0, 0, 0], 0.45);
+    return dark ? mixHex(hex, [255, 255, 255], 0.62) : mixHex(hex, [0, 0, 0], 0.55);
+  }
+
+  // --- Key lane -------------------------------------------------------------
+  // The band tints continue into the RIGHT margin as one uninterrupted colour
+  // column, with each band's name set inside its own segment. Shapes that mix
+  // paper/axis references get clipped at the plot edge, so the lane is built in
+  // pure "paper" coordinates (0-1 across the plot area; >1 reaches the margin).
+  const LANE_GAP = 10;    // px between the plot edge and the lane
+  const LANE_PAD = 12;    // px of breathing room inside the lane, left and right
+
+  function laneWidthFor(labels, size) {
+    const widest = labels.reduce((m, t) => Math.max(m, textWidthPx(t, size)), 0);
+    return widest ? Math.round(widest + LANE_PAD * 2) : 0;
+  }
+  // Convert a data-space y to a paper fraction of the plot area.
+  function toPaperY(y, range) {
+    return (y - range[0]) / (range[1] - range[0]);
+  }
+  // Build the lane rectangles. `segments` = [{y0,y1,color}] in data space.
+  function buildLaneShapes(segments, range, plotWidth, leftMargin, rightMargin, laneW, alpha) {
+    const plotAreaW = Math.max(120, plotWidth - leftMargin - rightMargin);
+    const x0 = 1 + LANE_GAP / plotAreaW;
+    const x1 = x0 + laneW / plotAreaW;
+    return segments.map((s) => ({
+      type: "rect", xref: "paper", yref: "paper",
+      x0, x1,
+      y0: toPaperY(s.y0, range), y1: toPaperY(s.y1, range),
+      fillcolor: s.color, opacity: alpha, line: { width: 0 }, layer: "below"
+    }));
   }
 
   // When true, charts render with the light theme regardless of the page theme.
@@ -194,6 +220,19 @@
   function fs(base, scale) { return Math.round(base * scale); }
   // Rough pixel width of a string at a given font size (Inter ≈ 0.55em/char).
   function textWidthPx(str, size) { return String(str).length * size * 0.55; }
+
+  // Tick labels are ALWAYS a single line (multi-line rotated labels are
+  // confusing and collide). When a name is too long, the ellipsis goes at the
+  // START: the end of the name (subtest, condition) carries the information,
+  // while the leading test name is the part that can be dropped.
+  //   "D-KEFS / DKEFS – Color-word interference – Inhibition (temps)"
+  //   → "…word interference – Inhibition (temps)"
+  // The full name always remains in the hover tooltip.
+  function fitOneLine(str, maxChars) {
+    const s = String(str || "").trim();
+    if (s.length <= maxChars) return s;
+    return "…" + s.slice(-(maxChars - 1));
+  }
 
   function colorForFunction(func, chartSettings) {
     const overrides = (chartSettings && chartSettings.functionColors) || {};
@@ -385,6 +424,7 @@
     // bands — always sized by how common each band is.
     const shapes = [];
     const bandLabelAnnotations = [];
+    const laneSegments = [];
     if (settings.showBands !== false) {
       const bands = window.ScoringEngine.getBandsForDisplayType(plotScale);
       const bandAlpha = bandOpacityOf(settings);
@@ -401,17 +441,18 @@
           x0: 0, x1: 1, y0, y1,
           fillcolor: b.color, opacity: bandAlpha, line: { width: 0 }, layer: "below"
         });
-        // Optional band name, drawn in the RIGHT margin, vertically centred on
-        // its stripe. Skipped when the stripe is shorter than the text, so names
-        // can never overlap each other (e.g. thin extreme bands at large sizes).
+        // Optional band name, set inside the tinted key lane that continues in
+        // the right margin. Skipped when the stripe is shorter than the text, so
+        // names can never overlap each other.
         if (settings.showBandLabels) {
           const txt = bandLabelOf(settings, b);
           const size = fs(10, fontScale);
           const bandPx = ((y1 - y0) / (range[1] - range[0])) * PLOT_AREA_PX;
+          laneSegments.push({ y0, y1, color: b.color });
           if (txt && bandPx >= size * 1.35) bandLabelAnnotations.push({
             xref: "paper", yref: "y", x: 1, y: (y0 + y1) / 2,
             text: txt, showarrow: false,
-            xanchor: "left", yanchor: "middle", xshift: BAND_LABEL_GAP,
+            xanchor: "left", yanchor: "middle", xshift: LANE_GAP + LANE_PAD,
             font: { size, color: bandTextColor(b.color, isDarkTheme()), family: FONT_BODY }
           });
         }
@@ -497,19 +538,35 @@
     // container (and landing on the export buttons). Height of a label rotated
     // 45° ≈ its width × sin(45°); width ≈ chars × 0.55em. Both track the text
     // size, so this stays correct at every zoom level.
-    const TICK_SIZE = fs(12, fontScale);
-    // Guard: a name so long that even the cap can't fit it would spill out of the
-    // figure (onto the export buttons). Trim it to what the margin can display.
-    const MAX_BOTTOM = 600;
-    const BOTTOM_PAD = 30;
-    const maxTickChars = Math.max(8, Math.floor((MAX_BOTTOM - BOTTOM_PAD) / (0.55 * TICK_SIZE * 0.72)));
-    const xLabelsFit = xLabels.map((s) =>
-      (s && s.length > maxTickChars) ? s.slice(0, maxTickChars - 1) + "…" : s);
-    const maxLabelLen = showTestLabels
-      ? xLabelsFit.reduce((m, s) => Math.max(m, (s || "").length), 0) : 0;
+    const CHAR_EM = 0.60;                       // ≈ Inter average char width
+    const ROT = 0.72;                           // ≈ sin/cos(45°), with slack
+    // Neighbouring 45° labels are parallel lines separated by
+    // (tick spacing × sin 45°). A single-line label is LINE_H thick, so if the
+    // gap is smaller than the line height the labels would touch — shrink the
+    // tick font just enough to keep them apart. In normal use (≤ ~30 tests) this
+    // never triggers and the size is exactly what the user asked for.
+    const perpGap = pxPerXUnit * 0.707;
+    const TICK_SIZE = Math.max(7, Math.min(fs(12, fontScale), Math.floor(perpGap / 1.25)));
+    const LINE_H = TICK_SIZE * 1.25;
+    // Always one line; ellipsis at the START (keeps the informative end).
+    const MAX_TICK_CHARS = 40;
+    const fittedRaw = xLabels.map((s) => fitOneLine(s, MAX_TICK_CHARS));
+    const xLabelsFit = fittedRaw.map(esc);      // escape AFTER measuring lengths
+    const widestLen = showTestLabels
+      ? fittedRaw.reduce((m, s) => Math.max(m, s.length), 0) : 0;
+    // A -45° label hangs DOWN-LEFT from its tick, so it needs room below…
     const bottomMargin = showTestLabels
-      ? Math.min(MAX_BOTTOM, Math.max(70, Math.round(maxLabelLen * 0.55 * TICK_SIZE * 0.72) + BOTTOM_PAD))
+      ? Math.max(70, Math.round(widestLen * CHAR_EM * TICK_SIZE * ROT + LINE_H) + 24)
       : 46;
+    // …and to the LEFT. The first labels overhang the y-axis and were being
+    // clipped away entirely (the "missing" labels). Measure the worst overhang.
+    let leftOverflow = 0;
+    if (showTestLabels) {
+      fittedRaw.forEach((s, i) => {
+        const reach = s.length * CHAR_EM * TICK_SIZE * ROT;   // horizontal extent
+        leftOverflow = Math.max(leftOverflow, reach - i * pxPerXUnit);
+      });
+    }
     // Keep the actual plot drawing area constant; total height grows to fit
     // labels + title rows. (renderChart applies this to the container.)
     const figHeight = topMargin + PLOT_AREA_PX + bottomMargin;
@@ -527,13 +584,24 @@
 
     // Right margin: the band names live here. Widen it to the longest name so
     // nothing is clipped; leave the default when they're off.
-    const bandLabelWidth = bandLabelAnnotations.reduce(
-      (m, a) => Math.max(m, textWidthPx(a.text, a.font.size)), 0);
-    const rightMargin = bandLabelWidth ? Math.round(BAND_LABEL_GAP + bandLabelWidth + 16) : 30;
-    // Left margin: axis title + the widest y tick, both of which grow with the
-    // text size. Never below Plotly's default so the look is unchanged at 100 %.
-    const maxTickW = yTickText.reduce((m, t) => Math.max(m, textWidthPx(t, TICK_SIZE)), 0);
-    const leftMargin = Math.max(80, Math.round(fs(13, fontScale) * 1.7 + maxTickW + 18));
+    // The key lane lives in the right margin: gap + lane + a little air.
+    const laneW = laneWidthFor(bandLabelAnnotations.map((a) => a.text), fs(10, fontScale));
+    const rightMargin = laneW ? LANE_GAP + laneW + 8 : 30;
+    // Left margin must clear the axis title + widest y tick AND the first tick
+    // labels, which hang left past the axis (that overhang was silently eating
+    // the leftmost labels).
+    const maxTickW = yTickText.reduce((m, t) => Math.max(m, textWidthPx(t, fs(12, fontScale))), 0);
+    const leftMargin = Math.max(
+      80,
+      Math.round(fs(13, fontScale) * 1.7 + maxTickW + 18),
+      Math.round(leftOverflow) + 10
+    );
+
+    // Lane rectangles need the final margins to convert px → paper fractions.
+    if (laneW && laneSegments.length) {
+      buildLaneShapes(laneSegments, range, plotWidth, leftMargin, rightMargin, laneW,
+                      Math.min(0.5, bandOpacityOf(settings) * 1.5)).forEach((s) => shapes.push(s));
+    }
 
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
@@ -542,15 +610,19 @@
       xaxis: {
         tickmode: "array",
         tickvals: xLabels.map((_, i) => i),
-        ticktext: showTestLabels ? xLabelsFit.map(esc) : xLabelsFit.map(() => ""),
+        ticktext: showTestLabels ? xLabelsFit : xLabelsFit.map(() => ""),
         tickangle: -45,
         range: [-0.5, totalPoints - 0.5],
         showticklabels: showTestLabels,
         ticks: showTestLabels ? "outside" : "",
-        tickfont: { color: TC.textSoft, size: fs(12, fontScale) },
+        tickfont: { color: TC.textSoft, size: TICK_SIZE },
         zeroline: false,        // <- removes the stray vertical line at x=0
         showgrid: false,
-        automargin: false
+        // Let Plotly measure the REAL rendered labels and expand the bottom
+        // margin if our estimate below is short: without this it silently clips
+        // long test names at the figure edge. Our estimate still drives the
+        // container height, so the two agree in practice.
+        automargin: true
       },
       yaxis: {
         title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } },
@@ -710,7 +782,8 @@
    * optional Y-axis limits, interpretation bands, per-scale show/hide, a custom
    * line colour and title. No comparison line here.
    */
-  function buildScalesFigure(project) {
+  function buildScalesFigure(project, opts) {
+    const plotWidth = (opts && opts.plotWidth) || 900;
     const settings = project.chartSettings || {};
     const DM = window.VizeaDataModel;
     let rows = DM ? DM.flattenScales(project) : [];
@@ -769,6 +842,7 @@
 
     const shapes = [];
     const sBandLabels = [];
+    const sLaneSegments = [];
     if (settings.showBands !== false) {
       const sbands = window.ScoringEngine.getBandsForDisplayType(plotScale);
       const sAlpha = bandOpacityOf(settings);
@@ -786,10 +860,11 @@
           const txt = bandLabelOf(settings, b);
           const size = fs(10, fontScale);
           const bandPx = ((y1 - y0) / (range[1] - range[0])) * PLOT_AREA_PX;
+          sLaneSegments.push({ y0, y1, color: b.color });
           if (txt && bandPx >= size * 1.35) sBandLabels.push({
             xref: "paper", yref: "y", x: 1, y: (y0 + y1) / 2,
             text: txt, showarrow: false, xanchor: "left", yanchor: "middle",
-            xshift: BAND_LABEL_GAP,
+            xshift: LANE_GAP + LANE_PAD,
             font: { size, color: bandTextColor(b.color, isDarkTheme()), family: FONT_BODY }
           });
         }
@@ -817,9 +892,14 @@
     const yTickText = tickScoreValues.map(v => String(v));
 
     const titleText = (settings.scalesTitle || "").trim();
-    // Band names sit in the right margin (same rule as the profile view).
-    const sBandWidth = sBandLabels.reduce((m, a) => Math.max(m, textWidthPx(a.text, a.font.size)), 0);
-    const sRightMargin = sBandWidth ? Math.round(BAND_LABEL_GAP + sBandWidth + 16) : 30;
+    // Band names sit inside the tinted key lane in the right margin.
+    const sLaneW = laneWidthFor(sBandLabels.map((a) => a.text), fs(10, fontScale));
+    const sRightMargin = sLaneW ? LANE_GAP + sLaneW + 8 : 30;
+    const sLeftMargin = 60;
+    if (sLaneW && sLaneSegments.length) {
+      buildLaneShapes(sLaneSegments, range, plotWidth, sLeftMargin, sRightMargin, sLaneW,
+                      Math.min(0.5, bandOpacityOf(settings) * 1.5)).forEach((sh) => shapes.push(sh));
+    }
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: TC.text, family: FONT_BODY },
@@ -828,7 +908,7 @@
         tickmode: "array", tickvals: yTickVals, ticktext: yTickText,
         tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, gridcolor: TC.gridSoft, zeroline: false },
       shapes, annotations: sBandLabels, showlegend: false,
-      margin: { t: titleText ? 60 : 30, b: 60, l: 60, r: sRightMargin }, hovermode: "closest"
+      margin: { t: titleText ? 60 : 30, b: 60, l: sLeftMargin, r: sRightMargin }, hovermode: "closest"
     };
     if (titleText) layout.title = { text: esc(titleText), x: 0.5, xanchor: "center",
       y: 0.97, yanchor: "top", yref: "container",
@@ -844,7 +924,7 @@
     const fig = settings.chartType === "radar"
       ? buildRadarFigure(project)
       : settings.chartType === "scales"
-        ? buildScalesFigure(project)
+        ? buildScalesFigure(project, { plotWidth })
         : buildLineFigure(project, { plotWidth });
 
     if (fig.empty) {
