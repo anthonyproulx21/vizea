@@ -623,6 +623,27 @@ body.panel-open main { z-index: 1450; }
 
 .signature { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); text-align: right; font-weight: 500; color: var(--ink); font-style: italic; }
 
+/* ---------- Author card (About » Mon parcours) ---------- */
+.author-card {
+  margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 20px;
+}
+.author-photo {
+  width: 92px; height: 92px; flex: none; border-radius: 50%;
+  object-fit: cover; object-position: center 32%;
+  border: 3px solid var(--white);
+  box-shadow: 0 0 0 1px var(--line), 0 6px 18px rgba(20, 50, 90, .14);
+}
+.author-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.author-sign {
+  font-family: "Allura", cursive;
+  font-size: 2.9rem; line-height: .9; color: var(--blue-700);
+}
+.author-title { font-size: .9rem; line-height: 1.5; color: var(--ink-soft); }
+@media (max-width: 520px) {
+  .author-card { flex-direction: column; align-items: flex-start; text-align: left; }
+}
+
 /* ---------- Footer ---------- */
 footer { flex: none; margin-top: 24px; padding: 26px clamp(16px, 4vw, 44px); border-top: 1px solid var(--line); background: var(--white); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: .85rem; color: var(--ink-soft); }
 .footer-brand { display: flex; align-items: center; gap: 9px; font-family: "Fraunces", serif; font-weight: 600; font-size: 1.05rem; color: var(--blue-900); }

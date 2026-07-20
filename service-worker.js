@@ -5,7 +5,7 @@
    clinical/project data — projects live only in memory and in the files you
    export yourself. POST requests (e.g. the "suggest a test" form) and any
    third-party resources are never intercepted. */
-const CACHE = "vizea-v2";
+const CACHE = "vizea-v3";
 const APP_SHELL = [
   "./", "index.html",
   "style.css", "theme-init.js", "constants.js", "scoring.js",
@@ -13,7 +13,8 @@ const APP_SHELL = [
   "plotly.min.js",
   "tests_bank.json", "nouveautes.json",
   "manifest.webmanifest",
-  "favicon.svg", "favicon.ico", "favicon-192.png", "favicon-512.png", "apple-touch-icon.png"
+  "favicon.svg", "favicon.ico", "favicon-192.png", "favicon-512.png", "apple-touch-icon.png",
+  "anthony-proulx.jpg"
 ];
 
 self.addEventListener("install", (e) => {
