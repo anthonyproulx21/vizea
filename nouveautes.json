@@ -1,5 +1,17 @@
 [
-   {
+  {
+    "date": "2026-07-23",
+    "titre": "V1.6 : Commentaires sur les scores",
+    "infos": [
+      "Possibilité d'ajouter un commentaire à chaque score, à partir de l'entrée des scores, du graphique ou du tableau.",
+      "Les points commentés sont identifiés sur le graphique. Le commentaire s'affiche au survol.",
+      "Un commentaire peut être épinglé pour rester affiché en permanence, et déplacé à l'endroit voulu. Il apparaît alors dans l'image exportée.",
+      "Une colonne « Commentaire » s'ajoute au tableau et à l'exportation Excel lorsque des commentaires ont été écrits.",
+      "Possibilité d'ajuster la taille du texte du graphique, et meilleure lisibilité des noms de tests sous l'axe.",
+      "Correction de l'ouverture des projets et des modèles enregistrés avec une version antérieure."
+    ]
+  },
+  {
     "date": "2026-07-15",
     "titre": "V1.5 : Intensité des couleurs et libellés des bandes de classification",
     "infos": [

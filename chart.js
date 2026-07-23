@@ -101,6 +101,8 @@
   // When true, charts render with the light theme regardless of the page theme.
   // Used so PNG exports are always on a white background with dark, legible text.
   let _forceLight = false;
+  // Annotation index -> conditionId for the comment chips/pinned labels.
+  let _commentAnnIndex = {};
 
   // Assign a colour to every function in display order: named/override colours
   // first, then the extended cycle (skipping colours already taken) so a profile
@@ -220,6 +222,30 @@
   function fs(base, scale) { return Math.round(base * scale); }
   // Rough pixel width of a string at a given font size (Inter ≈ 0.55em/char).
   function textWidthPx(str, size) { return String(str).length * size * 0.55; }
+
+  // Wrap free text into short lines for a hover/pinned box (Plotly uses <br>).
+  // Escapes each line, so it is safe to feed user-typed comments straight in.
+  function wrapForBox(str, maxChars, maxLines) {
+    const words = String(str || "").trim().split(/\s+/);
+    const lines = [];
+    let cur = "";
+    for (const w of words) {
+      const cand = cur ? cur + " " + w : w;
+      if (cand.length <= maxChars) { cur = cand; continue; }
+      if (cur) lines.push(cur);
+      if (w.length > maxChars) {
+        let rest = w;
+        while (rest.length > maxChars) { lines.push(rest.slice(0, maxChars)); rest = rest.slice(maxChars); }
+        cur = rest;
+      } else cur = w;
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > maxLines) {
+      lines.length = maxLines;
+      lines[maxLines - 1] = lines[maxLines - 1].slice(0, Math.max(1, maxChars - 1)) + "…";
+    }
+    return lines.map(esc).join("<br>");
+  }
 
   // Tick labels are ALWAYS a single line (multi-line rotated labels are
   // confusing and collide). When a name is too long, the ellipsis goes at the
@@ -353,31 +379,44 @@
     const colorMap = assignColors(groups.map(g => g.func), settings);
 
     let xIndex = 0;
+    const commentMarks = [];               // mini speech-bubble above commented points
     groups.forEach((group, gi) => {
       const startIndex = xIndex;
       const xs = [];
       const ys = [];
       const texts = [];
+      const keys = [];                    // conditionId per point (for click-to-edit)
+
+      const color = colorMap[group.func];
 
       const labelVals = [];
       group.points.forEach(p => {
         const lbl = p.displayLabel || p.label;
         xLabels.push(lbl);
         xs.push(xIndex);
-        ys.push(percentileToDisplay(p.percentile, plotScale));
-        // The on-point label always shows the value in the chosen display scale,
-        // even when the position is percentile-based.
+        const yVal = percentileToDisplay(p.percentile, plotScale);
+        ys.push(yVal);
         labelVals.push(percentileToDisplay(p.percentile, displayScale));
+        const hasComment = !!(p.comment && p.comment.trim());
+        // The data hover stays clean: the comment gets its OWN hover box, shown
+        // from the little bubble icon beside the point.
         texts.push(`${esc(lbl)}<br>${esc(p.func)}<br>${esc(p.rawValue)} (${esc(p.type)})<br>Percentile: ${p.percentile.toFixed(1)}`);
+        keys.push(p.conditionId || "");
+        if (hasComment) commentMarks.push({
+          x: xIndex, y: yVal, color,
+          comment: p.comment.trim(),
+          pinned: !!p.commentPinned,
+          id: p.conditionId || "",
+          ax: p.commentAx, ay: p.commentAy
+        });
         xIndex++;
       });
 
-      const color = colorMap[group.func];
       traces.push({
         x: xs,
         y: ys,
-        customdata: texts,
-        hovertemplate: "%{customdata}<extra></extra>",
+        customdata: xs.map((_, i) => [texts[i], keys[i]]),
+        hovertemplate: "%{customdata[0]}<extra></extra>",
         mode: settings.showDataLabels ? "lines+markers+text" : "lines+markers",
         text: settings.showDataLabels ? labelVals.map(v => (typeof v === "number" ? v.toFixed(0) : v)) : undefined,
         textposition: "top center",
@@ -523,6 +562,65 @@
       font: { size: fs(11, fontScale), color: gc.color }, textangle: 0,
       yanchor: "bottom", xanchor: "center"
     })).concat(compareAnnotations).concat(bandLabelAnnotations);
+
+    // Commented points get a small WHITE bubble with "…" beside them. Hovering
+    // that bubble shows the note in its OWN box, separate from the data hover.
+    // "Pinned" notes are additionally drawn as a permanent label joined to the
+    // point, so they appear in the exported image.
+    const chipSize = fs(10, fontScale);
+    // Map annotation index -> conditionId, so click/drag events on the chart can
+    // be traced back to the score they belong to.
+    _commentAnnIndex = {};
+    commentMarks.forEach((m) => {
+      // Unpinned note -> just the little bubble (hover to read, click to edit).
+      // Pinned note -> the permanent label instead; showing both would duplicate
+      // the same comment twice on the same point.
+      if (!m.pinned) {
+      _commentAnnIndex[annotations.length] = m.id;
+      annotations.push({
+        x: m.x, y: m.y, xref: "x", yref: "y",
+        text: "···",
+        // A tail (rather than a fixed shift) makes the bubble draggable too, and
+        // keeps it tied to its point. The connector is faint and, at the default
+        // offset, essentially hidden behind the bubble.
+        showarrow: true, arrowhead: 0, arrowsize: 1, arrowwidth: 1,
+        arrowcolor: mixHex(m.color, isDarkTheme() ? [0, 0, 0] : [255, 255, 255], 0.45),
+        ax: (typeof m.ax === "number" ? m.ax : 11),
+        ay: (typeof m.ay === "number" ? m.ay : -11),
+        axref: "pixel", ayref: "pixel",
+        font: { size: chipSize, color: m.color, family: FONT_BODY },
+        bgcolor: "#ffffff", bordercolor: m.color, borderwidth: 1, borderpad: 2,
+        opacity: 1,
+        captureevents: true,
+        hovertext: wrapForBox(m.comment, 46, 8),
+        hoverlabel: {
+          bgcolor: "#ffffff", bordercolor: m.color,
+          font: { color: TC.text, size: fs(11, fontScale), family: FONT_BODY },
+          align: "left"
+        }
+      });
+      }
+
+      if (m.pinned) {
+        _commentAnnIndex[annotations.length] = m.id;
+        annotations.push({
+          x: m.x, y: m.y, xref: "x", yref: "y",
+          text: wrapForBox(m.comment, 30, 6),
+          showarrow: true, arrowhead: 0, arrowsize: 1, arrowwidth: 1.1,
+          arrowcolor: mixHex(m.color, isDarkTheme() ? [0, 0, 0] : [255, 255, 255], 0.35),
+          ax: (typeof m.ax === "number" ? m.ax : 30),
+          ay: (typeof m.ay === "number" ? m.ay : -40),
+          axref: "pixel", ayref: "pixel", captureevents: true,
+          // No explicit anchors: Plotly then centres the box on its tail and
+          // clips the connector at the box edge FACING the point. Drag the note
+          // below-left and the line meets its top-right corner — always coherent.
+          align: "left",
+          bgcolor: isDarkTheme() ? "rgba(22,36,47,0.94)" : "rgba(255,255,255,0.94)",
+          bordercolor: m.color, borderwidth: 1, borderpad: 6,
+          font: { size: fs(10, fontScale), color: TC.text, family: FONT_BODY }
+        });
+      }
+    });
 
     const showTestLabels = settings.showTestLabels !== false;
     const titleText = (settings.title || "").trim();
@@ -948,6 +1046,11 @@
     else el.style.height = "";
     const config = {
       responsive: true,
+      // Pinned comment labels can be dragged to a better spot. We enable the
+      // TAIL edit (the label's offset from its point), not annotationPosition —
+      // the latter moves the anchor itself, which would detach a note from its
+      // score and leaves the label box immovable.
+      edits: { annotationTail: true },
       toImageButtonOptions: { format: "png", filename: "vizea_profil", scale: 2 },
       displaylogo: false
     };
@@ -970,6 +1073,7 @@
     groupPointsByFunction,
     renderChart,
     setForceLight: (v) => { _forceLight = !!v; },
+    commentAnnotationId: (i) => _commentAnnIndex[i] || null,
     AXIS_RANGE
   };
 

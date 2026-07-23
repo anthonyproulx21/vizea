@@ -405,7 +405,7 @@ label { font-weight: 500; }
 .conditions-container { display: flex; flex-direction: column; gap: 10px; }
 .condition-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1.5fr) 88px 140px minmax(150px, 1.3fr) 94px 38px;
+  grid-template-columns: minmax(140px, 1.5fr) 84px 132px minmax(150px, 1.3fr) 92px auto;
   gap: 10px; align-items: stretch;
   background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-sm);
   padding: 12px; transition: border .15s, box-shadow .15s;
@@ -428,8 +428,10 @@ label { font-weight: 500; }
 .ms-add-btn:hover { background: var(--blue-900); }
 .add-condition-btn { background: var(--blue-050); color: var(--blue-700); border: 1px dashed var(--blue-500); margin-top: 8px; font-weight: 600; padding: 9px 14px; border-radius: var(--radius-sm); }
 .add-condition-btn:hover { background: var(--blue-100); }
-.remove-condition-btn { background: var(--danger-soft); color: var(--danger); border: 0; width: 38px; height: 42px; border-radius: var(--radius-sm); font-size: 1.1rem; align-self: end; }
+.remove-condition-btn { background: var(--danger-soft); color: var(--danger); border: 0; width: 40px; height: 42px; border-radius: var(--radius-sm); font-size: 1.1rem; }
 .remove-condition-btn:hover { background: #f8d7d3; }
+.row-actions { display: flex; gap: 8px; align-items: flex-end; align-self: end; }
+.row-actions .comment-btn { width: 40px; height: 42px; border-radius: var(--radius-sm); }
 .cond-warn { grid-column: 1 / -1; font-size: .82rem; color: var(--amber); display: flex; align-items: center; gap: 6px; margin: 2px 0 0 2px; }
 .cond-warn.is-error { color: var(--danger); }
 .cond-warn svg { width: 14px; height: 14px; flex: none; }
@@ -1005,3 +1007,47 @@ body.dragging-file .drop-hint { display: flex; }
 }
 .band-rename-input:focus { outline: none; border-color: var(--cyan); }
 .btn-mini { padding: 5px 10px; font-size: .78rem; }
+
+/* ===== Score comments ===== */
+.comment-btn {
+  flex: none; width: 30px; height: 30px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--white); color: var(--ink-soft);
+  cursor: pointer; transition: color .15s, border-color .15s, background .15s;
+}
+.comment-btn:hover { color: var(--blue-700); border-color: var(--blue-700); }
+.comment-btn.has-comment { color: #fff; background: var(--cyan); border-color: var(--cyan); }
+.comment-btn.has-comment:hover { background: var(--blue-700); border-color: var(--blue-700); }
+
+/* Floating comment editor, shared by the score rows, chart and table */
+.comment-pop {
+  position: fixed; z-index: 1200; width: min(340px, 92vw);
+  background: var(--white); border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 12px 34px rgba(20, 50, 90, .22);
+  padding: 12px; animation: commentPopIn .12s ease-out;
+}
+@keyframes commentPopIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.comment-pop-title { font-size: .8rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 7px; }
+.comment-pop-text {
+  width: 100%; box-sizing: border-box; resize: vertical; min-height: 78px;
+  font-family: inherit; font-size: .9rem; line-height: 1.45; color: var(--ink);
+  padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--white);
+}
+.comment-pop-text:focus { outline: none; border-color: var(--cyan); }
+.comment-pop-actions { display: flex; justify-content: flex-end; margin-top: 9px; }
+
+/* Table comment column */
+.score-table th.th-comment, .score-table td.cell-comment { text-align: center; width: 44px; }
+.score-table td.cell-comment .comment-btn { width: 26px; height: 26px; }
+
+/* Pin toggle inside the comment editor */
+.comment-pop-actions { justify-content: space-between; align-items: center; }
+.comment-pin-btn {
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  padding: 5px 11px; font-size: .78rem; font-family: inherit;
+  color: var(--ink-soft); cursor: pointer; transition: all .15s;
+}
+.comment-pin-btn:hover:not(:disabled) { border-color: var(--blue-700); color: var(--blue-700); }
+.comment-pin-btn.is-pinned { background: var(--blue-050); border-color: var(--blue-500); color: var(--blue-700); font-weight: 600; }
+.comment-pin-btn:disabled { opacity: .45; cursor: not-allowed; }

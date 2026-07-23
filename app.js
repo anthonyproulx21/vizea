@@ -1114,6 +1114,161 @@
   }
 
   // Small confirmation dialog (reuses the modal styling). Resolves true/false.
+  // ===== Score comments =====================================================
+  // A comment is a free-text note attached to one condition (one score row). The
+  // same lightweight editor is reused from the score-entry step, the chart, and
+  // the table — so there is a single place that reads/writes cond.comment.
+  function commentIsSet(cond) { return !!(cond && cond.comment && String(cond.comment).trim()); }
+
+  // Find a live condition object anywhere in the project by its id (used by the
+  // chart click handler, which only knows the id from the point's customdata).
+  function findConditionById(id) {
+    const scores = currentProject && currentProject.scores;
+    if (!scores || !id) return null;
+    for (const testName of Object.keys(scores)) {
+      const subs = scores[testName] || {};
+      for (const key of Object.keys(subs)) {
+        const arr = subs[key];
+        if (Array.isArray(arr)) {
+          const hit = arr.find((c) => c && c.id === id);
+          if (hit) return hit;
+        }
+      }
+    }
+    return null;
+  }
+
+  let _commentPop = null;
+  function closeCommentEditor() {
+    if (_commentPop) {
+      const p = _commentPop; _commentPop = null;
+      if (p._onClose) p._onClose();
+      p.remove();
+      document.removeEventListener("mousedown", p._outside, true);
+      document.removeEventListener("keydown", p._onKey, true);
+      window.removeEventListener("resize", p._reposition);
+      window.removeEventListener("scroll", p._reposition, true);
+    }
+  }
+
+  // opts: { onInput?, onClose? }. The note is saved live as you type (like the
+  // rest of the form); onInput fires each keystroke (cheap UI refresh) and
+  // onClose fires once when the editor closes (heavier re-render: chart/table).
+  function openCommentEditor(cond, anchorEl, opts) {
+    opts = opts || {};
+    closeCommentEditor();
+    if (!cond) return;
+
+    const pop = document.createElement("div");
+    pop.className = "comment-pop";
+    const title = document.createElement("div");
+    title.className = "comment-pop-title";
+    title.textContent = "Commentaire";
+    const ta = document.createElement("textarea");
+    ta.className = "comment-pop-text";
+    ta.rows = 4;
+    ta.value = cond.comment || "";
+    ta.placeholder = "Observation, remarque, note personnelle…";
+    const actions = document.createElement("div");
+    actions.className = "comment-pop-actions";
+    // Pin = show this note permanently on the chart (and in the exported image).
+    const pin = document.createElement("button");
+    pin.type = "button"; pin.className = "comment-pin-btn";
+    const syncPin = () => {
+      const on = !!cond.commentPinned;
+      pin.classList.toggle("is-pinned", on);
+      pin.textContent = on ? "📌 Épinglé" : "📌 Épingler";
+      pin.title = on
+        ? "Retirer l'étiquette du graphique"
+        : "Afficher ce commentaire en permanence sur le graphique (et dans l'image exportée)";
+      pin.disabled = !String(ta.value || "").trim();
+    };
+    pin.addEventListener("click", () => {
+      cond.commentPinned = !cond.commentPinned;
+      // Unpinning also forgets any custom position: re-pinning then starts from
+      // the default spot (a simple way out if a label was dragged out of view).
+      if (!cond.commentPinned) { cond.commentAx = null; cond.commentAy = null; }
+      markDirty();
+      syncPin();
+      if (opts.onInput) opts.onInput();
+      if (opts.onPin) opts.onPin();
+    });
+    const done = document.createElement("button");
+    done.type = "button"; done.className = "btn-primary btn-mini"; done.textContent = "Terminé";
+    actions.append(pin, done);
+    pop.append(title, ta, actions);
+    document.body.appendChild(pop);
+
+    const reposition = () => {
+      const r = anchorEl.getBoundingClientRect();
+      const pw = pop.offsetWidth, ph = pop.offsetHeight, pad = 8;
+      let left = r.left, top = r.bottom + 6;
+      left = Math.max(pad, Math.min(left, window.innerWidth - pw - pad));
+      if (top + ph > window.innerHeight - pad) top = Math.max(pad, r.top - ph - 6);
+      pop.style.left = Math.round(left) + "px";
+      pop.style.top = Math.round(top) + "px";
+    };
+    reposition();
+    syncPin();
+    setTimeout(() => { try { ta.focus(); } catch (e) {} }, 30);
+
+    ta.addEventListener("input", () => {
+      cond.comment = ta.value;
+      // An empty note can't stay pinned to the chart.
+      if (!ta.value.trim()) cond.commentPinned = false;
+      markDirty();
+      syncPin();
+      if (opts.onInput) opts.onInput();
+    });
+    // Enter closes (saves live already); Shift+Enter inserts a line break.
+    ta.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        closeCommentEditor();
+      }
+    });
+    const outside = (e) => { if (!pop.contains(e.target) && e.target !== anchorEl && !anchorEl.contains(e.target)) closeCommentEditor(); };
+    const onKey = (e) => { if (e.key === "Escape") { e.stopPropagation(); closeCommentEditor(); } };
+    done.addEventListener("click", () => closeCommentEditor());
+    document.addEventListener("mousedown", outside, true);
+    document.addEventListener("keydown", onKey, true);
+    window.addEventListener("resize", reposition);
+    window.addEventListener("scroll", reposition, true);
+
+    pop._onClose = opts.onClose || null;
+    pop._outside = outside;
+    pop._onKey = onKey;
+    pop._reposition = reposition;
+    _commentPop = pop;
+  }
+
+  // A small speech-bubble button that reflects whether a comment exists and
+  // opens the editor. Reused in the score rows and the table.
+  function makeCommentButton(cond, opts) {
+    opts = opts || {};
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "comment-btn";
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+      '<path fill="currentColor" d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>';
+    const refresh = () => {
+      const has = commentIsSet(cond);
+      btn.classList.toggle("has-comment", has);
+      btn.title = has ? "Commentaire — voir ou modifier" : "Ajouter un commentaire";
+      btn.setAttribute("aria-label", btn.title);
+    };
+    refresh();
+    btn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      openCommentEditor(cond, btn, {
+        onInput: () => { refresh(); if (opts.onInput) opts.onInput(); },
+        onPin: opts.onPin,
+        onClose: opts.onClose
+      });
+    });
+    return btn;
+  }
+
   function confirmDialog(opts) {
     opts = opts || {};
     return new Promise((resolve) => {
@@ -1428,13 +1583,17 @@
     invToggle.append(invCb, document.createTextNode(" Inversé"));
     invField.append(invLab, invToggle);
 
+    const rowActions = document.createElement("div");
+    rowActions.className = "row-actions";
+    rowActions.append(makeCommentButton(cond, {}), removeBtn);
+
     row.append(
       field("Nom du score", nameInput),
       field("Score", valueInput),
       field("Type", typeSelect),
       field("Fonctions", msContainer),
       invField,
-      removeBtn,
+      rowActions,
       warnEl
     );
     return row;
@@ -1587,7 +1746,7 @@
         tries++;
         if (typeof window.Plotly !== "undefined") {
           clearInterval(timer);
-          CHART.renderChart(currentProject, "vizPlot");
+          drawChartWithComments();
         } else if (tries > 40) { // ~10s
           clearInterval(timer);
           if (el) el.innerHTML = '<p style="text-align:center;color:#c0392b;padding:40px">Le moteur graphique (Plotly) n\'a pas pu être chargé. Vérifiez votre connexion, puis rouvrez cette étape.</p>';
@@ -1595,7 +1754,87 @@
       }, 250);
       return;
     }
-    CHART.renderChart(currentProject, "vizPlot");
+    drawChartWithComments();
+  }
+
+  // Render the chart, then wire "click a point to add/edit its comment" (profile
+  // view only — that's where each marker maps to exactly one score condition).
+  function drawChartWithComments() {
+    const p = CHART.renderChart(currentProject, "vizPlot");
+    if (p && p.then) p.then(bindChartComments); else bindChartComments();
+  }
+  function bindChartComments() {
+    const el = $("vizPlot");
+    if (!el || typeof el.on !== "function") return;
+    if (currentProject.chartSettings.chartType !== "line") return;
+    try {
+      if (el.removeAllListeners) {
+        el.removeAllListeners("plotly_click");
+        el.removeAllListeners("plotly_clickannotation");
+        el.removeAllListeners("plotly_relayout");
+      }
+    } catch (e) { /* noop */ }
+
+    const editAt = (cond, clientX, clientY) => {
+      const anchor = {
+        getBoundingClientRect: () => ({ left: clientX, right: clientX, top: clientY, bottom: clientY, width: 0, height: 0 }),
+        contains: () => false
+      };
+      openCommentEditor(cond, anchor, {
+        onPin: () => drawChartWithComments(),
+        onClose: () => drawChartWithComments()
+      });
+    };
+
+    // Click a POINT: add or edit its comment (and pin it from the editor).
+    el.on("plotly_click", (data) => {
+      const pt = data && data.points && data.points[0];
+      if (!pt || !Array.isArray(pt.customdata)) return;
+      const cond = findConditionById(pt.customdata[1]);
+      if (!cond) return;
+      const ev = data.event || {};
+      editAt(cond, ev.clientX || 0, ev.clientY || 0);
+    });
+
+    // Click the "···" bubble or a pinned label: edit that same comment.
+    el.on("plotly_clickannotation", (ev) => {
+      const id = CHART.commentAnnotationId(ev && ev.index);
+      if (!id) return;
+      const cond = findConditionById(id);
+      if (!cond) return;
+      const me = (ev && ev.event) || {};
+      editAt(cond, me.clientX || 0, me.clientY || 0);
+    });
+
+    // Drag a pinned label: remember its new position on the score itself, so it
+    // survives redraws and is saved with the project. Labels that aren't
+    // comments (section titles, band names) are snapped back to their computed
+    // spot — only comments are meant to be movable.
+    el.on("plotly_relayout", (ed) => {
+      if (!ed) return;
+      const moved = {};
+      let foreign = false;
+      Object.keys(ed).forEach((k) => {
+        const m = /^annotations\[(\d+)\]\.(ax|ay)$/.exec(k);
+        if (!m) return;
+        const idx = Number(m[1]);
+        const id = CHART.commentAnnotationId(idx);
+        if (!id) { foreign = true; return; }
+        (moved[id] = moved[id] || {})[m[2]] = ed[k];
+      });
+      const ids = Object.keys(moved);
+      if (!ids.length && !foreign) return;
+      let changed = false;
+      ids.forEach((id) => {
+        const cond = findConditionById(id);
+        if (!cond) return;
+        if (typeof moved[id].ax === "number") cond.commentAx = moved[id].ax;
+        if (typeof moved[id].ay === "number") cond.commentAy = moved[id].ay;
+        changed = true;
+      });
+      if (changed) markDirty();
+      if (foreign) drawChartWithComments();
+    });
   }
 
   // Coalesce rapid input events (dragging a colour picker, typing in a text
@@ -1666,7 +1905,9 @@
         percentile: tableFmtPct(p.percentile),
         classification: band.label,
         color: band.color,
-        inverted: !!p.inverted
+        inverted: !!p.inverted,
+        comment: p.comment || "",
+        conditionId: p.conditionId
       };
     };
 
@@ -1692,7 +1933,8 @@
     return {
       firstHeader: groupBy === "test" ? "Sous-test / score" : "Test / score",
       colDefs, groups, showColor,
-      anyInverted: pts.some((p) => p.inverted)
+      anyInverted: pts.some((p) => p.inverted),
+      anyComment: pts.some((p) => p.comment && String(p.comment).trim())
     };
   }
 
@@ -1703,10 +1945,11 @@
     const htr = document.createElement("tr");
     const th0 = document.createElement("th"); th0.textContent = model.firstHeader; htr.appendChild(th0);
     model.colDefs.forEach(([, lab]) => { const th = document.createElement("th"); th.textContent = lab; htr.appendChild(th); });
+    const thc = document.createElement("th"); thc.textContent = "Comm."; thc.className = "th-comment"; thc.title = "Commentaire"; htr.appendChild(thc);
     thead.appendChild(htr); table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    const totalCols = 1 + model.colDefs.length;
+    const totalCols = 1 + model.colDefs.length + 1;   // + comment column
     model.groups.forEach((g) => {
       const gtr = document.createElement("tr"); gtr.className = "group-row";
       const gtd = document.createElement("td"); gtd.colSpan = totalCols; gtd.textContent = g.title;
@@ -1737,6 +1980,11 @@
           }
           tr.appendChild(td);
         });
+        // Comment cell: an icon that opens the shared editor (add or view/edit).
+        const ctd = document.createElement("td"); ctd.className = "cell-comment";
+        const cond = findConditionById(r.conditionId);
+        if (cond) ctd.appendChild(makeCommentButton(cond, { onClose: renderTableView }));
+        tr.appendChild(ctd);
         tbody.appendChild(tr);
       });
     });
@@ -1798,11 +2046,13 @@
   function tableToOfficeHTML() {
     const model = buildTableModel();
     const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const totalCols = 1 + model.colDefs.length;
+    const withComment = !!model.anyComment;
+    const totalCols = 1 + model.colDefs.length + (withComment ? 1 : 0);
     let h = '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">';
     h += '<thead><tr style="background:#1b7fb5;color:#ffffff;font-weight:bold">';
     h += '<th align="left">' + esc(model.firstHeader) + '</th>';
     model.colDefs.forEach(([, lab]) => { h += '<th align="left">' + esc(lab) + '</th>'; });
+    if (withComment) h += '<th align="left">Commentaire</th>';
     h += '</tr></thead><tbody>';
     model.groups.forEach((g) => {
       h += '<tr style="background:#e7f3fa;font-weight:bold"><td colspan="' + totalCols + '">' + esc(g.title) + '</td></tr>';
@@ -1818,6 +2068,7 @@
             h += '<td>' + esc(r[k]) + '</td>';
           }
         });
+        if (withComment) h += '<td>' + esc(r.comment || "") + '</td>';
         h += '</tr>';
       });
     });

@@ -103,7 +103,11 @@ function createEmptyCondition(defaultFunctions = []) {
     name: "",
     value: "",
     type: "Scale score",
-    functions: [...defaultFunctions]
+    functions: [...defaultFunctions],
+    comment: "",
+    commentPinned: false,
+    commentAx: null,          // pinned label offset in px (null = default position)
+    commentAy: null
   };
 }
 
@@ -209,7 +213,11 @@ function flattenScores(project) {
             type: cond.type || "Scale score",
             func,
             percentile: effPercentile,
-            inverted
+            inverted,
+            comment: cond.comment || "",
+            commentPinned: !!cond.commentPinned,
+            commentAx: (cond.commentAx === undefined ? null : cond.commentAx),
+            commentAy: (cond.commentAy === undefined ? null : cond.commentAy)
           });
         });
       });
@@ -239,7 +247,11 @@ function importProjectFromJSON(jsonString) {
   if (!parsed.scores) parsed.scores = {};
   if (!parsed.iqScales) parsed.iqScales = {};
   if (!parsed.selectedTests) parsed.selectedTests = {};
-  if (!parsed.chartSettings) parsed.chartSettings = getDefaultChartSettings();
+  // Fill in any chart settings the file predates (e.g. a project saved before
+  // band labels, text size or score comments existed). Merging onto the current
+  // defaults means an older .vizea keeps working — and simply gains the new
+  // options at their default value — instead of hitting missing keys.
+  parsed.chartSettings = normalizeChartSettings(parsed.chartSettings);
   if (!parsed.id) parsed.id = uid("proj");
   return parsed;
 }
@@ -293,9 +305,22 @@ function extractTemplateFromProject(project, templateName) {
  * syncScoresWithSelectedTests(), which preserves the restored rows and only
  * fills in any genuinely missing subtests.
  */
+// Fill in any chart settings a saved file predates (e.g. saved before band
+// labels, text size or score comments existed). Merging onto the current
+// defaults keeps older projects and templates working — they simply gain the
+// new options at their default value instead of hitting missing keys.
+function normalizeChartSettings(cs) {
+  const merged = Object.assign(getDefaultChartSettings(), cs || {});
+  ["bandLabels", "pointOverrides", "functionColors", "functionLabels", "scaleLabels"].forEach((k) => {
+    if (!merged[k] || typeof merged[k] !== "object" || Array.isArray(merged[k])) merged[k] = {};
+  });
+  if (!Array.isArray(merged.scaleOrder)) merged.scaleOrder = [];
+  return merged;
+}
+
 function applyTemplateToProject(project, template) {
   project.selectedTests = JSON.parse(JSON.stringify(template.selectedTests || {}));
-  project.chartSettings = JSON.parse(JSON.stringify(template.chartSettings || getDefaultChartSettings()));
+  project.chartSettings = normalizeChartSettings(JSON.parse(JSON.stringify(template.chartSettings || {})));
   project.customFunctions = Array.isArray(template.customFunctions) ? template.customFunctions.slice() : [];
   // Restore the score skeleton if the template has one (older templates won't).
   if (template.scores) {
