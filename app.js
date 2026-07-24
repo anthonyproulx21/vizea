@@ -1095,7 +1095,11 @@
         del.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
         del.addEventListener("click", () => { rows.splice(idx, 1); markDirty(); renderRows(); updateScalesViewAvailability(); });
 
-        row.append(nameInput, valInput, scaleSel, del, warn);
+        // Both buttons share ONE grid cell, so the row keeps its column count.
+        const acts = document.createElement("div");
+        acts.className = "scale-actions";
+        acts.append(makeCommentButton(r, { onClose: () => { if (currentStep === 3) renderChart(); } }), del);
+        row.append(nameInput, valInput, scaleSel, acts, warn);
         validate();
         listEl.appendChild(row);
       });
@@ -1123,8 +1127,16 @@
   // Find a live condition object anywhere in the project by its id (used by the
   // chart click handler, which only knows the id from the point's customdata).
   function findConditionById(id) {
-    const scores = currentProject && currentProject.scores;
-    if (!scores || !id) return null;
+    if (!currentProject || !id) return null;
+    // Scale notes are keyed "scale:<name>" within the battery feeding the chart.
+    if (String(id).indexOf("scale:") === 0) {
+      const name = String(id).slice(6);
+      const t = currentProject.activeScaleTest;
+      const rows = (t && currentProject.iqScales && currentProject.iqScales[t]) || [];
+      return rows.find((r) => (r.name || "") === name) || null;
+    }
+    const scores = currentProject.scores;
+    if (!scores) return null;
     for (const testName of Object.keys(scores)) {
       const subs = scores[testName] || {};
       for (const key of Object.keys(subs)) {
@@ -1766,7 +1778,8 @@
   function bindChartComments() {
     const el = $("vizPlot");
     if (!el || typeof el.on !== "function") return;
-    if (currentProject.chartSettings.chartType !== "line") return;
+    const ct = currentProject.chartSettings.chartType;
+    if (ct !== "line" && ct !== "scales") return;
     try {
       if (el.removeAllListeners) {
         el.removeAllListeners("plotly_click");
@@ -1790,7 +1803,9 @@
     el.on("plotly_click", (data) => {
       const pt = data && data.points && data.points[0];
       if (!pt || !Array.isArray(pt.customdata)) return;
-      const cond = findConditionById(pt.customdata[1]);
+      // Profile points carry [hoverText, id]; scale points carry [id].
+      const id = pt.customdata.length > 1 ? pt.customdata[1] : pt.customdata[0];
+      const cond = findConditionById(id);
       if (!cond) return;
       const ev = data.event || {};
       editAt(cond, ev.clientX || 0, ev.clientY || 0);
@@ -1933,6 +1948,8 @@
     return {
       firstHeader: groupBy === "test" ? "Sous-test / score" : "Test / score",
       colDefs, groups, showColor,
+      showComments: cols.comments !== false,
+      commentMode: s.tableCommentMode === "text" ? "text" : "icon",
       anyInverted: pts.some((p) => p.inverted),
       anyComment: pts.some((p) => p.comment && String(p.comment).trim())
     };
@@ -1945,11 +1962,38 @@
     const htr = document.createElement("tr");
     const th0 = document.createElement("th"); th0.textContent = model.firstHeader; htr.appendChild(th0);
     model.colDefs.forEach(([, lab]) => { const th = document.createElement("th"); th.textContent = lab; htr.appendChild(th); });
-    const thc = document.createElement("th"); thc.textContent = "Comm."; thc.className = "th-comment"; thc.title = "Commentaire"; htr.appendChild(thc);
+    if (model.showComments) {
+      const thc = document.createElement("th");
+      thc.className = model.commentMode === "text" ? "th-comment-wide" : "th-comment";
+      const head = document.createElement("div");
+      head.className = "comment-head";
+      const lab = document.createElement("span");
+      lab.textContent = model.commentMode === "text" ? "Commentaire" : "Comm.";
+      // Slider: left = compact icon, right = the note spelled out.
+      const sw = document.createElement("button");
+      sw.type = "button";
+      sw.className = "comment-mode-switch" + (model.commentMode === "text" ? " is-text" : "");
+      sw.setAttribute("role", "switch");
+      sw.setAttribute("aria-checked", model.commentMode === "text" ? "true" : "false");
+      sw.title = model.commentMode === "text"
+        ? "Afficher seulement une icône"
+        : "Afficher les commentaires au complet";
+      sw.setAttribute("aria-label", sw.title);
+      sw.innerHTML = '<span class="cms-knob"></span>';
+      sw.addEventListener("click", () => {
+        const st = currentProject.chartSettings;
+        st.tableCommentMode = (st.tableCommentMode === "text") ? "icon" : "text";
+        markDirty();
+        renderTableView();
+      });
+      head.append(lab, sw);
+      thc.appendChild(head);
+      htr.appendChild(thc);
+    }
     thead.appendChild(htr); table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
-    const totalCols = 1 + model.colDefs.length + 1;   // + comment column
+    const totalCols = 1 + model.colDefs.length + (model.showComments ? 1 : 0);
     model.groups.forEach((g) => {
       const gtr = document.createElement("tr"); gtr.className = "group-row";
       const gtd = document.createElement("td"); gtd.colSpan = totalCols; gtd.textContent = g.title;
@@ -1980,11 +2024,29 @@
           }
           tr.appendChild(td);
         });
-        // Comment cell: an icon that opens the shared editor (add or view/edit).
-        const ctd = document.createElement("td"); ctd.className = "cell-comment";
-        const cond = findConditionById(r.conditionId);
-        if (cond) ctd.appendChild(makeCommentButton(cond, { onClose: renderTableView }));
-        tr.appendChild(ctd);
+        // Comment cell — icon mode: a bubble to click. Text mode: no bubble at
+        // all; the note is spelled out and the whole cell opens the editor.
+        if (model.showComments) {
+          const ctd = document.createElement("td");
+          const cond = findConditionById(r.conditionId);
+          if (model.commentMode === "text") {
+            ctd.className = "cell-comment-wide";
+            const txt = document.createElement("button");
+            txt.type = "button";
+            txt.className = "comment-inline" + (commentIsSet(cond) ? "" : " is-empty");
+            txt.textContent = commentIsSet(cond) ? cond.comment : "Ajouter…";
+            txt.title = commentIsSet(cond) ? "Modifier ce commentaire" : "Ajouter un commentaire";
+            if (cond) txt.addEventListener("click", (e) => {
+              e.preventDefault(); e.stopPropagation();
+              openCommentEditor(cond, txt, { onClose: renderTableView });
+            });
+            ctd.appendChild(txt);
+          } else {
+            ctd.className = "cell-comment";
+            if (cond) ctd.appendChild(makeCommentButton(cond, { onClose: renderTableView }));
+          }
+          tr.appendChild(ctd);
+        }
         tbody.appendChild(tr);
       });
     });
@@ -2015,9 +2077,13 @@
 
     const colsWrap = document.createElement("div");
     colsWrap.className = "table-col-toggles";
-    [["value", "Valeur"], ["type", "Type"], ["percentile", "Rang centile"], ["classification", "Classification"], ["color", "Couleur"]].forEach(([k, lab]) => {
+    [["value", "Valeur"], ["type", "Type"], ["percentile", "Rang centile"], ["classification", "Classification"],
+     ["color", "Couleur"], ["comments", "Commentaires"]].forEach(([k, lab]) => {
       const l = document.createElement("label"); l.className = "table-col-toggle";
-      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = s.tableColumns[k] !== false;
+      const cb = document.createElement("input"); cb.type = "checkbox";
+      // Like the other columns: unticking hides the comment column entirely
+      // (no icons, no text). How it is displayed is chosen in the column header.
+      cb.checked = s.tableColumns[k] !== false;
       cb.addEventListener("change", () => { s.tableColumns[k] = cb.checked; markDirty(); renderTableView(); });
       l.appendChild(cb); l.appendChild(document.createTextNode(" " + lab));
       colsWrap.appendChild(l);
@@ -2046,7 +2112,7 @@
   function tableToOfficeHTML() {
     const model = buildTableModel();
     const esc = (s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const withComment = !!model.anyComment;
+    const withComment = model.showComments && !!model.anyComment;
     const totalCols = 1 + model.colDefs.length + (withComment ? 1 : 0);
     let h = '<table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt">';
     h += '<thead><tr style="background:#1b7fb5;color:#ffffff;font-weight:bold">';

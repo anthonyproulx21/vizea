@@ -475,7 +475,7 @@ label { font-weight: 500; }
 .scales-title { font-weight: 600; font-size: .95rem; color: var(--blue-900); }
 .scales-hint { font-size: .78rem; color: var(--ink-soft); }
 .scales-list { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
-.scale-row { display: grid; grid-template-columns: 72px 1fr 150px 34px; gap: 8px; align-items: center; }
+.scale-row { display: grid; grid-template-columns: 72px 1fr 150px auto; gap: 8px; align-items: center; }
 .scale-row input, .scale-row select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: .9rem; background: var(--white); color: var(--ink); }
 .scale-row .scale-name { font-weight: 600; text-align: center; }
 .scale-del { background: none; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); height: 36px; display: grid; place-items: center; cursor: pointer; }
@@ -483,7 +483,7 @@ label { font-weight: 500; }
 .scale-del svg { width: 15px; height: 15px; }
 .scales-add { background: var(--blue-050); border: 1px dashed var(--line); border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: .85rem; color: var(--blue-700); cursor: pointer; }
 .scales-add:hover { border-color: var(--cyan); }
-@media (max-width: 680px) { .scale-row { grid-template-columns: 58px 1fr 104px 30px; gap: 6px; } }
+@media (max-width: 680px) { .scale-row { grid-template-columns: 58px 1fr 104px auto; gap: 6px; } }
 .scale-row .scale-value.invalid { border-color: var(--danger); background: var(--danger-soft); }
 
 /* View switcher (Profil · Échelles · Radar) above the chart */
@@ -989,7 +989,7 @@ body.dragging-file .drop-hint { display: flex; }
   border-left: 2px solid var(--line);
 }
 .band-opacity-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.band-opacity-row input[type="range"] { flex: 1; accent-color: var(--cyan); }
+.band-opacity-row input[type="range"] { flex: 1; accent-color: var(--blue-700); }
 .band-opacity-value { font-size: .8rem; color: var(--ink-soft); min-width: 42px; text-align: right; }
 .band-rename { margin-top: 6px; }
 .band-rename > summary { cursor: pointer; font-size: .85rem; color: var(--blue-700); width: fit-content; }
@@ -1017,8 +1017,8 @@ body.dragging-file .drop-hint { display: flex; }
   cursor: pointer; transition: color .15s, border-color .15s, background .15s;
 }
 .comment-btn:hover { color: var(--blue-700); border-color: var(--blue-700); }
-.comment-btn.has-comment { color: #fff; background: var(--cyan); border-color: var(--cyan); }
-.comment-btn.has-comment:hover { background: var(--blue-700); border-color: var(--blue-700); }
+.comment-btn.has-comment { color: #fff; background: var(--blue-700); border-color: var(--blue-700); }
+.comment-btn.has-comment:hover { background: var(--blue-900); border-color: var(--blue-900); }
 
 /* Floating comment editor, shared by the score rows, chart and table */
 .comment-pop {
@@ -1051,3 +1051,29 @@ body.dragging-file .drop-hint { display: flex; }
 .comment-pin-btn:hover:not(:disabled) { border-color: var(--blue-700); color: var(--blue-700); }
 .comment-pin-btn.is-pinned { background: var(--blue-050); border-color: var(--blue-500); color: var(--blue-700); font-weight: 600; }
 .comment-pin-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Comment column: header holds a small slider choosing icon vs full text */
+.score-table th.th-comment-wide, .score-table td.cell-comment-wide { text-align: left; min-width: 190px; }
+.comment-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.comment-mode-switch {
+  flex: none; width: 34px; height: 18px; padding: 0; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--paper, #eef3f7);
+  position: relative; cursor: pointer; transition: background .15s, border-color .15s;
+}
+.comment-mode-switch .cms-knob {
+  position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--ink-soft); transition: transform .15s, background .15s;
+}
+.comment-mode-switch.is-text { background: var(--blue-700); border-color: var(--blue-700); }
+.comment-mode-switch.is-text .cms-knob { transform: translateX(16px); background: #fff; }
+.comment-inline {
+  display: block; width: 100%; text-align: left; background: none; border: 0;
+  padding: 3px 0; font: inherit; font-size: .85rem; line-height: 1.4;
+  color: var(--ink); cursor: pointer; white-space: pre-wrap;
+}
+.comment-inline:hover { color: var(--blue-700); text-decoration: underline; }
+.comment-inline.is-empty { color: var(--ink-soft); opacity: .55; font-style: italic; }
+/* Comment button inside a scale row */
+.scale-actions { display: flex; gap: 6px; align-items: center; }
+.scale-row .comment-btn { width: 36px; height: 36px; }
+.scale-row .scale-del { width: 36px; }

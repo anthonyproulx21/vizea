@@ -940,7 +940,9 @@
 
     const shapes = [];
     const sBandLabels = [];
+    const sNoteAnns = [];
     const sLaneSegments = [];
+    _commentAnnIndex = {};
     if (settings.showBands !== false) {
       const sbands = window.ScoringEngine.getBandsForDisplayType(plotScale);
       const sAlpha = bandOpacityOf(settings);
@@ -977,9 +979,50 @@
       textfont: { color: TC.text, size: fs(12, fontScale) },
       line: { color: lineColor, width: 2.6 },
       marker: { color: TC.markerFill, size: 9, line: { color: lineColor, width: 2.2 } },
+      customdata: rows.map((r) => [r.id || ""]),
       hovertemplate: "%{x}: %{text}<extra></extra>",
       cliponaxis: false
     }];
+
+    // Notes on scales, shown exactly like the ones on scores: a small bubble to
+    // hover/click, or a permanent draggable label once pinned.
+    const sChipSize = fs(10, fontScale);
+    rows.forEach((r, i) => {
+      const note = (r.comment || "").trim();
+      if (!note) return;
+      const yv = yvals[i];
+      if (yv === null || yv === undefined) return;
+      if (!r.commentPinned) {
+        _commentAnnIndex[sBandLabels.length + sNoteAnns.length] = r.id;
+        sNoteAnns.push({
+          x: labels[i], y: yv, xref: "x", yref: "y", text: "···",
+          showarrow: true, arrowhead: 0, arrowsize: 1, arrowwidth: 1,
+          arrowcolor: mixHex(lineColor, isDarkTheme() ? [0, 0, 0] : [255, 255, 255], 0.45),
+          ax: (typeof r.commentAx === "number" ? r.commentAx : 11),
+          ay: (typeof r.commentAy === "number" ? r.commentAy : -11),
+          axref: "pixel", ayref: "pixel",
+          font: { size: sChipSize, color: lineColor, family: FONT_BODY },
+          bgcolor: "#ffffff", bordercolor: lineColor, borderwidth: 1, borderpad: 2,
+          captureevents: true, hovertext: wrapForBox(note, 46, 8),
+          hoverlabel: { bgcolor: "#ffffff", bordercolor: lineColor,
+                        font: { color: TC.text, size: fs(11, fontScale), family: FONT_BODY }, align: "left" }
+        });
+      } else {
+        _commentAnnIndex[sBandLabels.length + sNoteAnns.length] = r.id;
+        sNoteAnns.push({
+          x: labels[i], y: yv, xref: "x", yref: "y",
+          text: wrapForBox(note, 30, 6),
+          showarrow: true, arrowhead: 0, arrowsize: 1, arrowwidth: 1.1,
+          arrowcolor: mixHex(lineColor, isDarkTheme() ? [0, 0, 0] : [255, 255, 255], 0.35),
+          ax: (typeof r.commentAx === "number" ? r.commentAx : 30),
+          ay: (typeof r.commentAy === "number" ? r.commentAy : -40),
+          axref: "pixel", ayref: "pixel", captureevents: true, align: "left",
+          bgcolor: isDarkTheme() ? "rgba(22,36,47,0.94)" : "rgba(255,255,255,0.94)",
+          bordercolor: lineColor, borderwidth: 1, borderpad: 6,
+          font: { size: fs(10, fontScale), color: TC.text, family: FONT_BODY }
+        });
+      }
+    });
 
     // Y ticks: standard-score values, placed by percentile when proportional.
     const tickScoreValues = tickValuesFor(displayScale, proportional);
@@ -1005,7 +1048,7 @@
       yaxis: { title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } }, range,
         tickmode: "array", tickvals: yTickVals, ticktext: yTickText,
         tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, gridcolor: TC.gridSoft, zeroline: false },
-      shapes, annotations: sBandLabels, showlegend: false,
+      shapes, annotations: sBandLabels.concat(sNoteAnns), showlegend: false,
       margin: { t: titleText ? 60 : 30, b: 60, l: sLeftMargin, r: sRightMargin }, hovermode: "closest"
     };
     if (titleText) layout.title = { text: esc(titleText), x: 0.5, xanchor: "center",

@@ -497,7 +497,16 @@ function flattenScales(project) {
   rows.forEach((r) => {
     const v = r && r.value;
     if (v === "" || v === null || v === undefined || isNaN(Number(v))) return;
-    out.push({ test: t, name: r.name, value: Number(v), scale: r.scale || "Standard score" });
+    out.push({
+      test: t, name: r.name, value: Number(v), scale: r.scale || "Standard score",
+      // Scales carry notes just like scores do. Identified by name (unique within
+      // a battery), so no extra id has to be stored in the file.
+      id: "scale:" + (r.name || ""),
+      comment: r.comment || "",
+      commentPinned: !!r.commentPinned,
+      commentAx: (r.commentAx === undefined ? null : r.commentAx),
+      commentAy: (r.commentAy === undefined ? null : r.commentAy)
+    });
   });
   return out;
 }
