@@ -706,6 +706,63 @@
     ],
     "subtests": {}
   },
+  "WIAT-IV": {
+    "type": "batterie",
+    "subtests": {
+      "Lecture de mots": [
+        "Langage écrit"
+      ],
+      "Décodage de pseudo-mots": [
+        "Langage écrit"
+      ],
+      "Compréhension de lecture": [
+        "Langage écrit"
+      ],
+      "Orthographe": [
+        "Langage écrit"
+      ],
+      "Rédaction de phrases": [
+        "Langage écrit"
+      ],
+      "Rédaction de textes": [
+        "Langage écrit"
+      ],
+      "Conscience phonologique": [
+        "Langage oral"
+      ],
+      "Compréhension orale": [
+        "Langage oral"
+      ],
+      "Expression orale": [
+        "Langage oral"
+      ],
+      "Opérations numériques": [
+        "Mathématiques"
+      ],
+      "Raisonnement mathématique": [
+        "Mathématiques"
+      ],
+      "Fluidité de l'écriture de l'alphabet": [
+        "Langage écrit"
+      ],
+      "Fluidité de la lecture orale": [
+        "Langage écrit"
+      ],
+      "Fluidité orthographique": [
+        "Langage écrit"
+      ],
+      "Fluidité du décodage": [
+        "Langage écrit"
+      ],
+      "Fluidité de la rédaction de phrases": [
+        "Langage écrit"
+      ],
+      "Fluidité mathématique": [
+        "Mathématiques"
+      ]
+    },
+    "recency": 4
+  },
   "WIAT-III": {
     "type": "batterie",
     "subtests": {
