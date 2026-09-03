@@ -1819,6 +1819,13 @@
     "recency": 1,
     "superseded": true
   },
+  "Color Trails Test (CTT)": {
+    "type": "test",
+    "default_functions": [
+      "Fonctions exécutives"
+    ],
+    "subtests": {}
+  },
   "WCST": {
     "type": "test",
     "default_functions": [
@@ -1853,6 +1860,13 @@
     "default_functions": [
       "Attention",
       "Vitesse de traitement"
+    ],
+    "subtests": {}
+  },
+  "Brief Test of Attention (BTA)": {
+    "type": "test",
+    "default_functions": [
+      "Attention"
     ],
     "subtests": {}
   },
