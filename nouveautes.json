@@ -1,5 +1,15 @@
 [
   {
+    "date": "2026-09-14",
+    "titre": "V1.7 : Barre de personnalisation repensée et nouveaux tests",
+    "infos": [
+      "Réorganisation de la barre de personnalisation en sections. Une seule section reste ouverte à la fois, pour trouver les réglages plus rapidement.",
+      "Aperçu plus fluide lors de l'ajustement des réglages, comme la taille du texte ou l'intensité des couleurs.",
+      "Agrandissement des libellés dans le graphique des échelles pour une meilleure lisibilité.",
+      "Ajout de trois tests à la banque : WIAT-IV, Color Trails Test et Brief Test of Attention."
+    ]
+  },
+  {
     "date": "2026-07-23",
     "titre": "V1.6 : Commentaires sur les scores",
     "infos": [
@@ -25,7 +35,7 @@
     "infos": [
       "Vizéa peut désormais s'installer comme une application, avec sa propre fenêtre et un accès en un clic (Chrome et Edge; ajout au Dock sur Safari Mac).",
       "Une fois installée, l'application fonctionne hors ligne, sans connexion Internet.",
-      "Les projets s'exportent maintenant au format .vizea et se rouvrent par simple glisser-déposer — ou par double-clic lorsque l'application est installée (Chrome / Edge).",
+      "Les projets s'exportent maintenant au format .vizea et se rouvrent par simple glisser-déposer, ou par double-clic lorsque l'application est installée (Chrome / Edge).",
       "Les exportations (image, tableau, projet) permettent de choisir le dossier de destination et de renommer le fichier avant l'enregistrement."
     ]
   },
