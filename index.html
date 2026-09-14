@@ -340,6 +340,12 @@
                 <button id="panelClose" class="panel-close" aria-label="Fermer">&times;</button>
               </div>
               <div class="viz-panel-body">
+               <div class="panel-acc" id="panelAcc">
+                <section class="acc-item" data-acc="affichage">
+                  <button type="button" class="acc-head" aria-expanded="true">
+                    <span>Affichage</span><span class="acc-chevron" aria-hidden="true"></span>
+                  </button>
+                  <div class="acc-panel">
                 <label class="panel-label" for="opt-displayScale">Échelle affichée</label>
                 <select id="opt-displayScale">
                   <option value="Percentile">Rang centile</option>
@@ -361,9 +367,36 @@
                   <span id="fontScaleValue" class="band-opacity-value">100 %</span>
                 </div>
 
+                <label class="panel-toggle">
+                  <input type="checkbox" id="opt-showDataLabels">
+                  <span>Valeur sur les points</span>
+                </label>
+                <label class="panel-toggle">
+                  <input type="checkbox" id="opt-proportionalAxis" checked>
+                  <span>Espacement proportionnel à la rareté</span>
+                </label>
                 <label class="panel-toggle" data-only="line">
+                  <input type="checkbox" id="opt-showTestLabels" checked>
+                  <span>Nom des tests (axe horizontal)</span>
+                </label>
+                <label class="panel-toggle" data-only="radar">
+                  <input type="checkbox" id="opt-radarFill" checked>
+                  <span>Ombrage du profil (radar)</span>
+                </label>
+
+                <label class="panel-label" for="opt-title">Titre du graphique</label>
+                <input type="text" id="opt-title" placeholder="Laisser vide pour aucun titre">
+                  </div>
+                </section>
+
+                <section class="acc-item" data-acc="bandes" data-only="line scales">
+                  <button type="button" class="acc-head" aria-expanded="false">
+                    <span>Bandes d'interprétation</span><span class="acc-chevron" aria-hidden="true"></span>
+                  </button>
+                  <div class="acc-panel">
+                <label class="panel-toggle">
                   <input type="checkbox" id="opt-showBands" checked>
-                  <span>Bandes d'interprétation</span>
+                  <span>Afficher les bandes</span>
                 </label>
                 <div id="bandOptions" class="band-options">
                   <label class="panel-toggle">
@@ -381,20 +414,7 @@
                     <button type="button" id="bandLabelsReset" class="btn-ghost btn-mini">Rétablir les noms d'origine</button>
                   </details>
                 </div>
-                <label class="panel-toggle">
-                  <input type="checkbox" id="opt-proportionalAxis" checked>
-                  <span>Espacement proportionnel à la rareté</span>
-                </label>
-                <label class="panel-toggle" data-only="line">
-                  <input type="checkbox" id="opt-showTestLabels" checked>
-                  <span>Nom des tests (axe horizontal)</span>
-                </label>
-                <label class="panel-toggle">
-                  <input type="checkbox" id="opt-showDataLabels">
-                  <span>Valeur sur les points</span>
-                </label>
-
-                <div data-only="line" class="axis-limits">
+                <div class="axis-limits">
                   <label class="panel-label">Limites de l'axe vertical</label>
                   <p class="fn-subhint" id="axisLimitsHint">Laissez vide pour l'étendue automatique.</p>
                   <div class="axis-limits-row">
@@ -408,16 +428,46 @@
                     </div>
                   </div>
                 </div>
-                <label class="panel-toggle" data-only="radar">
-                  <input type="checkbox" id="opt-radarFill" checked>
-                  <span>Ombrage du profil (radar)</span>
-                </label>
+                  </div>
+                </section>
 
-                <label class="panel-label" for="opt-title">Titre du graphique</label>
-                <input type="text" id="opt-title" placeholder="Laisser vide pour aucun titre">
+                <section class="acc-item" data-acc="contenu" data-only="line radar scales">
+                  <button type="button" class="acc-head" aria-expanded="false">
+                    <span>Contenu et couleurs</span><span class="acc-chevron" aria-hidden="true"></span>
+                  </button>
+                  <div class="acc-panel">
+                <label class="panel-label">Fonctions affichées</label>
+                <p class="fn-hint">Glissez pour réordonner · décochez pour masquer</p>
+                <div id="opt-functions" class="fn-list"></div>
 
+                <div data-only="line">
+                  <label class="panel-label">Tests affichés</label>
+                  <p class="fn-hint">Glissez pour réordonner · décochez pour masquer · cliquez le nom pour le renommer</p>
+                  <p class="fn-subhint">Affichage seulement : vos données saisies ne changent pas.</p>
+                  <div id="opt-points" class="fn-list points-list"></div>
+                </div>
+
+                <div data-only="line">
+                  <label class="panel-label">Couleurs par fonction</label>
+                  <div id="opt-colors" class="color-list"></div>
+                </div>
+
+                <div data-only="radar">
+                  <label class="panel-label" for="opt-radarColor">Couleur du profil (radar)</label>
+                  <div class="color-row">
+                    <input type="color" id="opt-radarColor" value="#176bb5">
+                    <span>Profil radar</span>
+                  </div>
+                </div>
+                  </div>
+                </section>
+
+                <section class="acc-item" data-acc="comparaison" data-only="line">
+                  <button type="button" class="acc-head" aria-expanded="false">
+                    <span>Ligne de comparaison</span><span class="acc-chevron" aria-hidden="true"></span>
+                  </button>
+                  <div class="acc-panel">
                 <div class="compare-block">
-                  <label class="panel-label">Ligne de comparaison</label>
                   <p class="panel-hint">Trace un repère horizontal (ex. QI estimé) pour situer le profil.</p>
                   <div class="compare-grid">
                     <div class="field">
@@ -440,30 +490,9 @@
                   <div id="compareWarn" class="cond-warn" style="display:none;"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 16H3L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span></span></div>
                   <button id="clearCompareBtn" class="btn-ghost btn-block btn-sm">Retirer la ligne</button>
                 </div>
-
-                <div data-only="radar">
-                  <label class="panel-label" for="opt-radarColor">Couleur du profil (radar)</label>
-                  <div class="color-row">
-                    <input type="color" id="opt-radarColor" value="#176bb5">
-                    <span>Profil radar</span>
                   </div>
-                </div>
-
-                <label class="panel-label">Fonctions affichées</label>
-                <p class="fn-hint">Glissez pour réordonner · décochez pour masquer</p>
-                <div id="opt-functions" class="fn-list"></div>
-
-                <div data-only="line">
-                  <label class="panel-label">Tests affichés</label>
-                  <p class="fn-hint">Glissez pour réordonner · décochez pour masquer · cliquez le nom pour le renommer</p>
-                  <p class="fn-subhint">Affichage seulement : vos données saisies ne changent pas.</p>
-                  <div id="opt-points" class="fn-list points-list"></div>
-                </div>
-
-                <div data-only="line">
-                  <label class="panel-label">Couleurs par fonction</label>
-                  <div id="opt-colors" class="color-list"></div>
-                </div>
+                </section>
+               </div>
 
                 <hr>
                 <button id="exportImageBtn" class="btn-soft btn-block">Exporter en image (PNG)</button>

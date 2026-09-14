@@ -1044,7 +1044,7 @@
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: TC.text, family: FONT_BODY },
-      xaxis: { type: "category", tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, zeroline: false, showgrid: false, automargin: true },
+      xaxis: { type: "category", tickfont: { color: TC.textSoft, size: fs(15, fontScale) }, zeroline: false, showgrid: false, automargin: true },
       yaxis: { title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } }, range,
         tickmode: "array", tickvals: yTickVals, ticktext: yTickText,
         tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, gridcolor: TC.gridSoft, zeroline: false },

@@ -1077,3 +1077,31 @@ body.dragging-file .drop-hint { display: flex; }
 .scale-actions { display: flex; gap: 6px; align-items: center; }
 .scale-row .comment-btn { width: 36px; height: 36px; }
 .scale-row .scale-del { width: 36px; }
+
+/* ===== Customization panel — accordion ===== */
+.panel-acc { display: flex; flex-direction: column; }
+.acc-item { border-bottom: 1px solid var(--line); }
+.acc-item:first-child { border-top: 1px solid var(--line); }
+.acc-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 15px 4px; background: none; border: 0; cursor: pointer;
+  font-family: inherit; font-size: .96rem; font-weight: 600; color: var(--ink);
+  text-align: left; transition: color .15s;
+}
+.acc-head:hover { color: var(--blue-700); }
+.acc-chevron {
+  flex: none; width: 9px; height: 9px; border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor; transform: rotate(45deg);
+  transition: transform .22s cubic-bezier(.4,0,.2,1); opacity: .55; margin-right: 4px;
+}
+.acc-item.open > .acc-head .acc-chevron { transform: rotate(-135deg); }
+.acc-item.open > .acc-head { color: var(--blue-700); }
+/* Collapsible body: animate max-height for a smooth open/close */
+.acc-panel {
+  overflow: hidden; max-height: 0;
+  transition: max-height .28s cubic-bezier(.4,0,.2,1), opacity .2s ease, padding .28s;
+  opacity: 0; padding: 0 2px;
+}
+.acc-item.open > .acc-panel { max-height: 4000px; opacity: 1; padding: 2px 2px 16px; }
+/* First control in a section shouldn't add extra top gap */
+.acc-panel > .panel-label:first-child { margin-top: 4px; }

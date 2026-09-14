@@ -1861,6 +1861,15 @@
     _chartRedrawTimer = setTimeout(() => { _chartRedrawTimer = null; renderChart(); }, 110);
   }
 
+  // Live redraw synced to the screen's refresh, for silky slider dragging: at
+  // most one redraw per frame, and never two in flight at once. Used while a
+  // control is being dragged; the final settle still goes through renderChart.
+  let _liveRaf = null;
+  function renderChartLive() {
+    if (_liveRaf) return;
+    _liveRaf = requestAnimationFrame(() => { _liveRaf = null; renderChart(); });
+  }
+
   // =========================================================================
   // TABLE VIEW (4th toggle) — a data table of the scores, grouped by test or
   // by cognitive function, with selectable columns and Word/Excel/Image export.
@@ -2354,6 +2363,39 @@
     $("panelToggle")?.addEventListener("click", () => {
       panel.classList.contains("open") ? closePanel() : openPanel();
     });
+
+    // Accordion: one section open at a time. The last-opened section is
+    // remembered (per browser) so the panel reopens the way it was left.
+    (function setupAccordion() {
+      const acc = $("panelAcc");
+      if (!acc) return;
+      const items = Array.from(acc.querySelectorAll(".acc-item"));
+      const openItem = (item) => {
+        items.forEach((it) => {
+          const on = it === item;
+          it.classList.toggle("open", on);
+          const head = it.querySelector(".acc-head");
+          if (head) head.setAttribute("aria-expanded", on ? "true" : "false");
+        });
+        try { localStorage.setItem("vizea_panel_section", item.getAttribute("data-acc") || ""); } catch (e) { /* noop */ }
+      };
+      items.forEach((it) => {
+        const head = it.querySelector(".acc-head");
+        head?.addEventListener("click", () => {
+          // Clicking the open section collapses it; otherwise switch to it.
+          if (it.classList.contains("open")) {
+            it.classList.remove("open");
+            head.setAttribute("aria-expanded", "false");
+            try { localStorage.setItem("vizea_panel_section", ""); } catch (e) { /* noop */ }
+          } else openItem(it);
+        });
+      });
+      // Restore the remembered section (default: the first, "Affichage").
+      let remembered = null;
+      try { remembered = localStorage.getItem("vizea_panel_section"); } catch (e) { /* noop */ }
+      const target = remembered ? items.find((it) => it.getAttribute("data-acc") === remembered) : items[0];
+      if (target) openItem(target); else if (items[0]) openItem(items[0]);
+    })();
     $("panelClose")?.addEventListener("click", closePanel);
     scrim?.addEventListener("click", closePanel);
     document.addEventListener("keydown", (e) => {
@@ -2400,14 +2442,14 @@
       s().fontScale = pct / 100;
       const out = $("fontScaleValue");
       if (out) out.textContent = pct + " %";
-      renderChartDebounced();
+      renderChartLive();
     });
     $("opt-bandOpacity")?.addEventListener("input", (e) => {
       const pct = Number(e.target.value);
       s().bandOpacity = pct / 100;
       const out = $("bandOpacityValue");
       if (out) out.textContent = pct + " %";
-      renderChartDebounced();
+      renderChartLive();
     });
     $("bandLabelsReset")?.addEventListener("click", () => {
       s().bandLabels = {};
@@ -2431,15 +2473,17 @@
     // Inject the "Utiliser le score à l'EGQI" option at the top of the comparison block.
     (function injectEgqiOption() {
       const block = document.querySelector(".compare-block");
-      const label = block && block.querySelector(".panel-label");
-      if (!block || !label || $("opt-useEgqi")) return;
+      if (!block || $("opt-useEgqi")) return;
       const wrap = document.createElement("label");
       wrap.className = "panel-toggle egqi-toggle";
       wrap.innerHTML = '<input type="checkbox" id="opt-useEgqi"><span>Utiliser le score à l\'EGQI</span>';
       const hint = document.createElement("p");
       hint.id = "opt-useEgqiHint"; hint.className = "fn-subhint";
       hint.textContent = "Entrez une valeur à l'EGQI (test Wechsler) pour l'activer.";
-      label.after(wrap, hint);
+      // Place both at the very top of the block (the section title is now the
+      // accordion header, so we no longer rely on an in-block .panel-label).
+      block.insertBefore(hint, block.firstChild);
+      block.insertBefore(wrap, block.firstChild);
       $("opt-useEgqi").addEventListener("change", (e) => {
         s().useEgqiCompare = e.target.checked;
         applyEgqiCompare();
@@ -2485,8 +2529,11 @@
 
     (function injectScalesExtras() {
       if ($("scalesExtras")) return;
-      const compareBlock = document.querySelector(".compare-block");
-      if (!compareBlock || !compareBlock.parentNode) return;
+      // Line colour + which-scales list belong with the other content/colour
+      // controls, so they live in the "Contenu et couleurs" section (shown in
+      // the scales view). The scales *display scale* stays in "Affichage".
+      const host = document.querySelector('[data-acc="contenu"] .acc-panel');
+      if (!host) return;
       const box = document.createElement("div");
       box.id = "scalesExtras";
       box.style.display = "none";
@@ -2495,7 +2542,7 @@
         '<input type="color" id="opt-scalesColor" class="color-input">' +
         '<label class="panel-label" style="margin-top:14px;">Échelles affichées</label>' +
         '<div id="opt-scalesVisible" class="fn-list"></div>';
-      compareBlock.after(box);
+      host.appendChild(box);
       $("opt-scalesColor").addEventListener("input", (e) => { s().scalesColor = e.target.value; renderChartDebounced(); });
     })();
 
@@ -2993,8 +3040,11 @@
 
   function updatePanelModeVisibility(chartType) {
     const isScales = chartType === "scales";
+    // data-only may list several modes ("line scales"): show if the current
+    // mode is among them.
     document.querySelectorAll('[data-only]').forEach((el) => {
-      el.style.display = el.getAttribute("data-only") === chartType ? "" : "none";
+      const modes = el.getAttribute("data-only").split(/\s+/);
+      el.style.display = modes.indexOf(chartType) !== -1 ? "" : "none";
     });
     const grp = (id) => { const e = $(id); return e ? e.closest(".panel-toggle") : null; };
     const setVis = (el, show) => { if (el) el.style.display = show ? "" : "none"; };
@@ -3034,6 +3084,22 @@
     }
     // Band options follow the bands themselves (hidden on radar/table).
     syncBandOptionsVisibility();
+
+    // If the currently open accordion section is hidden in this mode, open the
+    // first still-visible one so the panel never looks empty.
+    const acc = $("panelAcc");
+    if (acc) {
+      const visible = Array.from(acc.querySelectorAll(".acc-item")).filter((it) => it.style.display !== "none");
+      const openVisible = visible.some((it) => it.classList.contains("open"));
+      if (!openVisible && visible.length) {
+        acc.querySelectorAll(".acc-item").forEach((it) => {
+          it.classList.remove("open");
+          it.querySelector(".acc-head")?.setAttribute("aria-expanded", "false");
+        });
+        visible[0].classList.add("open");
+        visible[0].querySelector(".acc-head")?.setAttribute("aria-expanded", "true");
+      }
+    }
   }
 
   // =========================================================================
