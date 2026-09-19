@@ -1119,3 +1119,17 @@ body.dragging-file .drop-hint { display: flex; }
   font-size: .82rem; letter-spacing: .03em; transition: background .15s, color .15s;
 }
 .lang-toggle:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+/* Reorder arrows for selected tests (step 2) */
+.selected-test { display: flex; align-items: center; gap: 8px; }
+.selected-test-name { flex: 1; min-width: 0; }
+.test-move { display: inline-flex; flex-direction: column; line-height: 0; flex: none; }
+.test-move-btn {
+  border: 0; background: none; cursor: pointer; padding: 0 4px;
+  font-size: .62rem; color: var(--ink-soft); line-height: 1.05;
+}
+.test-move-btn:hover:not(:disabled) { color: var(--blue-700); }
+.test-move-btn:disabled { opacity: .28; cursor: default; }
+
+/* Reorder arrows on table function group headers */
+.group-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

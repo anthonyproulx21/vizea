@@ -942,14 +942,51 @@
       return;
     }
     div.innerHTML = "";
-    entries.forEach(([test, subtests]) => {
+    // Reorders a test (and its scores) by moving its key up/down, so the new
+    // order flows to the chart and the table. Arrows avoid long drag gestures.
+    const testKeys = Object.keys(selectedTests);
+    const moveTest = (test, dir) => {
+      const reorder = (obj) => {
+        const keys = Object.keys(obj); const i = keys.indexOf(test); const j = i + dir;
+        if (i < 0 || j < 0 || j >= keys.length) return false;
+        keys.splice(j, 0, keys.splice(i, 1)[0]);
+        const copy = {}; keys.forEach((k) => copy[k] = obj[k]);
+        Object.keys(obj).forEach((k) => delete obj[k]); keys.forEach((k) => obj[k] = copy[k]);
+        return true;
+      };
+      if (!reorder(selectedTests)) return;
+      if (currentProject && currentProject.scores) reorder(currentProject.scores);
+      markDirty();
+      renderSelectedTests();
+      if (currentStep === 2 && typeof renderStep2 === "function") renderStep2();
+    };
+    entries.forEach(([test, subtests], idx) => {
       const parent = document.createElement("div");
       parent.className = "selected-test";
-      parent.textContent = test;
+      const label = document.createElement("span");
+      label.className = "selected-test-name"; label.textContent = test;
+      parent.appendChild(label);
+
+      // Up / down reorder arrows (disabled at the ends).
+      const moveBox = document.createElement("span");
+      moveBox.className = "test-move";
+      const up = document.createElement("button");
+      up.type = "button"; up.className = "test-move-btn"; up.innerHTML = "▲";
+      up.title = T("tests.moveUp", "Monter"); up.setAttribute("aria-label", up.title);
+      up.disabled = idx === 0;
+      up.addEventListener("click", () => moveTest(test, -1));
+      const down = document.createElement("button");
+      down.type = "button"; down.className = "test-move-btn"; down.innerHTML = "▼";
+      down.title = T("tests.moveDown", "Descendre"); down.setAttribute("aria-label", down.title);
+      down.disabled = idx === testKeys.length - 1;
+      down.addEventListener("click", () => moveTest(test, 1));
+      moveBox.append(up, down);
+      parent.appendChild(moveBox);
+
       const rm = document.createElement("button");
       rm.textContent = "×";
       rm.className = "remove-test-btn";
-      rm.title = "Retirer";
+      rm.title = T("common.remove", "Retirer");
       rm.addEventListener("click", () => {
         delete selectedTests[test];
         renderTestList($("testSearch").value);
@@ -1146,7 +1183,8 @@
         valInput.addEventListener("keydown", (ev) => {
           if (ev.key !== "Enter") return;
           ev.preventDefault();
-          const all = Array.from(document.querySelectorAll("#scoreEntryContainer .scale-value"));
+          const all = Array.from(document.querySelectorAll("#scoreEntryContainer .condition-value, #scoreEntryContainer .scale-value"))
+            .filter((el) => !el.closest(".test-card.collapsed"));
           const i = all.indexOf(valInput);
           if (i > -1 && i + 1 < all.length) all[i + 1].focus();
           else valInput.blur();
@@ -1474,7 +1512,7 @@
     valueInput.addEventListener("keydown", (e) => {
       if (e.key !== "Enter") return;
       e.preventDefault();
-      const all = Array.from(document.querySelectorAll("#scoreEntryContainer .condition-value"))
+      const all = Array.from(document.querySelectorAll("#scoreEntryContainer .condition-value, #scoreEntryContainer .scale-value"))
         .filter((el) => !el.closest(".test-card.collapsed"));
       const i = all.indexOf(valueInput);
       if (i > -1 && i < all.length - 1) all[i + 1].focus();
@@ -2001,13 +2039,21 @@
     };
 
     const groups = [];
+    let functionKeys = null;
     if (groupBy === "function") {
-      const order = [], map = {};
+      const map = {}, present = [];
       pts.forEach((p) => {
-        if (!map[p.func]) { map[p.func] = []; order.push(p.func); }
+        if (!map[p.func]) { map[p.func] = []; present.push(p.func); }
         map[p.func].push(rowFromPoint(p, false));
       });
-      order.forEach((k) => groups.push({ title: displayFunc(k), rows: map[k] }));
+      // Follow the same function order as the panel / chart (drag-to-reorder),
+      // then canonical order — so the table isn't in random score-entry order.
+      const orderPref = (s.functionOrder || []).concat(COGNITIVE_FUNCTIONS);
+      const ordered = [], seen = {};
+      orderPref.forEach((f) => { if (map[f] && !seen[f]) { ordered.push(f); seen[f] = 1; } });
+      present.forEach((f) => { if (!seen[f]) ordered.push(f); });
+      ordered.forEach((k) => groups.push({ title: displayFunc(k), rows: map[k], key: k }));
+      functionKeys = ordered;
     } else {
       const order = [], map = {}, seen = {};
       pts.forEach((p) => {
@@ -2021,7 +2067,7 @@
 
     return {
       firstHeader: groupBy === "test" ? "Sous-test / score" : "Test / score",
-      colDefs, groups, showColor,
+      colDefs, groups, showColor, groupBy, functionKeys,
       showComments: cols.comments !== false,
       commentMode: s.tableCommentMode === "text" ? "text" : "icon",
       anyInverted: pts.some((p) => p.inverted),
@@ -2068,9 +2114,43 @@
 
     const tbody = document.createElement("tbody");
     const totalCols = 1 + model.colDefs.length + (model.showComments ? 1 : 0);
-    model.groups.forEach((g) => {
+    // Move a function up/down directly from the table (writes the shared
+    // functionOrder, so the chart and panel follow the same order).
+    const moveTableFunction = (key, dir) => {
+      const cur = (model.functionKeys || []).slice();
+      const i = cur.indexOf(key), j = i + dir;
+      if (i < 0 || j < 0 || j >= cur.length) return;
+      cur.splice(j, 0, cur.splice(i, 1)[0]);
+      const s = currentProject.chartSettings;
+      const others = (s.functionOrder || []).filter((x) => cur.indexOf(x) === -1);
+      s.functionOrder = cur.concat(others);
+      markDirty();
+      renderTableView();
+    };
+    model.groups.forEach((g, gi) => {
       const gtr = document.createElement("tr"); gtr.className = "group-row";
-      const gtd = document.createElement("td"); gtd.colSpan = totalCols; gtd.textContent = g.title;
+      const gtd = document.createElement("td"); gtd.colSpan = totalCols;
+      // When grouped by function, offer inline up/down arrows on the header.
+      if (model.groupBy === "function" && model.functionKeys && model.functionKeys.length > 1) {
+        const wrap = document.createElement("div"); wrap.className = "group-head";
+        const lab = document.createElement("span"); lab.textContent = g.title;
+        const mv = document.createElement("span"); mv.className = "test-move";
+        const up = document.createElement("button");
+        up.type = "button"; up.className = "test-move-btn"; up.innerHTML = "▲";
+        up.title = T("tests.moveUp", "Monter"); up.setAttribute("aria-label", up.title);
+        up.disabled = gi === 0;
+        up.addEventListener("click", () => moveTableFunction(g.key, -1));
+        const down = document.createElement("button");
+        down.type = "button"; down.className = "test-move-btn"; down.innerHTML = "▼";
+        down.title = T("tests.moveDown", "Descendre"); down.setAttribute("aria-label", down.title);
+        down.disabled = gi === model.groups.length - 1;
+        down.addEventListener("click", () => moveTableFunction(g.key, 1));
+        mv.append(up, down);
+        wrap.append(lab, mv);
+        gtd.appendChild(wrap);
+      } else {
+        gtd.textContent = g.title;
+      }
       gtr.appendChild(gtd); tbody.appendChild(gtr);
       g.rows.forEach((r) => {
         const tr = document.createElement("tr");
