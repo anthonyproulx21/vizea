@@ -40,7 +40,28 @@
   function displayFunc(func, settings) {
     const m = settings && settings.functionLabels;
     const v = m && m[func];
-    return (typeof v === "string" && v.trim()) ? v.trim() : func;
+    if (typeof v === "string" && v.trim()) return v.trim();
+    // No user override: fall back to the language display name (French = key).
+    return (window.VizeaConstants && window.VizeaConstants.displayFunctionName)
+      ? window.VizeaConstants.displayFunctionName(func) : func;
+  }
+  // Translated axis title for a score-type value (data value stays unchanged).
+  var SCALE_TITLE_KEYS = { "Percentile": "score.percentile", "Standard score": "score.standard", "Scale score": "score.scaled", "Z-Score": "score.z", "T-Score": "score.t" };
+  function scaleTitle(v) {
+    var k = SCALE_TITLE_KEYS[v];
+    return (k && window.VizeaI18n && window.VizeaI18n.t) ? window.VizeaI18n.t(k) : v;
+  }
+  // The ready-made default title is stored data, so it's translated for DISPLAY
+  // only (a user-edited title is shown as-is).
+  var DEFAULT_TITLES = {
+    "Visualisation des scores par fonctions cognitives": "chart.defaultTitle",
+    "Visualisation des échelles globales": "chart.defaultScalesTitle"
+  };
+  function localizedTitle(raw) {
+    if (raw && DEFAULT_TITLES[raw] && window.VizeaI18n && window.VizeaI18n.getLang() === "en" && window.VizeaI18n.t) {
+      return window.VizeaI18n.t(DEFAULT_TITLES[raw]);
+    }
+    return raw;
   }
   function displayScaleName(name, settings) {
     const m = settings && settings.scaleLabels;
@@ -208,7 +229,9 @@
   function bandLabelOf(settings, band) {
     const over = settings && settings.bandLabels && settings.bandLabels[band.key];
     if (over !== undefined && over !== null && String(over).trim() !== "") return String(over).trim();
-    return band.short || band.label;
+    const fallback = band.short || band.label;
+    return (window.VizeaConstants && window.VizeaConstants.displayBandField)
+      ? window.VizeaConstants.displayBandField(band.key, "short", fallback) : fallback;
   }
 
   // User-adjustable text size for the chart, as a multiplier of the base sizes.
@@ -623,7 +646,7 @@
     });
 
     const showTestLabels = settings.showTestLabels !== false;
-    const titleText = (settings.title || "").trim();
+    const titleText = localizedTitle((settings.title || "").trim());
     const hasTitle = titleText.length > 0;
 
     // Top margin must clear the title (at container top) AND the two annotation
@@ -723,7 +746,7 @@
         automargin: true
       },
       yaxis: {
-        title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } },
+        title: { text: scaleTitle(displayScale), font: { color: TC.textSoft, size: fs(13, fontScale) } },
         range: range,
         tickmode: "array",
         tickvals: yTickVals,
@@ -840,7 +863,7 @@
       : radarTickScores;
     const radarTickText = radarTickScores.map(v => String(v));
 
-    const titleText = (settings.title || "").trim();
+    const titleText = localizedTitle((settings.title || "").trim());
     const layout = {
       paper_bgcolor: "rgba(0,0,0,0)",
       font: { color: TC.text, family: FONT_BODY },
@@ -1032,7 +1055,7 @@
       : tickScoreValues;
     const yTickText = tickScoreValues.map(v => String(v));
 
-    const titleText = (settings.scalesTitle || "").trim();
+    const titleText = localizedTitle((settings.scalesTitle || "").trim());
     // Band names sit inside the tinted key lane in the right margin.
     const sLaneW = laneWidthFor(sBandLabels.map((a) => a.text), fs(10, fontScale));
     const sRightMargin = sLaneW ? LANE_GAP + sLaneW + 8 : 30;
@@ -1045,7 +1068,7 @@
       paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
       font: { color: TC.text, family: FONT_BODY },
       xaxis: { type: "category", tickfont: { color: TC.textSoft, size: fs(15, fontScale) }, zeroline: false, showgrid: false, automargin: true },
-      yaxis: { title: { text: displayScale, font: { color: TC.textSoft, size: fs(13, fontScale) } }, range,
+      yaxis: { title: { text: scaleTitle(displayScale), font: { color: TC.textSoft, size: fs(13, fontScale) } }, range,
         tickmode: "array", tickvals: yTickVals, ticktext: yTickText,
         tickfont: { color: TC.textSoft, size: fs(12, fontScale) }, gridcolor: TC.gridSoft, zeroline: false },
       shapes, annotations: sBandLabels.concat(sNoteAnns), showlegend: false,

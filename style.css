@@ -375,7 +375,7 @@ label { font-weight: 500; }
 /* ---------- Step 1 ---------- */
 .test-list { max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 12px; margin: 14px 0; background: var(--blue-050); }
 .test-list:empty { padding: 18px 12px; }
-.test-list:empty::after { content: "Tapez ci-dessus pour rechercher un test…"; color: var(--ink-soft); font-size: .9rem; }
+.test-list:empty::after { content: var(--i18n-testEmpty, "Tapez ci-dessus pour rechercher un test…"); color: var(--ink-soft); font-size: .9rem; }
 .test { padding: 5px 0; font-weight: 600; }
 .test label, .subtests label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: inherit; }
 .subtests { margin-left: 24px; }
@@ -962,7 +962,11 @@ body.dragging-file .drop-hint { display: flex; }
 
 /* ===== Home hero — 4 uniform stacked buttons (authoritative) ===== */
 .hero-buttons {
-  display: grid; grid-auto-flow: row; grid-template-columns: max-content;
+  display: grid; grid-auto-flow: row;
+  /* Floor set ABOVE the longest French label ("Commencer une démonstration")
+     so BOTH languages resolve to the same width — English no longer looks
+     narrower. The column still grows past this if a longer label appears. */
+  grid-template-columns: minmax(340px, max-content);
   justify-items: stretch; justify-content: start; gap: 12px;
 }
 .hero-buttons > .hero-btn {
@@ -1105,3 +1109,13 @@ body.dragging-file .drop-hint { display: flex; }
 .acc-item.open > .acc-panel { max-height: 4000px; opacity: 1; padding: 2px 2px 16px; }
 /* First control in a section shouldn't add extra top gap */
 .acc-panel > .panel-label:first-child { margin-top: 4px; }
+
+/* ===== Language toggle (FR / EN) ===== */
+.lang-toggle {
+  display: inline-grid; place-items: center; min-width: 38px; height: 38px;
+  padding: 0 10px; border-radius: 10px; flex: none;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16);
+  color: #dceaf8; cursor: pointer; font-family: inherit; font-weight: 700;
+  font-size: .82rem; letter-spacing: .03em; transition: background .15s, color .15s;
+}
+.lang-toggle:hover { background: rgba(255,255,255,.16); color: #fff; }

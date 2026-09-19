@@ -57,11 +57,55 @@ const EXTENDED_PALETTE = [
   "#3F9E8E","#D49A4E","#7AA0D8","#A85C5C","#5E8C6A","#B98ACF","#4C8C99"
 ];
 
+// English display names for cognitive functions. Keys stay in French (they are
+// identifiers used by scores, colours and grouping); this only affects display.
+const FUNCTION_LABELS_EN = {
+  "Attention": "Attention",
+  "Cognition sociale": "Social cognition",
+  "Fonctions exécutives": "Executive functions",
+  "Langage oral": "Oral language",
+  "Langage écrit": "Written language",
+  "Mathématiques": "Mathematics",
+  "Mémoire": "Memory",
+  "Mémoire de travail": "Working memory",
+  "Moteur": "Motor",
+  "Psychoaffectif": "Psychoaffective",
+  "Raisonnement fluide": "Fluid reasoning",
+  "Visuospatial": "Visuospatial",
+  "Vitesse de traitement": "Processing speed"
+};
+// English display names for classification bands, keyed by band key.
+const BAND_LABELS_EN = {
+  extremely_low:  { label: "Extremely low score",   short: "Extremely low" },
+  below_average:  { label: "Below-average score",   short: "Below average" },
+  low_average:    { label: "Low-average score",     short: "Low average" },
+  average:        { label: "Average score",         short: "Average" },
+  high_average:   { label: "High-average score",    short: "High average" },
+  superior:       { label: "Above-average score",   short: "Above average" },
+  extremely_high: { label: "Extremely high score",  short: "Extremely high" }
+};
+function vizeaLang() {
+  return (typeof window !== "undefined" && window.VizeaI18n && window.VizeaI18n.getLang) ? window.VizeaI18n.getLang() : "fr";
+}
+// Display name of a cognitive function in the current language (French keeps the key).
+function displayFunctionName(name) {
+  return (vizeaLang() === "en" && FUNCTION_LABELS_EN[name]) ? FUNCTION_LABELS_EN[name] : name;
+}
+// Display value of a band field ("label" | "short") in the current language.
+function displayBandField(key, field, fallback) {
+  const m = BAND_LABELS_EN[key];
+  return (vizeaLang() === "en" && m && m[field]) ? m[field] : fallback;
+}
+
 const VizeaConstants = {
   COGNITIVE_FUNCTIONS,
   SCORE_TYPE_OPTIONS,
   DEFAULT_FUNCTION_COLORS,
-  EXTENDED_PALETTE
+  EXTENDED_PALETTE,
+  FUNCTION_LABELS_EN,
+  BAND_LABELS_EN,
+  displayFunctionName,
+  displayBandField
 };
 
 if (typeof module !== "undefined" && module.exports) {

@@ -10,6 +10,11 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='11' fill='%230d3b66'/%3E%3Cpath d='M24 11v27' stroke='%237fd9e8' stroke-width='2.4' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='11' r='3' fill='%232fd0e0'/%3E%3Ccircle cx='17' cy='22' r='2.6' fill='%232fd0e0'/%3E%3Ccircle cx='31' cy='26' r='2.6' fill='%232fd0e0'/%3E%3Ccircle cx='24' cy='38' r='2.6' fill='%23eaf6ff'/%3E%3C/svg%3E">
   <meta name="description"
     content="Outil québécois gratuit pour visualiser des profils cognitifs regroupés par fonction cognitive." />
+  <meta property="og:title" content="Vizéa — Visualisation de profils cognitifs" />
+  <meta property="og:description" content="Outil québécois gratuit pour visualiser des profils cognitifs regroupés par fonction cognitive." />
+  <link rel="alternate" hreflang="fr" href="https://vizea.ca/?lang=fr" />
+  <link rel="alternate" hreflang="en" href="https://vizea.ca/?lang=en" />
+  <link rel="alternate" hreflang="x-default" href="https://vizea.ca/" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -25,6 +30,7 @@
   <link rel="stylesheet" href="style.css?v=20260702">
 
   <script defer src="plotly.min.js?v=20260702" charset="utf-8"></script>
+  <script defer src="i18n.js?v=20260914"></script>
   <script defer src="constants.js?v=20260702"></script>
   <script defer src="scoring.js?v=20260702"></script>
   <script defer src="datamodel.js?v=20260702"></script>
@@ -55,20 +61,21 @@
       <span class="logo-word">Viz<span class="logo-x">é</span>a</span>
     </div>
     <div class="header-right">
-      <button class="theme-toggle" id="themeToggle" aria-label="Basculer le thème clair/sombre" title="Thème clair/sombre">
+      <nav id="topnav" aria-label="Navigation principale">
+        <a data-target="page-home" class="active" data-i18n="nav.home">Accueil</a>
+        <a data-target="page-new" data-i18n="nav.viz">Visualisation</a>
+        <a id="navDemo" class="nav-demo" role="button" tabindex="0" data-i18n="nav.demo">Démo</a>
+        <a data-target="page-about" data-i18n="nav.about">À propos</a>
+        <a data-target="page-news" data-i18n="nav.news">Nouveautés</a>
+        <a data-target="page-suggest" data-i18n="nav.suggest">Suggérer un test</a>
+        <a data-target="page-donate" data-i18n="nav.donate">Faire un don</a>
+      </nav>
+      <button class="lang-toggle" id="langToggle" aria-label="Switch to English" title="Switch to English">EN</button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Basculer le thème clair/sombre" data-i18n-attr="title:theme.toggle" title="Thème clair/sombre">
         <svg class="ico-sun" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 1.5v2.5M12 20v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M1.5 12h2.5M20 12h2.5M4.2 19.8l1.8-1.8M18 6l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         <svg class="ico-moon" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       </button>
-      <nav id="topnav" aria-label="Navigation principale">
-        <a data-target="page-home" class="active">Accueil</a>
-        <a data-target="page-new">Visualisation</a>
-        <a id="navDemo" class="nav-demo" role="button" tabindex="0">Démo</a>
-        <a data-target="page-about">À propos</a>
-        <a data-target="page-news">Nouveautés</a>
-        <a data-target="page-suggest">Suggérer un test</a>
-        <a data-target="page-donate">Faire un don</a>
-      </nav>
-      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false">
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" data-i18n-attr="aria-label:nav.menuOpen" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -80,27 +87,27 @@
       <div class="hero">
         <div class="hero-grid">
           <div class="hero-content">
-            <p class="hero-eyebrow"><span class="dot"></span>Outil clinique · Gratuit · D'ici</p>
-            <h1 class="hero-title">Voir un <span class="accent-word">profil</span>,<br>pas seulement des
+            <p class="hero-eyebrow"><span class="dot"></span><span data-i18n="home.eyebrow">Outil clinique · Gratuit · D'ici</span></p>
+            <h1 class="hero-title" data-i18n-html="home.title">Voir un <span class="accent-word">profil</span>,<br>pas seulement des
               chiffres.</h1>
-            <p class="slogan">Vizéa présente des scores standardisés en un profil cognitif clair, regroupé par
+            <p class="slogan" data-i18n="home.slogan">Vizéa présente des scores standardisés en un profil cognitif clair, regroupé par
               fonction cognitive : Prêt à interpréter, à exporter, à montrer.</p>
             <div class="hero-buttons">
               <a data-target="page-new" class="btn-primary hero-btn">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20V11M9.5 20V4M15 20v-6M20.5 20V8M3 20h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                Commencer une visualisation
+                <span data-i18n="home.btnStart">Commencer une visualisation</span>
               </a>
               <button type="button" id="startDemoBtn" class="btn-demo hero-btn">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" /><path d="M10 8.5l5 3.5-5 3.5V8.5Z" fill="currentColor" /></svg>
-                Commencer une démonstration
+                <span data-i18n="home.btnDemo">Commencer une démonstration</span>
               </button>
               <a data-target="page-about" class="btn-outline hero-btn">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9 4.03 9 9 9Z" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
-                Découvrir le projet
+                <span data-i18n="home.btnDiscover">Découvrir le projet</span>
               </a>
               <button type="button" id="installAppBtn" class="btn-outline hero-btn" data-target="page-install">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Installer l'application
+                <span data-i18n="home.btnInstall">Installer l'application</span>
               </button>
             </div>
             <p class="hero-note">
@@ -110,7 +117,7 @@
                 <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
                   stroke-linejoin="round" />
               </svg>
-              Aucune donnée clinique conservée. Les scores restent dans votre navigateur le temps de la séance.
+              <span data-i18n="home.note">Aucune donnée clinique conservée. Les scores restent dans votre navigateur le temps de la séance.</span>
             </p>
           </div>
 
@@ -119,7 +126,7 @@
             <div class="profile-card">
               <div class="profile-card-head">
                 <span class="pc-dot"></span><span class="pc-dot"></span><span class="pc-dot"></span>
-                <span class="pc-label">Profil cognitif</span>
+                <span class="pc-label" data-i18n="home.card.label">Profil cognitif</span>
               </div>
               <svg class="profile-svg" viewBox="0 0 420 280" preserveAspectRatio="none">
                 <!-- interpretation bands -->
@@ -143,7 +150,7 @@
                 </g>
               </svg>
               <div class="profile-axis">
-                <span>Langage</span><span>Visuo.</span><span>Mémoire</span><span>Attention</span><span>Exéc.</span>
+                <span data-i18n="home.card.lang">Langage</span><span data-i18n="home.card.visuo">Visuo.</span><span data-i18n="home.card.mem">Mémoire</span><span data-i18n="home.card.att">Attention</span><span data-i18n="home.card.exec">Exéc.</span>
               </div>
             </div>
           </div>
@@ -165,8 +172,8 @@
               <circle cx="25" cy="15" r="1.8" fill="currentColor" />
             </svg>
           </span>
-          <h3>Un profil d'un coup d'œil</h3>
-          <p>Chaque score est replacé sur une échelle commune et regroupé par fonction cognitive, sur fond des bandes
+          <h3 data-i18n="home.feat1.title">Un profil d'un coup d'œil</h3>
+          <p data-i18n="home.feat1.desc">Chaque score est replacé sur une échelle commune et regroupé par fonction cognitive, sur fond des bandes
             d'interprétation reconnues.</p>
         </div>
         <div class="feature">
@@ -178,8 +185,8 @@
               <circle cx="24" cy="10" r="3" fill="var(--bg)" stroke="currentColor" stroke-width="2" />
             </svg>
           </span>
-          <h3>Entièrement ajustable</h3>
-          <p>Changez d'échelle, de type de graphique, de couleurs, masquez des fonctions, ajoutez les valeurs, puis
+          <h3 data-i18n="home.feat2.title">Entièrement ajustable</h3>
+          <p data-i18n="home.feat2.desc">Changez d'échelle, de type de graphique, de couleurs, masquez des fonctions, ajoutez les valeurs, puis
             exportez l'image finale.</p>
         </div>
         <div class="feature">
@@ -191,16 +198,16 @@
                 stroke-linejoin="round" />
             </svg>
           </span>
-          <h3>Confidentiel par conception</h3>
-          <p>Les scores ne quittent jamais votre appareil. Seuls vos modèles de tests et vos préférences de graphique
+          <h3 data-i18n="home.feat3.title">Confidentiel par conception</h3>
+          <p data-i18n="home.feat3.desc">Les scores ne quittent jamais votre appareil. Seuls vos modèles de tests et vos préférences de graphique
             sont enregistrés, localement.</p>
         </div>
       </div>
 
       <div class="home-cta reveal">
-        <h2>Prêt à visualiser un profil ?</h2>
-        <p>Aucune inscription requise. Créez un projet, entrez vos scores, obtenez le graphique.</p>
-        <a data-target="page-new" class="btn-primary btn-lg">Ouvrir l'outil</a>
+        <h2 data-i18n="home.cta.title">Prêt à visualiser un profil ?</h2>
+        <p data-i18n="home.cta.desc">Aucune inscription requise. Créez un projet, entrez vos scores, obtenez le graphique.</p>
+        <a data-target="page-new" class="btn-primary btn-lg" data-i18n="home.cta.btn">Ouvrir l'outil</a>
       </div>
     </section>
 
@@ -208,13 +215,13 @@
     <section id="page-new" class="page">
       <div id="stepnav" class="stepnav" style="display:none;">
         <div class="stepnav-inner">
-          <button data-step="0" class="btn-step active"><span class="step-num">1</span> Projet</button>
+          <button data-step="0" class="btn-step active"><span class="step-num">1</span> <span data-i18n="wiz.tab.project">Projet</span></button>
           <span class="step-sep" aria-hidden="true"></span>
-          <button data-step="1" class="btn-step"><span class="step-num">2</span> Tests</button>
+          <button data-step="1" class="btn-step"><span class="step-num">2</span> <span data-i18n="wiz.tab.tests">Tests</span></button>
           <span class="step-sep" aria-hidden="true"></span>
-          <button data-step="2" class="btn-step"><span class="step-num">3</span> Scores</button>
+          <button data-step="2" class="btn-step"><span class="step-num">3</span> <span data-i18n="wiz.tab.scores">Scores</span></button>
           <span class="step-sep" aria-hidden="true"></span>
-          <button data-step="3" class="btn-step"><span class="step-num">4</span> Graphique</button>
+          <button data-step="3" class="btn-step"><span class="step-num">4</span> <span data-i18n="wiz.tab.chart">Graphique</span></button>
         </div>
       </div>
 
@@ -222,45 +229,45 @@
         <!-- STEP 0 -->
         <section id="step-0-content" class="step-content active">
           <div class="card step0-card">
-            <h2>Nouveau projet</h2>
-            <p class="muted step0-intro">Donnez un nom à la séance, choisissez un point de départ, puis ajoutez vos tests. Tout reste local sur votre appareil.</p>
+            <h2 data-i18n="wiz.new.title">Nouveau projet</h2>
+            <p class="muted step0-intro" data-i18n="wiz.new.intro">Donnez un nom à la séance, choisissez un point de départ, puis ajoutez vos tests. Tout reste local sur votre appareil.</p>
 
             <div class="info-msg">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span>N'inscrivez aucun renseignement permettant d'identifier la personne évaluée (nom, date de naissance, initiales). Utilisez un code interne si nécessaire.</span>
+              <span data-i18n="wiz.new.privacy">N'inscrivez aucun renseignement permettant d'identifier la personne évaluée (nom, date de naissance, initiales). Utilisez un code interne si nécessaire.</span>
             </div>
 
             <div class="new-project">
               <div class="field">
-                <label class="field-label" for="projectTitle">Nom du projet</label>
-                <input type="text" id="projectTitle" placeholder="Ex : Évaluation 2026-014" autocomplete="off">
+                <label class="field-label" for="projectTitle" data-i18n="wiz.new.nameLabel">Nom du projet</label>
+                <input type="text" id="projectTitle" placeholder="Ex : Évaluation 2026-014" data-i18n-attr="placeholder:wiz.new.namePh" autocomplete="off">
               </div>
 
               <div class="field">
-                <label class="field-label" for="templateSelect">Point de départ</label>
-                <select id="templateSelect"><option value="">Projet vierge : Aucun modèle</option></select>
-                <p class="field-hint">Un modèle reprend toute la structure enregistrée (tests, scores, fonctions, types), sans aucune valeur.</p>
-                <button id="deleteTemplateBtn" class="btn-text-danger" disabled>Supprimer ce modèle</button>
+                <label class="field-label" for="templateSelect" data-i18n="wiz.new.startLabel">Point de départ</label>
+                <select id="templateSelect"><option value="" data-i18n="wiz.new.blankOption">Projet vierge : Aucun modèle</option></select>
+                <p class="field-hint" data-i18n="wiz.new.templateHint">Un modèle reprend toute la structure enregistrée (tests, scores, fonctions, types), sans aucune valeur.</p>
+                <button id="deleteTemplateBtn" class="btn-text-danger" data-i18n="wiz.new.deleteTemplate" disabled>Supprimer ce modèle</button>
               </div>
 
               <label class="confirm-box">
                 <input type="checkbox" id="confirmNoPI" />
-                <span>Je confirme que ce titre ne contient aucune donnée nominative.</span>
+                <span data-i18n="wiz.new.confirm">Je confirme que ce titre ne contient aucune donnée nominative.</span>
               </label>
 
               <button id="createProjectBtn" class="btn-primary btn-lg btn-block" disabled>
-                Créer le projet
+                <span data-i18n="wiz.new.create">Créer le projet</span>
                 <svg class="btn-arrow" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>
 
-            <div class="divider"><span>ou</span></div>
+            <div class="divider"><span data-i18n="wiz.new.or">ou</span></div>
 
             <button id="importProjectBtn" class="import-tile">
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 15V3m0 0L8 7m4-4 4 4M3 15v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <span class="import-tile-text">
-                <strong>Reprendre un projet exporté (.vizea)</strong>
-                <small>Recharge un projet complet, scores compris.</small>
+                <strong data-i18n="wiz.new.importTitle">Reprendre un projet exporté (.vizea)</strong>
+                <small data-i18n="wiz.new.importDesc">Recharge un projet complet, scores compris.</small>
               </span>
             </button>
             <input type="file" id="importProjectInput" accept=".vizea,application/vizea+json,application/json,.json" hidden>
@@ -271,24 +278,24 @@
         <section id="step-1-content" class="step-content">
           <div class="step1-grid">
             <div class="card">
-              <h2>Sélection des tests</h2>
-              <input type="text" id="testSearch" placeholder="Rechercher une batterie ou un test…" autocomplete="off">
+              <h2 data-i18n="wiz.tests.title">Sélection des tests</h2>
+              <input type="text" id="testSearch" placeholder="Rechercher une batterie ou un test…" data-i18n-attr="placeholder:wiz.tests.searchPh" autocomplete="off">
               <div id="testList" class="test-list"></div>
               <div id="manualTestWrapper">
-                <input type="text" id="manualTestInput" placeholder="Nom d'un test absent de la liste">
-                <button id="addManualTestBtn" class="btn-soft">Ajouter manuellement</button>
+                <input type="text" id="manualTestInput" placeholder="Nom d'un test absent de la liste" data-i18n-attr="placeholder:wiz.tests.manualPh">
+                <button id="addManualTestBtn" class="btn-soft" data-i18n="wiz.tests.addManual">Ajouter manuellement</button>
               </div>
             </div>
 
             <div class="card">
-              <h2>Tests sélectionnés</h2>
+              <h2 data-i18n="wiz.tests.selected">Tests sélectionnés</h2>
               <div id="selectedTestsList" class="selected-list">
-                <p class="muted empty-hint">Aucun test sélectionné pour l'instant.</p>
+                <p class="muted empty-hint" data-i18n="wiz.tests.emptyHint">Aucun test sélectionné pour l'instant.</p>
               </div>
               <div id="step1Warning" class="warning" style="display:none;">
-                Sélectionnez au moins un test pour continuer.
+                <span data-i18n="wiz.tests.warning">Sélectionnez au moins un test pour continuer.</span>
               </div>
-              <button id="nextStepBtn" class="btn-primary">Continuer vers les scores →</button>
+              <button id="nextStepBtn" class="btn-primary" data-i18n="wiz.tests.next">Continuer vers les scores →</button>
             </div>
           </div>
         </section>
@@ -296,15 +303,14 @@
         <!-- STEP 2 -->
         <section id="step-2-content" class="step-content">
           <div class="card">
-            <h2>Entrée des scores</h2>
-            <p class="muted">Pour chaque score : la valeur, son type, et la ou les fonctions cognitives évaluées.
-              Vous pouvez ajouter plusieurs scores à un même test.</p>
-            <p class="muted entry-hint">Astuce : appuyez sur <kbd>Entrée</kbd> pour passer au champ de score suivant (ou <kbd>Tab</kbd> pour le champ suivant).</p>
+            <h2 data-i18n="wiz.scores.title">Entrée des scores</h2>
+            <p class="muted" data-i18n="wiz.scores.intro">Pour chaque score : la valeur, son type, et la ou les fonctions cognitives évaluées. Vous pouvez ajouter plusieurs scores à un même test.</p>
+            <p class="muted entry-hint" data-i18n-html="wiz.scores.kbdHint">Astuce : appuyez sur <kbd>Entrée</kbd> pour passer au champ de score suivant (ou <kbd>Tab</kbd> pour le champ suivant).</p>
           </div>
           <div id="scoreEntryContainer"></div>
           <div class="card step-actions">
-            <button id="backToStep1Btn" class="btn-ghost">← Retour aux tests</button>
-            <button id="goToStep3Btn" class="btn-primary">Voir le graphique →</button>
+            <button id="backToStep1Btn" class="btn-ghost" data-i18n="wiz.scores.back">← Retour aux tests</button>
+            <button id="goToStep3Btn" class="btn-primary" data-i18n="wiz.scores.toChart">Voir le graphique →</button>
           </div>
         </section>
 
@@ -314,7 +320,7 @@
             <div class="card viz-main">
               <button id="panelToggle" class="panel-fab" aria-expanded="false" aria-controls="vizPanel">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                Personnaliser
+                <span data-i18n="panel.open">Personnaliser</span>
               </button>
               <div id="vizPlot" class="viz-plot"></div>
               <div id="vizTableWrap" class="viz-table-wrap" hidden></div>
@@ -322,46 +328,46 @@
               <div class="viz-actions">
                 <button id="vaImageBtn" class="va-primary" type="button">
                   <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0l-3.5-3.5M12 14l3.5-3.5M5 18h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  Image (PNG)
+                  <span data-i18n="export.image">Image (PNG)</span>
                 </button>
                 <button id="vaExcelBtn" class="va-primary" type="button" hidden>
                   <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h9l5 5v11a0 0 0 0 1 0 0H5a0 0 0 0 1 0 0V4Z" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l4 5M13 12l-4 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                  Exporter en Excel
+                  <span data-i18n="export.excel">Exporter en Excel</span>
                 </button>
-                <button id="vaTemplateBtn" class="btn-soft" type="button">Enregistrer comme modèle</button>
-                <button id="vaProjectBtn" class="btn-ghost" type="button">Exporter le projet (.vizea)</button>
+                <button id="vaTemplateBtn" class="btn-soft" type="button" data-i18n="export.template">Enregistrer comme modèle</button>
+                <button id="vaProjectBtn" class="btn-ghost" type="button" data-i18n="export.project">Exporter le projet (.vizea)</button>
               </div>
             </div>
 
             <div id="panelScrim" class="panel-scrim" hidden></div>
             <aside class="viz-panel" id="vizPanel" aria-label="Options du graphique">
               <div class="viz-panel-head">
-                <h3>Personnaliser</h3>
-                <button id="panelClose" class="panel-close" aria-label="Fermer">&times;</button>
+                <h3 data-i18n="panel.title">Personnaliser</h3>
+                <button id="panelClose" class="panel-close" aria-label="Fermer" data-i18n-attr="aria-label:common.close">&times;</button>
               </div>
               <div class="viz-panel-body">
                <div class="panel-acc" id="panelAcc">
                 <section class="acc-item" data-acc="affichage">
                   <button type="button" class="acc-head" aria-expanded="true">
-                    <span>Affichage</span><span class="acc-chevron" aria-hidden="true"></span>
+                    <span data-i18n="panel.sec.display">Affichage</span><span class="acc-chevron" aria-hidden="true"></span>
                   </button>
                   <div class="acc-panel">
-                <label class="panel-label" for="opt-displayScale">Échelle affichée</label>
+                <label class="panel-label" for="opt-displayScale" data-i18n="panel.displayScale">Échelle affichée</label>
                 <select id="opt-displayScale">
-                  <option value="Percentile">Rang centile</option>
-                  <option value="Standard score">Score standard</option>
-                  <option value="Scale score">Score pondéré</option>
-                  <option value="Z-Score">Score Z</option>
-                  <option value="T-Score">Score T</option>
+                  <option value="Percentile" data-i18n="score.percentile">Rang centile</option>
+                  <option value="Standard score" data-i18n="score.standard">Score standard</option>
+                  <option value="Scale score" data-i18n="score.scaled">Score pondéré</option>
+                  <option value="Z-Score" data-i18n="score.z">Score Z</option>
+                  <option value="T-Score" data-i18n="score.t">Score T</option>
                 </select>
 
-                <label class="panel-label">Type de graphique</label>
+                <label class="panel-label" data-i18n="panel.chartType">Type de graphique</label>
                 <div class="seg" id="opt-chartType">
-                  <button type="button" data-type="line" class="active">Ligne</button>
-                  <button type="button" data-type="radar">Radar</button>
+                  <button type="button" data-type="line" class="active" data-i18n="panel.typeLine">Ligne</button>
+                  <button type="button" data-type="radar" data-i18n="panel.typeRadar">Radar</button>
                 </div>
 
-                <label class="panel-label" for="opt-fontScale">Taille du texte</label>
+                <label class="panel-label" for="opt-fontScale" data-i18n="panel.textSize">Taille du texte</label>
                 <div class="band-opacity-row">
                   <input type="range" id="opt-fontScale" min="75" max="160" step="5" value="100">
                   <span id="fontScaleValue" class="band-opacity-value">100 %</span>
@@ -369,61 +375,61 @@
 
                 <label class="panel-toggle">
                   <input type="checkbox" id="opt-showDataLabels">
-                  <span>Valeur sur les points</span>
+                  <span data-i18n="panel.dataLabels">Valeur sur les points</span>
                 </label>
                 <label class="panel-toggle">
                   <input type="checkbox" id="opt-proportionalAxis" checked>
-                  <span>Espacement proportionnel à la rareté</span>
+                  <span data-i18n="panel.proportional">Espacement proportionnel à la rareté</span>
                 </label>
                 <label class="panel-toggle" data-only="line">
                   <input type="checkbox" id="opt-showTestLabels" checked>
-                  <span>Nom des tests (axe horizontal)</span>
+                  <span data-i18n="panel.testLabels">Nom des tests (axe horizontal)</span>
                 </label>
                 <label class="panel-toggle" data-only="radar">
                   <input type="checkbox" id="opt-radarFill" checked>
-                  <span>Ombrage du profil (radar)</span>
+                  <span data-i18n="panel.radarFill">Ombrage du profil (radar)</span>
                 </label>
 
-                <label class="panel-label" for="opt-title">Titre du graphique</label>
-                <input type="text" id="opt-title" placeholder="Laisser vide pour aucun titre">
+                <label class="panel-label" for="opt-title" data-i18n="panel.title2">Titre du graphique</label>
+                <input type="text" id="opt-title" placeholder="Laisser vide pour aucun titre" data-i18n-attr="placeholder:panel.titlePh">
                   </div>
                 </section>
 
                 <section class="acc-item" data-acc="bandes" data-only="line scales">
                   <button type="button" class="acc-head" aria-expanded="false">
-                    <span>Bandes d'interprétation</span><span class="acc-chevron" aria-hidden="true"></span>
+                    <span data-i18n="panel.sec.bands">Bandes d'interprétation</span><span class="acc-chevron" aria-hidden="true"></span>
                   </button>
                   <div class="acc-panel">
                 <label class="panel-toggle">
                   <input type="checkbox" id="opt-showBands" checked>
-                  <span>Afficher les bandes</span>
+                  <span data-i18n="panel.showBands">Afficher les bandes</span>
                 </label>
                 <div id="bandOptions" class="band-options">
                   <label class="panel-toggle">
                     <input type="checkbox" id="opt-showBandLabels">
-                    <span>Nom des bandes sur le graphique</span>
+                    <span data-i18n="panel.bandLabels">Nom des bandes sur le graphique</span>
                   </label>
-                  <label class="panel-label" for="opt-bandOpacity">Intensité des couleurs</label>
+                  <label class="panel-label" for="opt-bandOpacity" data-i18n="panel.bandOpacity">Intensité des couleurs</label>
                   <div class="band-opacity-row">
                     <input type="range" id="opt-bandOpacity" min="3" max="45" step="1" value="13">
                     <span id="bandOpacityValue" class="band-opacity-value">13 %</span>
                   </div>
                   <details class="band-rename">
-                    <summary>Renommer les bandes</summary>
+                    <summary data-i18n="panel.renameBands">Renommer les bandes</summary>
                     <div id="bandLabelList" class="band-label-list"></div>
-                    <button type="button" id="bandLabelsReset" class="btn-ghost btn-mini">Rétablir les noms d'origine</button>
+                    <button type="button" id="bandLabelsReset" class="btn-ghost btn-mini" data-i18n="panel.resetNames">Rétablir les noms d'origine</button>
                   </details>
                 </div>
                 <div class="axis-limits">
-                  <label class="panel-label">Limites de l'axe vertical</label>
-                  <p class="fn-subhint" id="axisLimitsHint">Laissez vide pour l'étendue automatique.</p>
+                  <label class="panel-label" data-i18n="panel.axisLimits">Limites de l'axe vertical</label>
+                  <p class="fn-subhint" id="axisLimitsHint" data-i18n="panel.axisHint">Laissez vide pour l'étendue automatique.</p>
                   <div class="axis-limits-row">
                     <div class="field">
-                      <label class="field-label" for="opt-axisMin">Minimum</label>
+                      <label class="field-label" for="opt-axisMin" data-i18n="panel.min">Minimum</label>
                       <input type="number" id="opt-axisMin" step="any" placeholder="auto">
                     </div>
                     <div class="field">
-                      <label class="field-label" for="opt-axisMax">Maximum</label>
+                      <label class="field-label" for="opt-axisMax" data-i18n="panel.max">Maximum</label>
                       <input type="number" id="opt-axisMax" step="any" placeholder="auto">
                     </div>
                   </div>
@@ -433,30 +439,30 @@
 
                 <section class="acc-item" data-acc="contenu" data-only="line radar scales">
                   <button type="button" class="acc-head" aria-expanded="false">
-                    <span>Contenu et couleurs</span><span class="acc-chevron" aria-hidden="true"></span>
+                    <span data-i18n="panel.sec.content">Contenu et couleurs</span><span class="acc-chevron" aria-hidden="true"></span>
                   </button>
                   <div class="acc-panel">
-                <label class="panel-label">Fonctions affichées</label>
-                <p class="fn-hint">Glissez pour réordonner · décochez pour masquer</p>
+                <label class="panel-label" data-i18n="panel.functions">Fonctions affichées</label>
+                <p class="fn-hint" data-i18n="panel.fnHint">Glissez pour réordonner · décochez pour masquer</p>
                 <div id="opt-functions" class="fn-list"></div>
 
                 <div data-only="line">
-                  <label class="panel-label">Tests affichés</label>
-                  <p class="fn-hint">Glissez pour réordonner · décochez pour masquer · cliquez le nom pour le renommer</p>
-                  <p class="fn-subhint">Affichage seulement : vos données saisies ne changent pas.</p>
+                  <label class="panel-label" data-i18n="panel.tests">Tests affichés</label>
+                  <p class="fn-hint" data-i18n="panel.testsHint">Glissez pour réordonner · décochez pour masquer · cliquez le nom pour le renommer</p>
+                  <p class="fn-subhint" data-i18n="panel.viewOnly">Affichage seulement : vos données saisies ne changent pas.</p>
                   <div id="opt-points" class="fn-list points-list"></div>
                 </div>
 
                 <div data-only="line">
-                  <label class="panel-label">Couleurs par fonction</label>
+                  <label class="panel-label" data-i18n="panel.colors">Couleurs par fonction</label>
                   <div id="opt-colors" class="color-list"></div>
                 </div>
 
                 <div data-only="radar">
-                  <label class="panel-label" for="opt-radarColor">Couleur du profil (radar)</label>
+                  <label class="panel-label" for="opt-radarColor" data-i18n="panel.radarColor">Couleur du profil (radar)</label>
                   <div class="color-row">
                     <input type="color" id="opt-radarColor" value="#176bb5">
-                    <span>Profil radar</span>
+                    <span data-i18n="panel.radarProfile">Profil radar</span>
                   </div>
                 </div>
                   </div>
@@ -464,31 +470,31 @@
 
                 <section class="acc-item" data-acc="comparaison" data-only="line">
                   <button type="button" class="acc-head" aria-expanded="false">
-                    <span>Ligne de comparaison</span><span class="acc-chevron" aria-hidden="true"></span>
+                    <span data-i18n="panel.sec.compare">Ligne de comparaison</span><span class="acc-chevron" aria-hidden="true"></span>
                   </button>
                   <div class="acc-panel">
                 <div class="compare-block">
-                  <p class="panel-hint">Trace un repère horizontal (ex. QI estimé) pour situer le profil.</p>
+                  <p class="panel-hint" data-i18n="panel.compareHint">Trace un repère horizontal (ex. QI estimé) pour situer le profil.</p>
                   <div class="compare-grid">
                     <div class="field">
-                      <span class="field-label">Valeur</span>
+                      <span class="field-label" data-i18n="common.value">Valeur</span>
                       <input type="number" id="opt-compareValue" placeholder="ex. 100" class="condition-value">
                     </div>
                     <div class="field">
-                      <span class="field-label">Type de score</span>
+                      <span class="field-label" data-i18n="common.scoreType">Type de score</span>
                       <select id="opt-compareType" class="condition-type">
-                        <option value="Standard score">Score standard</option>
-                        <option value="Percentile">Rang centile</option>
-                        <option value="Scale score">Score pondéré</option>
-                        <option value="Z-Score">Score Z</option>
-                        <option value="T-Score">Score T</option>
+                        <option value="Standard score" data-i18n="score.standard">Score standard</option>
+                        <option value="Percentile" data-i18n="score.percentile">Rang centile</option>
+                        <option value="Scale score" data-i18n="score.scaled">Score pondéré</option>
+                        <option value="Z-Score" data-i18n="score.z">Score Z</option>
+                        <option value="T-Score" data-i18n="score.t">Score T</option>
                       </select>
                     </div>
                   </div>
-                  <label class="field-label" for="opt-compareLabel" style="margin-top:8px;display:block;">Étiquette (optionnelle)</label>
-                  <input type="text" id="opt-compareLabel" placeholder="ex. QI estimé" class="compare-label-input">
+                  <label class="field-label" for="opt-compareLabel" style="margin-top:8px;display:block;" data-i18n="panel.compareLabel">Étiquette (optionnelle)</label>
+                  <input type="text" id="opt-compareLabel" placeholder="ex. QI estimé" data-i18n-attr="placeholder:panel.comparePh" class="compare-label-input">
                   <div id="compareWarn" class="cond-warn" style="display:none;"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 16H3L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4M12 17h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span></span></div>
-                  <button id="clearCompareBtn" class="btn-ghost btn-block btn-sm">Retirer la ligne</button>
+                  <button id="clearCompareBtn" class="btn-ghost btn-block btn-sm" data-i18n="panel.removeLine">Retirer la ligne</button>
                 </div>
                   </div>
                 </section>
@@ -508,9 +514,9 @@
     <!-- ============ ABOUT ============ -->
     <section id="page-about" class="page page-narrow">
       <div class="about-hero">
-        <span class="about-kicker">À propos</span>
-        <h2>Un outil clinique, <em>libre</em> et <em>fait ici</em>.</h2>
-        <p class="about-lede"><span class="brand">Vizéa</span> rend la visualisation des profils cognitifs claire, rapide et accessible, gratuitement, et sans dépendre des grandes compagnies.</p>
+        <span class="about-kicker" data-i18n="about.kicker">À propos</span>
+        <h2 data-i18n-html="about.heroTitle">Un outil clinique, <em>libre</em> et <em>fait ici</em>.</h2>
+        <p class="about-lede" data-i18n-html="about.lede"><span class="brand">Vizéa</span> rend la visualisation des profils cognitifs claire, rapide et accessible, gratuitement, et sans dépendre des grandes compagnies.</p>
       </div>
 
       <div class="about-grid">
@@ -519,11 +525,11 @@
             <span class="about-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l2.2 6.6L21 11l-6.8 2.4L12 20l-2.2-6.6L3 11l6.8-2.4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             </span>
-            <h3>À propos de Vizéa</h3>
+            <h3 data-i18n="about.c1t">À propos de Vizéa</h3>
           </div>
-          <p><span class="brand">Vizéa</span> est un outil technologique québécois conçu pour faciliter la visualisation des profils cognitifs. Il s'adresse aux professionnels de la santé, aux étudiants et aux chercheurs, en offrant une solution gratuite, accessible et indépendante des grandes compagnies qui dominent le domaine.</p>
-          <p>L'objectif est simple : Redonner le contrôle de nos outils, favoriser une pratique plus libre et collaborative, et soutenir l'évolution de nos professions sans barrières commerciales ni coûts récurrents. <span class="brand">Vizéa</span> permet une visualisation rapide, intuitive et personnalisée des profils cognitifs, pour une meilleure compréhension des forces et des défis de la personne évaluée.</p>
-          <p>Il me semble évident qu'un tel outil devrait déjà exister, et pourtant, ce n'est pas le cas. Si <span class="brand">Vizéa</span> peut combler ce vide, même modestement, alors le projet aura du sens.</p>
+          <p data-i18n-html="about.c1p1"><span class="brand">Vizéa</span> est un outil technologique québécois conçu pour faciliter la visualisation des profils cognitifs. Il s'adresse aux professionnels de la santé, aux étudiants et aux chercheurs, en offrant une solution gratuite, accessible et indépendante des grandes compagnies qui dominent le domaine.</p>
+          <p data-i18n-html="about.c1p2">L'objectif est simple : Redonner le contrôle de nos outils, favoriser une pratique plus libre et collaborative, et soutenir l'évolution de nos professions sans barrières commerciales ni coûts récurrents. <span class="brand">Vizéa</span> permet une visualisation rapide, intuitive et personnalisée des profils cognitifs, pour une meilleure compréhension des forces et des défis de la personne évaluée.</p>
+          <p data-i18n-html="about.c1p3">Il me semble évident qu'un tel outil devrait déjà exister, et pourtant, ce n'est pas le cas. Si <span class="brand">Vizéa</span> peut combler ce vide, même modestement, alors le projet aura du sens.</p>
         </article>
 
         <article class="card about-card reveal">
@@ -531,10 +537,10 @@
             <span class="about-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M15.1 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.76.76 1.23 1.52 1.41 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 18h6M10 22h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
             </span>
-            <h3>Pourquoi ce projet ?</h3>
+            <h3 data-i18n="about.c2t">Pourquoi ce projet ?</h3>
           </div>
-          <p>L'idée est née lorsque mes superviseures d'internat m'ont demandé en supervision de partager et regrouper les résultats d'un patient pour faciliter la compréhension de son profil. J'en avais assez d'utiliser des fichiers Excel bricolés, transmis de façon informelle par des professionnels que je ne connaissais même pas. Cette dépendance à des outils opaques m'a poussé à créer une solution claire, fiable et ouverte.</p>
-          <p>Dans notre milieu, on nous répète souvent qu'il faut « faire plus avec moins ». Mais les outils technologiques qui pourraient nous aider sont soit inexistants, soit hors de prix, souvent proposés par des compagnies qui profitent déjà largement du système. <span class="brand">Vizéa</span> vise à changer cela.</p>
+          <p data-i18n="about.c2p1">L'idée est née lorsque mes superviseures d'internat m'ont demandé en supervision de partager et regrouper les résultats d'un patient pour faciliter la compréhension de son profil. J'en avais assez d'utiliser des fichiers Excel bricolés, transmis de façon informelle par des professionnels que je ne connaissais même pas. Cette dépendance à des outils opaques m'a poussé à créer une solution claire, fiable et ouverte.</p>
+          <p data-i18n-html="about.c2p2">Dans notre milieu, on nous répète souvent qu'il faut « faire plus avec moins ». Mais les outils technologiques qui pourraient nous aider sont soit inexistants, soit hors de prix, souvent proposés par des compagnies qui profitent déjà largement du système. <span class="brand">Vizéa</span> vise à changer cela.</p>
         </article>
 
         <article class="card about-card reveal">
@@ -542,9 +548,9 @@
             <span class="about-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M3 17l6-6 4 4 8-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 7h4v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
-            <h3>Une plateforme évolutive</h3>
+            <h3 data-i18n="about.c3t">Une plateforme évolutive</h3>
           </div>
-          <p><span class="brand">Vizéa</span> est conçu pour être utilisé, adapté et perfectionné avec le temps. La fonction de suggestion de tests permet à la plateforme de grandir avec la communauté, en s'ajustant aux réalités cliniques et aux besoins du terrain. Mon souhait est que cette plateforme réponde à un besoin réel, partagé par d'autres cliniciens, et qu'elle devienne un outil naturel dans notre pratique.</p>
+          <p data-i18n-html="about.c3p1"><span class="brand">Vizéa</span> est conçu pour être utilisé, adapté et perfectionné avec le temps. La fonction de suggestion de tests permet à la plateforme de grandir avec la communauté, en s'ajustant aux réalités cliniques et aux besoins du terrain. Mon souhait est que cette plateforme réponde à un besoin réel, partagé par d'autres cliniciens, et qu'elle devienne un outil naturel dans notre pratique.</p>
         </article>
 
         <article class="card about-card reveal">
@@ -552,11 +558,11 @@
             <span class="about-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v4H4zM14 13h6v6h-6z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             </span>
-            <h3>Le regroupement par fonction</h3>
+            <h3 data-i18n="about.c4t">Le regroupement par fonction</h3>
           </div>
-          <p>Pour regrouper les tests, j'ai retenu un ensemble volontairement concis de fonctions cognitives, celles qui correspondent le mieux à la majorité des tests, sans multiplier les catégories à l'infini. L'objectif est de garder l'outil lisible et fonctionnel plutôt que d'imposer des dizaines de fonctions qui alourdiraient la lecture. Au besoin, vous pouvez toujours en ajouter.</p>
-          <p>Les associations par défaut reposent sur mon jugement clinique, en tenant compte de ce que chaque test ou batterie est présumé mesurer. Comme vous le savez, certains tests ne se rattachent pas parfaitement à une seule fonction : l'Arithmétique, par exemple, peut relever du raisonnement non verbal, de la mémoire de travail ou des mathématiques, selon la batterie utilisée et l'interprétation du clinicien. C'est pourquoi <span class="brand">Vizéa</span> vous laisse libre de reclassifier, renommer et réorganiser les fonctions selon vos besoins et votre lecture du profil.</p>
-          <p>Enfin, les bandes d'interprétation suivent la classification normative proposée par l'American Academy of Clinical Neuropsychology (Guilmette et al., 2020) et adoptée par l'AQNP.</p>
+          <p data-i18n="about.c4p1">Pour regrouper les tests, j'ai retenu un ensemble volontairement concis de fonctions cognitives, celles qui correspondent le mieux à la majorité des tests, sans multiplier les catégories à l'infini. L'objectif est de garder l'outil lisible et fonctionnel plutôt que d'imposer des dizaines de fonctions qui alourdiraient la lecture. Au besoin, vous pouvez toujours en ajouter.</p>
+          <p data-i18n-html="about.c4p2">Les associations par défaut reposent sur mon jugement clinique, en tenant compte de ce que chaque test ou batterie est présumé mesurer. Comme vous le savez, certains tests ne se rattachent pas parfaitement à une seule fonction : l'Arithmétique, par exemple, peut relever du raisonnement non verbal, de la mémoire de travail ou des mathématiques, selon la batterie utilisée et l'interprétation du clinicien. C'est pourquoi <span class="brand">Vizéa</span> vous laisse libre de reclassifier, renommer et réorganiser les fonctions selon vos besoins et votre lecture du profil.</p>
+          <p data-i18n="about.c4p3">Enfin, les bandes d'interprétation suivent la classification normative proposée par l'American Academy of Clinical Neuropsychology (Guilmette et al., 2020) et adoptée par l'AQNP.</p>
         </article>
 
         <article class="card about-card about-card--accent reveal">
@@ -564,9 +570,9 @@
             <span class="about-icon about-icon--green">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
-            <h3>Confidentialité d'abord</h3>
+            <h3 data-i18n="about.c5t">Confidentialité d'abord</h3>
           </div>
-          <p><span class="brand">Vizéa</span> ne conserve aucune donnée clinique. Les scores que vous entrez vivent uniquement dans votre navigateur, le temps de la séance, et servent seulement à produire le graphique. Vous seul décidez de l'exporter et de le conserver, sur votre propre environnement sécurisé. Seuls vos modèles de tests et vos préférences de graphique (qui ne contiennent aucune information clinique) sont enregistrés localement.</p>
+          <p data-i18n-html="about.c5p1"><span class="brand">Vizéa</span> ne conserve aucune donnée clinique. Les scores que vous entrez vivent uniquement dans votre navigateur, le temps de la séance, et servent seulement à produire le graphique. Vous seul décidez de l'exporter et de le conserver, sur votre propre environnement sécurisé. Seuls vos modèles de tests et vos préférences de graphique (qui ne contiennent aucune information clinique) sont enregistrés localement.</p>
         </article>
 
         <article class="card about-card reveal">
@@ -574,9 +580,9 @@
             <span class="about-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             </span>
-            <h3>Un engagement bénévole</h3>
+            <h3 data-i18n="about.c6t">Un engagement bénévole</h3>
           </div>
-          <p>Ce projet est volontaire, et je tiens à ce qu'il le reste. Les coûts liés aux tests, aux protocoles et aux abonnements ne cessent d'augmenter. Et ces frais, qu'ils soient absorbés par le privé ou le public, finissent toujours par retomber sur les patients. <span class="brand">Vizéa</span> est une plateforme gratuite, accessible, et pensée pour le bien commun.</p>
+          <p data-i18n-html="about.c6p1">Ce projet est volontaire, et je tiens à ce qu'il le reste. Les coûts liés aux tests, aux protocoles et aux abonnements ne cessent d'augmenter. Et ces frais, qu'ils soient absorbés par le privé ou le public, finissent toujours par retomber sur les patients. <span class="brand">Vizéa</span> est une plateforme gratuite, accessible, et pensée pour le bien commun.</p>
         </article>
 
         <article class="card about-card reveal">
@@ -584,16 +590,16 @@
             <span class="about-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M22 10L12 5 2 10l10 5 10-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </span>
-            <h3>Mon parcours</h3>
+            <h3 data-i18n="about.c7t">Mon parcours</h3>
           </div>
-          <p>Je poursuis actuellement mon doctorat en neuropsychologie à l'Université du Québec en Outaouais (UQO). Je réalise mes deux internats dans des milieux hospitaliers, avec une patientèle pédiatrique. En ce qui concerne mes modestes compétences en programmation, j'ai été initié au vaste monde de l'informatique en apprenant Matlab dans le cadre de mon projet de thèse d'honneur et de mon essai doctoral au sein du Laboratoire de Perception Visuelle et Sociale de l'UQO. J'ai également acquis des connaissances en Java grâce à un cours hors programme suivi durant mon baccalauréat.</p>
-          <p>Je dois confier que les aspects esthétiques de cet outil ont grandement bénéficiés de l'aide de Claude IA. C'est grâce à sa grande consommation d'eau et ma plus grande consommation de café que <span class="brand">Vizéa</span> est disponible et aussi joli.</p>
+          <p data-i18n="about.c7p1">Je poursuis actuellement mon doctorat en neuropsychologie à l'Université du Québec en Outaouais (UQO). Je réalise mes deux internats dans des milieux hospitaliers, avec une patientèle pédiatrique. En ce qui concerne mes modestes compétences en programmation, j'ai été initié au vaste monde de l'informatique en apprenant Matlab dans le cadre de mon projet de thèse d'honneur et de mon essai doctoral au sein du Laboratoire de Perception Visuelle et Sociale de l'UQO. J'ai également acquis des connaissances en Java grâce à un cours hors programme suivi durant mon baccalauréat.</p>
+          <p data-i18n-html="about.c7p2">Je dois confier que les aspects esthétiques de cet outil ont grandement bénéficiés de l'aide de Claude IA. C'est grâce à sa grande consommation d'eau et ma plus grande consommation de café que <span class="brand">Vizéa</span> est disponible et aussi joli.</p>
           <div class="author-card">
             <img class="author-photo" src="anthony-proulx.jpg" width="440" height="440"
                  alt="Anthony Proulx" loading="lazy" decoding="async">
             <div class="author-meta">
               <span class="author-sign">Anthony Proulx</span>
-              <span class="author-title">Anthony Proulx, B.Sc.<br>Candidat au doctorat en neuropsychologie<br>Université du Québec en Outaouais</span>
+              <span class="author-title" data-i18n-html="about.authorTitle">Anthony Proulx, B.Sc.<br>Candidat au doctorat en neuropsychologie<br>Université du Québec en Outaouais</span>
             </div>
           </div>
         </article>
@@ -603,28 +609,28 @@
     <!-- ============ SUGGEST ============ -->
     <section id="page-suggest" class="page page-narrow">
       <div class="card">
-        <h2>Suggérer un test</h2>
-        <p class="muted">Aidez la banque à grandir. Proposez un test ou une batterie à ajouter.</p>
+        <h2 data-i18n="suggest.title">Suggérer un test</h2>
+        <p class="muted" data-i18n="suggest.desc">Aidez la banque à grandir. Proposez un test ou une batterie à ajouter.</p>
         <form id="suggestForm">
-          <label for="testName">Nom du test ou de la batterie</label>
-          <input id="testName" type="text" placeholder="Ex : WISC-V, Figure de Rey…" />
+          <label for="testName" data-i18n="suggest.nameLabel">Nom du test ou de la batterie</label>
+          <input id="testName" type="text" placeholder="Ex : WISC-V, Figure de Rey…" data-i18n-attr="placeholder:suggest.namePh" />
 
-          <label>Fonctions cognitives associées</label>
+          <label data-i18n="suggest.fnLabel">Fonctions cognitives associées</label>
           <div id="functions" class="fn-checks"></div>
 
-          <label for="description">Description (optionnel)</label>
-          <textarea id="description" rows="4" placeholder="Conditions, scores utilisés, etc."></textarea>
+          <label for="description" data-i18n="suggest.descLabel">Description (optionnel)</label>
+          <textarea id="description" rows="4" placeholder="Conditions, scores utilisés, etc." data-i18n-attr="placeholder:suggest.descPh"></textarea>
 
-          <label for="contactName">Votre nom (optionnel)</label>
+          <label for="contactName" data-i18n="suggest.yourName">Votre nom (optionnel)</label>
           <input id="contactName" type="text" />
 
-          <label for="contactEmail">Votre courriel (optionnel)</label>
+          <label for="contactEmail" data-i18n="suggest.yourEmail">Votre courriel (optionnel)</label>
           <input id="contactEmail" type="email" />
 
           <div class="form-actions">
-            <button id="suggestSend" type="button" class="btn-primary">Envoyer la suggestion</button>
+            <button id="suggestSend" type="button" class="btn-primary" data-i18n="suggest.send">Envoyer la suggestion</button>
           </div>
-          <div id="suggestSuccess" class="success" style="display:none;">Merci, votre suggestion a été acheminée.</div>
+          <div id="suggestSuccess" class="success" style="display:none;" data-i18n="suggest.success">Merci, votre suggestion a été acheminée.</div>
           <div id="suggestError" class="warning" style="display:none;"></div>
         </form>
       </div>
@@ -633,28 +639,27 @@
     <!-- ============ DONATE ============ -->
     <section id="page-donate" class="page page-narrow">
       <div class="card donate-card">
-        <h2>Soutenir Vizéa</h2>
-        <p class="muted">Vizéa est un projet bénévole. Votre contribution aide à le maintenir et à l'améliorer.
-          Merci !</p>
+        <h2 data-i18n="donate.title">Soutenir Vizéa</h2>
+        <p class="muted" data-i18n="donate.desc">Vizéa est un projet bénévole. Votre contribution aide à le maintenir et à l'améliorer. Merci !</p>
         <div class="donate-options">
           <label><input type="radio" name="donation-amount" value="5" checked><span>5 $</span></label>
           <label><input type="radio" name="donation-amount" value="10"><span>10 $</span></label>
           <label><input type="radio" name="donation-amount" value="20"><span>20 $</span></label>
-          <label class="donate-custom"><input type="radio" name="donation-amount" value="autre"><span>Autre</span>
+          <label class="donate-custom"><input type="radio" name="donation-amount" value="autre"><span data-i18n="donate.other">Autre</span>
             <input type="number" id="customAmount" min="1" step="1" placeholder="$" class="donate-input"></label>
         </div>
         <div id="paypal-button-container" class="paypal-container"></div>
-        <p id="paypalLoading" class="muted small">Chargement du module de paiement…</p>
-        <div id="donate-thanks" class="success" style="display:none;">Merci infiniment pour votre soutien.</div>
+        <p id="paypalLoading" class="muted small" data-i18n="donate.loading">Chargement du module de paiement…</p>
+        <div id="donate-thanks" class="success" style="display:none;" data-i18n="donate.thanks">Merci infiniment pour votre soutien.</div>
       </div>
     </section>
 
     <!-- NOUVEAUTÉS (changelog) -->
     <section id="page-news" class="page page-narrow">
       <div class="about-hero">
-        <span class="about-kicker">Nouveautés</span>
-        <h2>Ce qui évolue dans <span class="brand">Vizéa</span>.</h2>
-        <p class="about-lede">Le journal des améliorations apportées à l'outil, de la plus récente à la plus ancienne.</p>
+        <span class="about-kicker" data-i18n="news.kicker">Nouveautés</span>
+        <h2 data-i18n-html="news.h2">Ce qui évolue dans <span class="brand">Vizéa</span>.</h2>
+        <p class="about-lede" data-i18n="news.lede">Le journal des améliorations apportées à l'outil, de la plus récente à la plus ancienne.</p>
       </div>
       <div id="newsTimeline" class="news-timeline" aria-live="polite"></div>
     </section>
@@ -662,79 +667,79 @@
     <!-- INSTALLER (PWA) — reachable from the home button and the footer, not the nav -->
     <section id="page-install" class="page page-narrow">
       <div class="about-hero">
-        <span class="about-kicker">Application</span>
-        <h2>Installer <span class="brand">Vizéa</span> comme application</h2>
-        <p class="about-lede">Optionnel et gratuit : en plus du site web, Vizéa peut s'installer comme une application avec quelques avantages, et sans jamais rien changer à la version web habituelle.</p>
+        <span class="about-kicker" data-i18n="install.kicker">Application</span>
+        <h2 data-i18n-html="install.h2">Installer <span class="brand">Vizéa</span> comme application</h2>
+        <p class="about-lede" data-i18n="install.lede">Optionnel et gratuit : en plus du site web, Vizéa peut s'installer comme une application avec quelques avantages, et sans jamais rien changer à la version web habituelle.</p>
       </div>
 
       <div class="install-benefits">
         <div class="install-benefit">
-          <h3>Hors ligne</h3>
-          <p>Utilisez Vizéa sans connexion Internet, une fois l'application ouverte.</p>
+          <h3 data-i18n="install.b1t">Hors ligne</h3>
+          <p data-i18n="install.b1d">Utilisez Vizéa sans connexion Internet, une fois l'application ouverte.</p>
         </div>
         <div class="install-benefit">
-          <h3>Ouverture en un clic</h3>
-          <p>Une icône dans le Dock ou le menu Démarrer, dans sa propre fenêtre, sans passer par le navigateur.</p>
+          <h3 data-i18n="install.b2t">Ouverture en un clic</h3>
+          <p data-i18n="install.b2d">Une icône dans le Dock ou le menu Démarrer, dans sa propre fenêtre, sans passer par le navigateur.</p>
         </div>
         <div class="install-benefit">
-          <h3>Double-clic sur vos projets</h3>
-          <p>Ouvrez un fichier <strong>.vizea</strong> directement pour reprendre un projet (Chrome / Edge sur ordinateur).</p>
+          <h3 data-i18n="install.b3t">Double-clic sur vos projets</h3>
+          <p data-i18n-html="install.b3d">Ouvrez un fichier <strong>.vizea</strong> directement pour reprendre un projet (Chrome / Edge sur ordinateur).</p>
         </div>
         <div class="install-benefit">
-          <h3>Mêmes garanties de confidentialité</h3>
-          <p>Aucune donnée clinique n'est collectée ni transmise; seuls les fichiers de l'outil sont mis en cache.</p>
+          <h3 data-i18n="install.b4t">Mêmes garanties de confidentialité</h3>
+          <p data-i18n="install.b4d">Aucune donnée clinique n'est collectée ni transmise; seuls les fichiers de l'outil sont mis en cache.</p>
         </div>
       </div>
 
-      <h3 class="install-how-title">Comment l'installer</h3>
+      <h3 class="install-how-title" data-i18n="install.howTitle">Comment l'installer</h3>
       <p id="installDetected" class="install-detected" hidden></p>
 
       <div class="install-steps-wrap">
         <div class="install-steps" data-browser="chromium" hidden>
           <ol>
-            <li>Cliquez ce bouton : <button id="installNowBtn" class="btn-primary install-now-inline" type="button">Installer Vizéa</button></li>
-            <li>Confirmez <strong>« Installer »</strong> dans la petite fenêtre du navigateur.</li>
+            <li><span data-i18n="install.clickBtn">Cliquez ce bouton :</span> <button id="installNowBtn" class="btn-primary install-now-inline" type="button" data-i18n="install.installNow">Installer Vizéa</button></li>
+            <li data-i18n-html="install.confirmInstall">Confirmez <strong>« Installer »</strong> dans la petite fenêtre du navigateur.</li>
           </ol>
-          <p class="muted install-hint">À noter : l'installation n'est <strong>pas</strong> un téléchargement. Vizéa s'ajoute à vos applications (menu Démarrer sur Windows, Dock sur Mac), pas à vos téléchargements.</p>
+          <p class="muted install-hint" data-i18n-html="install.hint">À noter : l'installation n'est <strong>pas</strong> un téléchargement. Vizéa s'ajoute à vos applications (menu Démarrer sur Windows, Dock sur Mac), pas à vos téléchargements.</p>
           <p id="installStatus" class="install-status" hidden></p>
         </div>
         <div class="install-steps" data-browser="safari-mac" hidden>
-          <p class="install-warning">Safari installe une version <strong>partielle</strong> : Vizéa fonctionne dans sa propre fenêtre et hors ligne, mais l'ouverture des projets <strong>.vizea</strong> par double-clic n'est pas prise en charge. Pour l'<strong>installation complète</strong>, utilisez plutôt <strong>Chrome</strong> ou <strong>Edge</strong> sur ordinateur.</p>
-          <p class="install-detected">Pour ajouter Vizéa au Dock avec Safari :</p>
+          <p class="install-warning" data-i18n-html="install.safariWarn">Safari installe une version <strong>partielle</strong> : Vizéa fonctionne dans sa propre fenêtre et hors ligne, mais l'ouverture des projets <strong>.vizea</strong> par double-clic n'est pas prise en charge. Pour l'<strong>installation complète</strong>, utilisez plutôt <strong>Chrome</strong> ou <strong>Edge</strong> sur ordinateur.</p>
+          <p class="install-detected" data-i18n="install.safariIntro">Pour ajouter Vizéa au Dock avec Safari :</p>
           <ol>
-            <li>Ouvrez le menu <strong>Fichier</strong>, dans la barre tout en haut de l'écran.</li>
-            <li>Choisissez <strong>« Ajouter au Dock »</strong>.</li>
-            <li>Confirmez le nom, puis cliquez <strong>« Ajouter »</strong>.</li>
+            <li data-i18n-html="install.safari1">Ouvrez le menu <strong>Fichier</strong>, dans la barre tout en haut de l'écran.</li>
+            <li data-i18n-html="install.safari2">Choisissez <strong>« Ajouter au Dock »</strong>.</li>
+            <li data-i18n-html="install.safari3">Confirmez le nom, puis cliquez <strong>« Ajouter »</strong>.</li>
           </ol>
         </div>
         <div class="install-steps" data-browser="firefox" hidden>
-          <p class="install-warning">Firefox <strong>ne permet pas</strong> d'installer les applications web. Pour installer Vizéa, ouvrez cette page dans <strong>Chrome</strong> ou <strong>Edge</strong> sur ordinateur, ou continuez simplement sur le site : tout fonctionne pareil.</p>
+          <p class="install-warning" data-i18n-html="install.firefox">Firefox <strong>ne permet pas</strong> d'installer les applications web. Pour installer Vizéa, ouvrez cette page dans <strong>Chrome</strong> ou <strong>Edge</strong> sur ordinateur, ou continuez simplement sur le site : tout fonctionne pareil.</p>
         </div>
         <div class="install-steps" data-browser="ios" hidden>
-          <p class="install-note-ios">Sur iPhone / iPad, l'installation se fait par le menu Partager (l'ouverture des fichiers .vizea par double-clic n'existe pas sur ces appareils).</p>
+          <p class="install-note-ios" data-i18n="install.iosNote">Sur iPhone / iPad, l'installation se fait par le menu Partager (l'ouverture des fichiers .vizea par double-clic n'existe pas sur ces appareils).</p>
           <ol>
-            <li>Touchez le bouton <strong>Partager</strong> (un carré avec une flèche vers le haut).</li>
-            <li>Faites défiler, puis touchez <strong>« Sur l'écran d'accueil »</strong>.</li>
-            <li>Touchez <strong>« Ajouter »</strong>, en haut à droite.</li>
+            <li data-i18n-html="install.ios1">Touchez le bouton <strong>Partager</strong> (un carré avec une flèche vers le haut).</li>
+            <li data-i18n-html="install.ios2">Faites défiler, puis touchez <strong>« Sur l'écran d'accueil »</strong>.</li>
+            <li data-i18n-html="install.ios3">Touchez <strong>« Ajouter »</strong>, en haut à droite.</li>
           </ol>
         </div>
         <div class="install-steps" data-browser="other" hidden>
-          <p class="install-warning">Pour l'<strong>installation complète</strong> (installation en un clic et ouverture des projets .vizea par double-clic), utilisez <strong>Chrome</strong> ou <strong>Edge</strong> sur ordinateur.</p>
-          <p>Sinon : sur <strong>Safari (Mac)</strong>, <strong>Fichier → Ajouter au Dock</strong>; sur <strong>iPhone / iPad</strong>, <strong>Partager → Sur l'écran d'accueil</strong>.</p>
+          <p class="install-warning" data-i18n-html="install.otherWarn">Pour l'<strong>installation complète</strong> (installation en un clic et ouverture des projets .vizea par double-clic), utilisez <strong>Chrome</strong> ou <strong>Edge</strong> sur ordinateur.</p>
+          <p data-i18n-html="install.otherAlt">Sinon : sur <strong>Safari (Mac)</strong>, <strong>Fichier → Ajouter au Dock</strong>; sur <strong>iPhone / iPad</strong>, <strong>Partager → Sur l'écran d'accueil</strong>.</p>
         </div>
       </div>
 
       <details class="install-others">
-        <summary>Voir les méthodes pour tous les navigateurs</summary>
+        <summary data-i18n="install.allMethods">Voir les méthodes pour tous les navigateurs</summary>
         <ul class="install-how">
-          <li><strong>Chrome ou Edge (ordinateur)</strong> — le bouton « Installer Vizéa » ci-dessus, ou l'icône d'installation dans la barre d'adresse.</li>
-          <li><strong>Safari (Mac)</strong> — menu <strong>Fichier → Ajouter au Dock</strong>.</li>
-          <li><strong>iPhone / iPad</strong> — bouton <strong>Partager → Sur l'écran d'accueil</strong>.</li>
-          <li><strong>Firefox</strong> — non pris en charge; utilisez Chrome ou Edge, ou continuez sur le site.</li>
+          <li data-i18n-html="install.m1"><strong>Chrome ou Edge (ordinateur)</strong> — le bouton « Installer Vizéa » ci-dessus, ou l'icône d'installation dans la barre d'adresse.</li>
+          <li data-i18n-html="install.m2"><strong>Safari (Mac)</strong> — menu <strong>Fichier → Ajouter au Dock</strong>.</li>
+          <li data-i18n-html="install.m3"><strong>iPhone / iPad</strong> — bouton <strong>Partager → Sur l'écran d'accueil</strong>.</li>
+          <li data-i18n-html="install.m4"><strong>Firefox</strong> — non pris en charge; utilisez Chrome ou Edge, ou continuez sur le site.</li>
         </ul>
       </details>
 
-      <p class="install-privacy-note">Confidentialité : installée ou non, Vizéa fonctionne entièrement sur votre appareil. Aucun score ni projet n'est envoyé à un serveur.</p>
+      <p class="install-privacy-note" data-i18n="install.privacy">Confidentialité : installée ou non, Vizéa fonctionne entièrement sur votre appareil. Aucun score ni projet n'est envoyé à un serveur.</p>
     </section>
   </main>
 
@@ -749,22 +754,22 @@
       <span>Vizéa</span>
     </div>
     <div class="footer-links">
-      <a id="installFooterLink" data-target="page-install" href="#">Installer l'application</a>
+      <a id="installFooterLink" data-target="page-install" href="#" data-i18n="footer.install">Installer l'application</a>
       <span class="footer-dot" aria-hidden="true">·</span>
-      <a href="https://github.com/anthonyproulx21/vizea" target="_blank" rel="noopener">Code source</a>
+      <a href="https://github.com/anthonyproulx21/vizea" target="_blank" rel="noopener" data-i18n="footer.source">Code source</a>
       <span class="footer-dot" aria-hidden="true">·</span>
-      <a href="https://www.netlify.com" target="_blank" rel="noopener">Propulsé par Netlify</a>
+      <a href="https://www.netlify.com" target="_blank" rel="noopener" data-i18n="footer.netlify">Propulsé par Netlify</a>
     </div>
   </footer>
 
   <div id="leaveModal" class="modal-overlay" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="leaveModalTitle">
-      <h3 id="leaveModalTitle">Retourner à l'écran de projet ?</h3>
-      <p class="muted">Vous quittez la séance en cours. Si vous démarrez ensuite un nouveau projet, les scores entrés (non exportés) seront perdus. C'est voulu : aucune donnée clinique n'est conservée. Vous pouvez exporter le projet avant de continuer.</p>
+      <h3 id="leaveModalTitle" data-i18n="leave.title">Retourner à l'écran de projet ?</h3>
+      <p class="muted" data-i18n="leave.desc">Vous quittez la séance en cours. Si vous démarrez ensuite un nouveau projet, les scores entrés (non exportés) seront perdus. C'est voulu : aucune donnée clinique n'est conservée. Vous pouvez exporter le projet avant de continuer.</p>
       <div class="modal-actions">
-        <button id="leaveExport" class="btn-primary">Exporter (.vizea) puis continuer</button>
-        <button id="leaveDiscard" class="btn-ghost btn-danger-ghost">Continuer sans enregistrer</button>
-        <button id="leaveCancel" class="btn-ghost">Annuler</button>
+        <button id="leaveExport" class="btn-primary" data-i18n="leave.export">Exporter (.vizea) puis continuer</button>
+        <button id="leaveDiscard" class="btn-ghost btn-danger-ghost" data-i18n="leave.discard">Continuer sans enregistrer</button>
+        <button id="leaveCancel" class="btn-ghost" data-i18n="common.cancel">Annuler</button>
       </div>
     </div>
   </div>

@@ -1784,6 +1784,22 @@
       ]
     }
   },
+  "Beery VMI": {
+    "type": "batterie",
+    "subtests": {
+      "Intégration visuomotrice": [
+        "Visuospatial",
+        "Moteur"
+      ],
+      "Visuospatial": [
+        "Visuospatial"
+      ],
+      "Coordination motrice": [
+        "Moteur"
+      ]
+    }
+  },
+
   "TEA-Ch": {
     "type": "batterie",
     "subtests": {
@@ -2104,6 +2120,27 @@
     "type": "test",
     "default_functions": [
       "Cognition sociale"
+    ],
+    "subtests": {}
+  },
+  "Grooved Pegboard": {
+    "type": "test",
+    "default_functions": [
+      "Moteur"
+    ],
+    "subtests": {}
+  },
+  "Purdue Pegboard": {
+    "type": "test",
+    "default_functions": [
+      "Moteur"
+    ],
+    "subtests": {}
+  },
+  "Dynamomètre (force manuelle)": {
+    "type": "test",
+    "default_functions": [
+      "Moteur"
     ],
     "subtests": {}
   }

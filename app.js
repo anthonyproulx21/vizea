@@ -27,6 +27,33 @@
 
   function markDirty() { dirty = true; }
 
+  // Translation helper for dynamically-built strings. Falls back to the given
+  // French text if i18n isn't available or the key is missing.
+  function T(key, fallback) {
+    return (window.VizeaI18n && window.VizeaI18n.t) ? window.VizeaI18n.t(key) : fallback;
+  }
+  // Translated label for a score-type value (the stored value stays unchanged).
+  var SCORE_TYPE_KEYS = { "Scale score": "score.scaled", "Standard score": "score.standard", "Percentile": "score.percentile", "Z-Score": "score.z", "T-Score": "score.t" };
+  function scoreTypeLabel(v) { return T(SCORE_TYPE_KEYS[v] || "", v); }
+  // Display names for functions / bands in the current language (data unchanged).
+  function funcDisplay(fn) { return (window.VizeaConstants && window.VizeaConstants.displayFunctionName) ? window.VizeaConstants.displayFunctionName(fn) : fn; }
+  function bandFieldDisplay(key, field, fb) { return (window.VizeaConstants && window.VizeaConstants.displayBandField) ? window.VizeaConstants.displayBandField(key, field, fb) : fb; }
+  // The two ready-made default titles are stored in their canonical (French)
+  // form. The panel input shows a LOCALIZED VIEW of them, so the box matches the
+  // translated title on the chart. Typing something else stores it verbatim.
+  var DEFAULT_TITLE_FR = "Visualisation des scores par fonctions cognitives";
+  var DEFAULT_SCALES_TITLE_FR = "Visualisation des échelles globales";
+  var DEFAULT_TITLE_KEYS = {
+    "Visualisation des scores par fonctions cognitives": "chart.defaultTitle",
+    "Visualisation des échelles globales": "chart.defaultScalesTitle"
+  };
+  function localizedTitleView(raw) {
+    if (raw && DEFAULT_TITLE_KEYS[raw] && window.VizeaI18n && window.VizeaI18n.getLang() === "en" && window.VizeaI18n.t) {
+      return window.VizeaI18n.t(DEFAULT_TITLE_KEYS[raw]);
+    }
+    return raw;
+  }
+
   // Shared score validation, used for both test scores and IQ scales so the
   // feedback is congruent everywhere. Two levels:
   //   • error  → value is impossible for that score type (blocks/red)
@@ -44,12 +71,12 @@
     const v = Number(value);
     if (isNaN(v)) return { level: "ok" };
     const r = SCORE_RULES[type] || SCORE_RULES["Scale score"];
-    const tl = (type || "score").toLowerCase();
+    const tl = scoreTypeLabel(type || "score").toLowerCase();
     if (r.hard && (v < r.hard.min || v > r.hard.max)) {
-      return { level: "error", message: `Valeur impossible pour un ${tl} (doit être entre ${r.hard.min} et ${r.hard.max}).` };
+      return { level: "error", message: T("scores.errImpossible", "Valeur impossible pour un {type} (doit être entre {min} et {max}).").replace("{type}", tl).replace("{min}", r.hard.min).replace("{max}", r.hard.max) };
     }
     if (r.warn && (v < r.warn.min || v > r.warn.max)) {
-      return { level: "warn", message: `Valeur inhabituelle pour un ${tl} (plage attendue : ${r.warn.min} à ${r.warn.max}). Vérifiez la saisie.` };
+      return { level: "warn", message: T("scores.warnUnusual", "Valeur inhabituelle pour un {type} (plage attendue : {min} à {max}). Vérifiez la saisie.").replace("{type}", tl).replace("{min}", r.warn.min).replace("{max}", r.warn.max) };
     }
     return { level: "ok" };
   }
@@ -143,6 +170,33 @@
       }
     });
     refreshTemplateSelect();
+
+    // When the language changes, refresh the dynamically-built pieces that carry
+    // translated text (the static [data-i18n] nodes are handled by i18n itself).
+    // Each refresh is isolated so a failure in one (e.g. before a project
+    // exists) can't stop the others from updating.
+    document.addEventListener("vizea:langchange", () => {
+      const safe = (fn) => { try { fn(); } catch (e) { /* noop */ } };
+      safe(() => refreshTemplateSelect());
+      safe(() => { if (typeof renderSuggestFunctions === "function" && $("functions")) renderSuggestFunctions(); });
+      safe(() => { if (typeof syncViewSwitch === "function") syncViewSwitch(); });
+      safe(() => { if (typeof renderSelectedTests === "function" && currentProject) renderSelectedTests(); });
+      safe(() => { if (typeof renderTestList === "function" && $("testSearch")) renderTestList($("testSearch").value); });
+      safe(() => { if (typeof renderStep2 === "function" && currentProject && $("scoreEntryContainer") && $("scoreEntryContainer").children.length) renderStep2(); });
+      safe(() => { if (typeof buildPanelDynamicControls === "function" && currentProject && $("opt-functions")) buildPanelDynamicControls(); });
+      safe(() => { if (typeof buildBandLabelList === "function" && currentProject && $("bandLabelList")) buildBandLabelList(); });
+      safe(() => { if (currentStep === 3 && currentProject && typeof renderChart === "function") renderChart(); });
+      safe(() => { if (typeof updateAxisLimitsHint === "function" && currentProject) updateAxisLimitsHint(); });
+      safe(() => { if (typeof setupNews === "function" && $("newsTimeline")) setupNews(); });
+      safe(() => { if (typeof reloadPayPalForLang === "function") reloadPayPalForLang(); });
+      safe(() => {
+        const ti = $("opt-title");
+        if (ti && currentProject) {
+          const cs = currentProject.chartSettings;
+          ti.value = localizedTitleView(cs.chartType === "scales" ? (cs.scalesTitle || "") : (cs.title || ""));
+        }
+      });
+    });
   }
 
   // Light/dark theme: persists choice and re-renders the chart so its colours
@@ -624,7 +678,7 @@
     delBtn?.addEventListener("click", () => {
       const id = tmplSelect.value;
       if (!id) return;
-      if (!confirm("Supprimer ce modèle ? Cette action est définitive.")) return;
+      if (!confirm(T("dialog.deleteTemplate", "Supprimer ce modèle ? Cette action est définitive."))) return;
       DM.deleteLocalTemplate(id);
       refreshTemplateSelect();
       toast("Modèle supprimé.");
@@ -718,13 +772,14 @@
     if (!sel) return;
     const templates = DM.loadAllLocalTemplates();
     const ids = Object.keys(templates);
+    const T = (k, fb) => (window.VizeaI18n ? window.VizeaI18n.t(k) : fb);
     sel.innerHTML = ids.length
-      ? '<option value="">Aucun modèle — projet vierge</option>'
-      : '<option value="">Aucun modèle enregistré — projet vierge</option>';
+      ? '<option value="">' + T("wiz.new.blankWithTemplates", "Aucun modèle — projet vierge") + '</option>'
+      : '<option value="">' + T("wiz.new.blankNoTemplates", "Aucun modèle enregistré — projet vierge") + '</option>';
     ids.forEach((id) => {
       const opt = document.createElement("option");
       opt.value = id;
-      opt.textContent = templates[id].name || "Modèle";
+      opt.textContent = templates[id].name || T("common.template", "Modèle");
       sel.appendChild(opt);
     });
     if ($("deleteTemplateBtn")) $("deleteTemplateBtn").disabled = true;
@@ -883,7 +938,7 @@
     if (!div) return;
     const entries = Object.entries(selectedTests);
     if (entries.length === 0) {
-      div.innerHTML = '<p class="muted empty-hint">Aucun test sélectionné pour l\'instant.</p>';
+      div.innerHTML = '<p class="muted empty-hint">' + T("wiz.tests.emptyHint", "Aucun test sélectionné pour l'instant.") + '</p>';
       return;
     }
     div.innerHTML = "";
@@ -1015,8 +1070,8 @@
     const sec = document.createElement("div");
     sec.className = "scales-section";
     sec.innerHTML =
-      '<div class="scales-head"><span class="scales-title">Échelles globales</span>' +
-      '<span class="scales-hint">· score standard ou rang centile</span></div>';
+      '<div class="scales-head"><span class="scales-title">' + T("scales.title", "Échelles globales") + '</span>' +
+      '<span class="scales-hint">' + T("scales.hint", "· score standard ou rang centile") + '</span></div>';
 
     // When several IQ batteries are selected, only ONE feeds the échelles chart.
     const iqTests = listIqTests();
@@ -1027,7 +1082,7 @@
       acb.type = "checkbox";
       acb.checked = currentProject.activeScaleTest === testName;
       const span = document.createElement("span");
-      span.textContent = "Utiliser ces valeurs pour la visualisation des échelles";
+      span.textContent = T("scales.useForViz", "Utiliser ces valeurs pour la visualisation des échelles");
       activeWrap.append(acb, span);
       acb.addEventListener("change", () => {
         if (acb.checked) {
@@ -1062,7 +1117,7 @@
 
         const nameInput = document.createElement("input");
         nameInput.type = "text"; nameInput.className = "scale-name";
-        nameInput.value = r.name || ""; nameInput.placeholder = "Sigle";
+        nameInput.value = r.name || ""; nameInput.placeholder = T("scales.sigle", "Sigle");
         nameInput.addEventListener("input", () => { r.name = nameInput.value; markDirty(); });
 
         const valInput = document.createElement("input");
@@ -1071,8 +1126,8 @@
 
         const scaleSel = document.createElement("select");
         scaleSel.className = "scale-type";
-        [["Standard score", "Score standard"], ["Percentile", "Rang centile"]].forEach(([v, lbl]) => {
-          const o = document.createElement("option"); o.value = v; o.textContent = lbl;
+        [["Standard score", "score.standard"], ["Percentile", "score.percentile"]].forEach(([v, k]) => {
+          const o = document.createElement("option"); o.value = v; o.textContent = T(k, v);
           if ((r.scale || "Standard score") === v) o.selected = true;
           scaleSel.appendChild(o);
         });
@@ -1088,6 +1143,14 @@
         applyConstraints();
 
         valInput.addEventListener("input", () => { r.value = valInput.value; markDirty(); validate(); updateScalesViewAvailability(); if (currentStep === 3) renderChart(); });
+        valInput.addEventListener("keydown", (ev) => {
+          if (ev.key !== "Enter") return;
+          ev.preventDefault();
+          const all = Array.from(document.querySelectorAll("#scoreEntryContainer .scale-value"));
+          const i = all.indexOf(valInput);
+          if (i > -1 && i + 1 < all.length) all[i + 1].focus();
+          else valInput.blur();
+        });
         scaleSel.addEventListener("change", () => { r.scale = scaleSel.value; markDirty(); applyConstraints(); validate(); if (currentStep === 3) renderChart(); });
 
         const del = document.createElement("button");
@@ -1108,7 +1171,7 @@
 
     const addBtn = document.createElement("button");
     addBtn.type = "button"; addBtn.className = "scales-add";
-    addBtn.textContent = "+ Ajouter une échelle";
+    addBtn.textContent = T("scales.add", "+ Ajouter une échelle");
     addBtn.addEventListener("click", () => {
       rows.push({ name: "", value: "", scale: "Standard score" });
       markDirty(); renderRows();
@@ -1175,12 +1238,12 @@
     pop.className = "comment-pop";
     const title = document.createElement("div");
     title.className = "comment-pop-title";
-    title.textContent = "Commentaire";
+    title.textContent = T("comment.title", "Commentaire");
     const ta = document.createElement("textarea");
     ta.className = "comment-pop-text";
     ta.rows = 4;
     ta.value = cond.comment || "";
-    ta.placeholder = "Observation, remarque, note personnelle…";
+    ta.placeholder = T("comment.placeholder", "Observation, remarque, note personnelle…");
     const actions = document.createElement("div");
     actions.className = "comment-pop-actions";
     // Pin = show this note permanently on the chart (and in the exported image).
@@ -1189,10 +1252,10 @@
     const syncPin = () => {
       const on = !!cond.commentPinned;
       pin.classList.toggle("is-pinned", on);
-      pin.textContent = on ? "📌 Épinglé" : "📌 Épingler";
+      pin.textContent = on ? ("📌 " + T("comment.pinned", "Épinglé")) : ("📌 " + T("comment.pin", "Épingler"));
       pin.title = on
-        ? "Retirer l'étiquette du graphique"
-        : "Afficher ce commentaire en permanence sur le graphique (et dans l'image exportée)";
+        ? T("comment.pinnedTitle", "Retirer l'étiquette du graphique")
+        : T("comment.pinTitle", "Afficher ce commentaire en permanence sur le graphique (et dans l'image exportée)");
       pin.disabled = !String(ta.value || "").trim();
     };
     pin.addEventListener("click", () => {
@@ -1206,7 +1269,7 @@
       if (opts.onPin) opts.onPin();
     });
     const done = document.createElement("button");
-    done.type = "button"; done.className = "btn-primary btn-mini"; done.textContent = "Terminé";
+    done.type = "button"; done.className = "btn-primary btn-mini"; done.textContent = T("common.done", "Terminé");
     actions.append(pin, done);
     pop.append(title, ta, actions);
     document.body.appendChild(pop);
@@ -1344,7 +1407,7 @@
     wrapper.appendChild(list);
 
     const addBtn = document.createElement("button");
-    addBtn.textContent = "+ Ajouter un score à ce test";
+    addBtn.textContent = T("scores.addScore", "+ Ajouter un score à ce test");
     addBtn.className = "add-condition-btn";
 
     function render() {
@@ -1375,7 +1438,7 @@
 
     const nameInput = document.createElement("input");
     nameInput.type = "text";
-    nameInput.placeholder = "Nom du score (optionnel)";
+    nameInput.placeholder = T("scores.namePh", "Nom du score (optionnel)");
     nameInput.value = cond.name || "";
     nameInput.className = "condition-name";
     nameInput.addEventListener("input", () => { cond.name = nameInput.value; markDirty(); });
@@ -1386,7 +1449,7 @@
 
     const valueInput = document.createElement("input");
     valueInput.type = "number";
-    valueInput.placeholder = "Score";
+    valueInput.placeholder = T("scores.fieldScore", "Score");
     valueInput.value = cond.value ?? "";
     valueInput.className = "condition-value";
 
@@ -1425,7 +1488,7 @@
       const clamped = Math.max(0, Math.min(100, v));
       if (clamped !== v) {
         valueInput.value = clamped; cond.value = String(clamped);
-        toast("Le rang centile doit être entre 0 et 100.");
+        toast(T("scores.pctRange", "Le rang centile doit être entre 0 et 100."));
         checkValue();
       }
     });
@@ -1435,7 +1498,7 @@
     SCORE_TYPE_OPTIONS.forEach((t) => {
       const opt = document.createElement("option");
       opt.value = t;
-      opt.textContent = t;
+      opt.textContent = scoreTypeLabel(t);
       if ((cond.type || "Scale score") === t) opt.selected = true;
       typeSelect.appendChild(opt);
     });
@@ -1453,10 +1516,10 @@
     display.className = "multi-select-display";
     const refreshDisplay = () => {
       if (cond.functions && cond.functions.length) {
-        display.textContent = cond.functions.join(", ");
+        display.textContent = cond.functions.map(funcDisplay).join(", ");
         display.classList.add("has-value");
       } else {
-        display.textContent = "Fonctions cognitives…";
+        display.textContent = T("scores.fnPlaceholder", "Fonctions cognitives…");
         display.classList.remove("has-value");
       }
     };
@@ -1482,7 +1545,7 @@
         });
         cb.classList.add("ms-cb");
         lab.appendChild(cb);
-        lab.appendChild(document.createTextNode(fn));
+        lab.appendChild(document.createTextNode(funcDisplay(fn)));
         options.appendChild(lab);
       });
 
@@ -1491,7 +1554,7 @@
       addRow.className = "ms-add-row";
       const addInput = document.createElement("input");
       addInput.type = "text";
-      addInput.placeholder = "Ajouter une fonction…";
+      addInput.placeholder = T("scores.addFn", "Ajouter une fonction…");
       addInput.className = "ms-add-input";
       const addBtn = document.createElement("button");
       addBtn.type = "button";
@@ -1549,10 +1612,10 @@
         // Only score of this test/subtest: removing it removes the entry, so warn.
         if (entry && typeof entry.remove === "function") {
           confirmDialog({
-            title: "Retirer ce test ?",
-            message: "« " + (entry.label || "Ce test") + " » n'a qu'un seul score. Le retirer enlèvera ce test du projet.",
-            confirmText: "Retirer",
-            cancelText: "Annuler"
+            title: T("dialog.removeTest.title", "Retirer ce test ?"),
+            message: T("dialog.removeTest.msg", "« {test} » n'a qu'un seul score. Le retirer enlèvera ce test du projet.").replace("{test}", (entry.label || T("dialog.removeTest.thisTest", "Ce test"))),
+            confirmText: T("common.remove", "Retirer"),
+            cancelText: T("common.cancel", "Annuler")
           }).then((confirmed) => { if (confirmed) entry.remove(); });
           return;
         }
@@ -1584,7 +1647,7 @@
     invField.className = "field field-invert";
     const invLab = document.createElement("span");
     invLab.className = "field-label";
-    invLab.textContent = "Sens";
+    invLab.textContent = T("scores.direction", "Sens");
     const invToggle = document.createElement("label");
     invToggle.className = "invert-toggle";
     invToggle.title = "Élevé = défavorable (ex. temps de réponse, nombre d'erreurs). Le score est miroité autour de la moyenne.";
@@ -1592,7 +1655,7 @@
     invCb.type = "checkbox";
     invCb.checked = !!cond.inverted;
     invCb.addEventListener("change", () => { cond.inverted = invCb.checked; markDirty(); });
-    invToggle.append(invCb, document.createTextNode(" Inversé"));
+    invToggle.append(invCb, document.createTextNode(" " + T("scores.inverted", "Inversé")));
     invField.append(invLab, invToggle);
 
     const rowActions = document.createElement("div");
@@ -1600,10 +1663,10 @@
     rowActions.append(makeCommentButton(cond, {}), removeBtn);
 
     row.append(
-      field("Nom du score", nameInput),
-      field("Score", valueInput),
-      field("Type", typeSelect),
-      field("Fonctions", msContainer),
+      field(T("scores.fieldName", "Nom du score"), nameInput),
+      field(T("scores.fieldScore", "Score"), valueInput),
+      field(T("common.type", "Type"), typeSelect),
+      field(T("scores.fieldFunctions", "Fonctions"), msContainer),
       invField,
       rowActions,
       warnEl
@@ -1681,10 +1744,12 @@
     seg.id = "viewSwitch";
     seg.className = "view-switch";
     seg.setAttribute("role", "tablist");
-    const defs = [["line", "Profil"], ["scales", "Échelles"], ["radar", "Radar"], ["table", "Tableau"]];
-    defs.forEach(([type, label]) => {
+    const defs = [["line", "Profil", "view.line"], ["scales", "Échelles", "view.scales"], ["radar", "Radar", "view.radar"], ["table", "Tableau", "view.table"]];
+    defs.forEach(([type, label, key]) => {
       const b = document.createElement("button");
-      b.type = "button"; b.dataset.view = type; b.textContent = label;
+      b.type = "button"; b.dataset.view = type;
+      b.setAttribute("data-i18n", key);
+      b.textContent = (window.VizeaI18n ? window.VizeaI18n.t(key) : label);
       b.addEventListener("click", () => {
         if (b.classList.contains("disabled")) return;
         currentProject.chartSettings.chartType = type;
@@ -1905,14 +1970,14 @@
     const SE = window.ScoringEngine;
     const groupBy = s.tableGroupBy || "test";
     const showColor = cols.color !== false;
-    const displayFunc = (f) => (s.functionLabels && s.functionLabels[f]) || f;
+    const displayFunc = (f) => (s.functionLabels && s.functionLabels[f]) || funcDisplay(f);
     const pts = DM.flattenScores(currentProject);
 
     const colDefs = [];
-    if (cols.value !== false) colDefs.push(["value", "Valeur"]);
-    if (cols.type !== false) colDefs.push(["type", "Type"]);
-    if (cols.percentile !== false) colDefs.push(["percentile", "Rang centile"]);
-    if (cols.classification !== false) colDefs.push(["classification", "Classification"]);
+    if (cols.value !== false) colDefs.push(["value", T("common.value", "Valeur")]);
+    if (cols.type !== false) colDefs.push(["type", T("common.type", "Type")]);
+    if (cols.percentile !== false) colDefs.push(["percentile", T("score.percentile", "Rang centile")]);
+    if (cols.classification !== false) colDefs.push(["classification", T("table.classification", "Classification")]);
 
     const rowFromPoint = (p, stripTest) => {
       const band = SE ? SE.getBandForPercentile(p.percentile) : { label: "", color: "#cccccc" };
@@ -1927,7 +1992,7 @@
         value: String(p.rawValue),
         type: p.type,
         percentile: tableFmtPct(p.percentile),
-        classification: band.label,
+        classification: bandFieldDisplay(band.key, "label", band.label),
         color: band.color,
         inverted: !!p.inverted,
         comment: p.comment || "",
@@ -2015,7 +2080,7 @@
         if (r.inverted) {
           const star = document.createElement("span");
           star.className = "inv-star"; star.textContent = " *";
-          star.title = "Score inversé (élevé = défavorable)";
+          star.title = T("scores.invertedTitle", "Score inversé (élevé = défavorable)");
           ltd.appendChild(star);
         }
         tr.appendChild(ltd);
@@ -2076,7 +2141,7 @@
 
     const grp = document.createElement("div");
     grp.className = "table-group-switch";
-    [["test", "Par test"], ["function", "Par fonction"]].forEach(([v, lab]) => {
+    [["test", T("table.byTest", "Par test")], ["function", T("table.byFunction", "Par fonction")]].forEach(([v, lab]) => {
       const b = document.createElement("button"); b.type = "button"; b.textContent = lab;
       if (s.tableGroupBy === v) b.classList.add("active");
       b.addEventListener("click", () => { s.tableGroupBy = v; markDirty(); renderTableView(); });
@@ -2086,8 +2151,8 @@
 
     const colsWrap = document.createElement("div");
     colsWrap.className = "table-col-toggles";
-    [["value", "Valeur"], ["type", "Type"], ["percentile", "Rang centile"], ["classification", "Classification"],
-     ["color", "Couleur"], ["comments", "Commentaires"]].forEach(([k, lab]) => {
+    [["value", T("common.value", "Valeur")], ["type", T("common.type", "Type")], ["percentile", T("score.percentile", "Rang centile")], ["classification", T("table.classification", "Classification")],
+     ["color", T("table.color", "Couleur")], ["comments", T("table.comments", "Commentaires")]].forEach(([k, lab]) => {
       const l = document.createElement("label"); l.className = "table-col-toggle";
       const cb = document.createElement("input"); cb.type = "checkbox";
       // Like the other columns: unticking hides the comment column entirely
@@ -2113,7 +2178,7 @@
     if (model.anyInverted) {
       const note = document.createElement("p");
       note.className = "table-footnote";
-      note.textContent = "* Score inversé (élevé = défavorable) : positionné et classé selon son écart inverse à la moyenne.";
+      note.textContent = T("scores.invertedNote", "* Score inversé (élevé = défavorable) : positionné et classé selon son écart inverse à la moyenne.");
       wrap.appendChild(note);
     }
   }
@@ -2178,10 +2243,10 @@
       card.setAttribute("role", "dialog");
       card.setAttribute("aria-modal", "true");
       const h = document.createElement("h3");
-      h.textContent = "Enregistrer sous";
+      h.textContent = T("dialog.saveAs.title", "Enregistrer sous");
       const p = document.createElement("p");
       p.className = "muted";
-      p.textContent = "Nommez le fichier avant de le télécharger. Il ira dans le dossier de téléchargement de votre navigateur.";
+      p.textContent = T("dialog.saveAs.desc", "Nommez le fichier avant de le télécharger. Il ira dans le dossier de téléchargement de votre navigateur.");
       const input = document.createElement("input");
       input.type = "text";
       input.className = "modal-input";
@@ -2189,9 +2254,9 @@
       const actions = document.createElement("div");
       actions.className = "modal-actions";
       const save = document.createElement("button");
-      save.type = "button"; save.className = "btn-primary"; save.textContent = "Enregistrer";
+      save.type = "button"; save.className = "btn-primary"; save.textContent = T("common.save", "Enregistrer");
       const cancel = document.createElement("button");
-      cancel.type = "button"; cancel.className = "btn-ghost"; cancel.textContent = "Annuler";
+      cancel.type = "button"; cancel.className = "btn-ghost"; cancel.textContent = T("common.cancel", "Annuler");
       let done = false;
       const onKey = (e) => {
         if (e.key === "Escape") close(null);
@@ -2265,7 +2330,7 @@
     const hint = $("axisLimitsHint");
     if (!hint || !currentProject) return;
     const scale = currentProject.chartSettings.displayScale || "Percentile";
-    hint.textContent = `En valeurs « ${scale} ». Laissez vide pour l'étendue automatique.`;
+    hint.textContent = T("panel.axisHintFull", "En valeurs « {scale} ». Laissez vide pour l'étendue automatique.").replace("{scale}", scoreTypeLabel(scale));
   }
 
   function syncProportionalLock() {
@@ -2476,10 +2541,10 @@
       if (!block || $("opt-useEgqi")) return;
       const wrap = document.createElement("label");
       wrap.className = "panel-toggle egqi-toggle";
-      wrap.innerHTML = '<input type="checkbox" id="opt-useEgqi"><span>Utiliser le score à l\'EGQI</span>';
+      wrap.innerHTML = '<input type="checkbox" id="opt-useEgqi"><span data-i18n="scales.useEgqi">Utiliser le score à l\'EGQI</span>';
       const hint = document.createElement("p");
       hint.id = "opt-useEgqiHint"; hint.className = "fn-subhint";
-      hint.textContent = "Entrez une valeur à l'EGQI (test Wechsler) pour l'activer.";
+      hint.setAttribute("data-i18n","scales.egqiHint"); hint.textContent = T("scales.egqiHint", "Entrez une valeur à l'EGQI (test Wechsler) pour l'activer.");
       // Place both at the very top of the block (the section title is now the
       // accordion header, so we no longer rely on an in-block .panel-label).
       block.insertBefore(hint, block.firstChild);
@@ -2498,8 +2563,13 @@
       renderChart();
     });
     $("opt-title")?.addEventListener("input", (e) => {
-      if (s().chartType === "scales") s().scalesTitle = e.target.value;
-      else s().title = e.target.value;
+      const raw = e.target.value;
+      const scalesMode = s().chartType === "scales";
+      // If the field still shows the (localized) default, keep the canonical
+      // French value stored so the title stays language-neutral.
+      const canonical = scalesMode ? DEFAULT_SCALES_TITLE_FR : DEFAULT_TITLE_FR;
+      const toStore = (raw === localizedTitleView(canonical)) ? canonical : raw;
+      if (scalesMode) s().scalesTitle = toStore; else s().title = toStore;
       renderChartDebounced();
     });
 
@@ -2514,12 +2584,13 @@
       wrap.id = "scalesDisplayWrap";
       wrap.style.display = "none";
       wrap.innerHTML =
-        '<label class="panel-label" for="opt-scalesDisplay">Échelle affichée</label>' +
+        '<label class="panel-label" for="opt-scalesDisplay" data-i18n="panel.displayScale">Échelle affichée</label>' +
         '<select id="opt-scalesDisplay" class="condition-type">' +
-        '<option value="Standard score">Score standard</option>' +
-        '<option value="Percentile">Rang centile</option></select>';
+        '<option value="Standard score" data-i18n="score.standard">Score standard</option>' +
+        '<option value="Percentile" data-i18n="score.percentile">Rang centile</option></select>';
       // Insert just after the profile display-scale select (and its label).
       ds.after(wrap);
+      if (window.VizeaI18n) window.VizeaI18n.applyTranslations(wrap);
       $("opt-scalesDisplay").addEventListener("change", (e) => {
         s().scalesDisplay = e.target.value;
         syncProportionalLock();
@@ -2538,11 +2609,12 @@
       box.id = "scalesExtras";
       box.style.display = "none";
       box.innerHTML =
-        '<label class="panel-label" for="opt-scalesColor">Couleur de la ligne</label>' +
+        '<label class="panel-label" for="opt-scalesColor" data-i18n="panel.scalesColor">Couleur de la ligne</label>' +
         '<input type="color" id="opt-scalesColor" class="color-input">' +
-        '<label class="panel-label" style="margin-top:14px;">Échelles affichées</label>' +
+        '<label class="panel-label" style="margin-top:14px;" data-i18n="panel.scalesShown">Échelles affichées</label>' +
         '<div id="opt-scalesVisible" class="fn-list"></div>';
       host.appendChild(box);
+      if (window.VizeaI18n) window.VizeaI18n.applyTranslations(box);
       $("opt-scalesColor").addEventListener("input", (e) => { s().scalesColor = e.target.value; renderChartDebounced(); });
     })();
 
@@ -2570,7 +2642,7 @@
     });
 
     $("saveTemplateBtn")?.addEventListener("click", () => {
-      const name = prompt("Nom du modèle (sélection de tests + préférences, sans aucun score) :",
+      const name = prompt(T("dialog.template.prompt", "Nom du modèle (sélection de tests + préférences, sans aucun score) :"),
         currentProject.title || "Mon modèle");
       if (!name) return;
       const tmpl = DM.extractTemplateFromProject(currentProject, name);
@@ -2665,25 +2737,27 @@
       const row = document.createElement("div");
       row.className = "band-row";
 
-      const base = b.short || b.label;   // default display name (short form)
+      const base = bandFieldDisplay(b.key, "short", b.short || b.label);   // default display name in the current language
+      const fullName = bandFieldDisplay(b.key, "label", b.label);
 
       const swatch = document.createElement("span");
       swatch.className = "band-swatch";
       swatch.style.background = b.color;
-      swatch.title = b.label;            // full classification name as tooltip
+      swatch.title = fullName;            // full classification name as tooltip
 
       const input = document.createElement("input");
       input.type = "text";
       input.className = "band-rename-input";
       input.value = settings.bandLabels[b.key] || base;
-      input.title = b.label + " — renommer pour l'affichage (n'affecte pas la classification)";
+      input.title = fullName + " — " + T("panel.renameHint", "renommer pour l'affichage (n'affecte pas la classification)");
       input.addEventListener("focus", () => input.select());
       input.addEventListener("blur", () => {
         if (!settings.bandLabels[b.key]) input.value = base;
       });
       input.addEventListener("input", () => {
         const v = input.value.trim();
-        if (!v || v === base) delete settings.bandLabels[b.key];
+        // Empty, or equal to the default in either language = no override.
+        if (!v || v === base || v === b.short || v === b.label) delete settings.bandLabels[b.key];
         else settings.bandLabels[b.key] = v;
         markDirty();
         renderChartDebounced();
@@ -2730,7 +2804,7 @@
     if ($("opt-scalesDisplay")) $("opt-scalesDisplay").value = settings.scalesDisplay || "Standard score";
     updateAxisLimitsHint();
     updatePanelModeVisibility(settings.chartType || "line");
-    $("opt-title").value = isScales ? (settings.scalesTitle || "") : (settings.title || "");
+    $("opt-title").value = localizedTitleView(isScales ? (settings.scalesTitle || "") : (settings.title || ""));
     $$("#opt-chartType button").forEach((b) =>
       b.classList.toggle("active", b.dataset.type === (settings.chartType || "line")));
 
@@ -2753,7 +2827,7 @@
     const fnList = $("opt-functions");
     fnList.innerHTML = "";
     if (orderedPresent.length === 0) {
-      fnList.innerHTML = '<p class="muted small">Aucune fonction à afficher.</p>';
+      fnList.innerHTML = '<p class="muted small">' + T("panel.noFunctions", "Aucune fonction à afficher.") + '</p>';
     }
     orderedPresent.forEach((fn) => {
       const row = document.createElement("div");
@@ -2780,19 +2854,21 @@
       // Editable display name: renames the function in the chart only. Identity
       // (grouping, colour, score links) stays keyed by the real name `fn`.
       if (!settings.functionLabels) settings.functionLabels = {};
+      const fnDef = funcDisplay(fn);   // default display name in the current language
       const nameInput = document.createElement("input");
       nameInput.type = "text";
       nameInput.className = "fn-rename";
-      nameInput.value = settings.functionLabels[fn] || fn;
-      nameInput.title = "Renommer pour l'affichage (n'affecte pas les scores ni le regroupement)";
+      nameInput.value = settings.functionLabels[fn] || fnDef;
+      nameInput.title = T("panel.fnRenameHint", "Renommer pour l'affichage (n'affecte pas les scores ni le regroupement)");
       nameInput.addEventListener("focus", () => { row.draggable = false; nameInput.select(); });
       nameInput.addEventListener("blur", () => {
         row.draggable = true;
-        if (!settings.functionLabels[fn]) nameInput.value = fn;
+        if (!settings.functionLabels[fn]) nameInput.value = fnDef;
       });
       nameInput.addEventListener("input", () => {
         const v = nameInput.value.trim();
-        if (!v || v === fn) delete settings.functionLabels[fn];
+        // Empty or equal to the language default = no override.
+        if (!v || v === fnDef || v === fn) delete settings.functionLabels[fn];
         else settings.functionLabels[fn] = v;
         markDirty();
         renderChartDebounced();
@@ -2950,7 +3026,7 @@
     if (n < b.min || n > b.max) {
       input.classList.add("invalid");
       warn.querySelector("span").textContent =
-        `Valeur inhabituelle pour un ${type.toLowerCase()} (plage attendue : ${b.min} à ${b.max}).`;
+        T("scores.warnUnusualShort", "Valeur inhabituelle pour un {type} (plage attendue : {min} à {max}).").replace("{type}", scoreTypeLabel(type).toLowerCase()).replace("{min}", b.min).replace("{max}", b.max);
       warn.style.display = "flex";
     } else {
       input.classList.remove("invalid");
@@ -3113,22 +3189,31 @@
   // =========================================================================
   const SUGGESTIONS_ENDPOINT = "https://script.google.com/macros/s/AKfycbyUpNdf5yde07qLSBI6zTxQPWg6_uPl1Hmh7WWhjQGb1mo5i3_4wx4unOhlL71B8xJg_w/exec";
 
-  function setupSuggestForm() {
-    // Build the function checkboxes from the canonical list (+ "batterie")
+  // Special "battery" option (not a cognitive-function key). Kept as data in the
+  // submitted suggestion; only its displayed label is translated. The 13
+  // functions use funcDisplay (language-aware via the display layer).
+  var SUGGEST_BATTERY = "Batterie évaluant plusieurs fonctions";
+  function renderSuggestFunctions() {
     const fnDiv = $("functions");
-    if (fnDiv) {
-      const opts = ["Batterie évaluant plusieurs fonctions", ...COGNITIVE_FUNCTIONS];
-      opts.forEach((fn) => {
-        const lab = document.createElement("label");
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.name = "functions";
-        cb.value = fn;
-        lab.appendChild(cb);
-        lab.appendChild(document.createTextNode(fn));
-        fnDiv.appendChild(lab);
-      });
-    }
+    if (!fnDiv) return;
+    // Keep any current selections across a re-render (e.g. on language change).
+    const checked = new Set($$('input[name="functions"]:checked').map((cb) => cb.value));
+    fnDiv.innerHTML = "";
+    [SUGGEST_BATTERY, ...COGNITIVE_FUNCTIONS].forEach((fn) => {
+      const lab = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.name = "functions";
+      cb.value = fn;
+      if (checked.has(fn)) cb.checked = true;
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(fn === SUGGEST_BATTERY ? T("suggest.battery", fn) : funcDisplay(fn)));
+      fnDiv.appendChild(lab);
+    });
+  }
+
+  function setupSuggestForm() {
+    renderSuggestFunctions();
 
     $("suggestSend")?.addEventListener("click", async () => {
       const testName = $("testName")?.value.trim() || "";
@@ -3224,6 +3309,20 @@
     }
   }
 
+  // Reloads the PayPal SDK in the new language so the donate button follows it.
+  function reloadPayPalForLang() {
+    if (!paypalInitStarted) return;                    // never loaded yet: nothing to do
+    const old = document.getElementById("paypal-sdk");
+    if (old) old.remove();
+    try { delete window.paypal; } catch (e) { window.paypal = undefined; }
+    paypalInitStarted = false;
+    const container = $("paypal-button-container");
+    if (container) container.innerHTML = "";
+    // Reload only if the donate page is currently visible.
+    const donate = $("page-donate");
+    if (donate && donate.classList.contains("active")) initPayPalLazy();
+  }
+
   // Injects the PayPal SDK on demand (first visit to the donate page).
   function initPayPalLazy() {
     if (paypalInitStarted) return;
@@ -3235,7 +3334,9 @@
     if (loading) loading.style.display = "block";
 
     const script = document.createElement("script");
-    script.src = "https://www.paypal.com/sdk/js?client-id=BAAI4m0yUdkGit6WfOe6AlMmlvv3rdGM-cxcZ3-DzPT4tQNsHgvHbPVZbg-oIss6ZRmyITRrST5aavZXuk&currency=CAD&disable-funding=card,credit,paylater";
+    const ppLocale = (window.VizeaI18n && window.VizeaI18n.getLang && window.VizeaI18n.getLang() === "en") ? "en_US" : "fr_CA";
+    script.id = "paypal-sdk";
+    script.src = "https://www.paypal.com/sdk/js?client-id=BAAI4m0yUdkGit6WfOe6AlMmlvv3rdGM-cxcZ3-DzPT4tQNsHgvHbPVZbg-oIss6ZRmyITRrST5aavZXuk&currency=CAD&locale=" + ppLocale + "&disable-funding=card,credit,paylater";
     script.onload = renderPayPalButtons;
     script.onerror = () => {
       if (loading) { loading.textContent = "Le module de paiement n'a pas pu se charger (bloqué ou hors-ligne)."; }
@@ -3436,12 +3537,12 @@
       const quit = document.createElement("button");
       quit.type = "button";
       quit.className = "demo-btn demo-btn-ghost";
-      quit.textContent = "Quitter";
+      quit.textContent = T("demo.quit", "Quitter");
       quit.addEventListener("click", () => demoCleanup(true));
       const next = document.createElement("button");
       next.type = "button";
       next.className = "demo-btn demo-btn-next";
-      next.textContent = (i === steps.length - 1) ? "Terminer" : "Suivant";
+      next.textContent = (i === steps.length - 1) ? T("demo.finish", "Terminer") : T("demo.next", "Suivant");
       next.addEventListener("click", () => {
         if (step.onNext) { try { step.onNext(); } catch (e) {} }
         if (!_demo) return;
@@ -3463,21 +3564,21 @@
     return [
       {
         target: "#homeLogo",
-        title: "Bienvenue dans Vizéa",
-        body: "Cette courte visite vous montre l'outil de bout en bout, avec des données fictives. Appuyez sur « Suivant » pour avancer à votre rythme — vous pouvez quitter à tout moment.",
+        title: T("demo.s1.t", "Bienvenue dans Vizéa"),
+        body: T("demo.s1.b", "Cette courte visite vous montre l'outil de bout en bout, avec des données fictives. Appuyez sur « Suivant » pour avancer à votre rythme — vous pouvez quitter à tout moment."),
         before: () => goToPage("page-home"),
         wait: 120
       },
       {
         target: '#topnav [data-target="page-new"]',
-        title: "Tout commence ici",
-        body: "L'onglet « Visualisation » ouvre le flux en quatre étapes : projet, sélection des tests, saisie des scores, puis le graphique.",
+        title: T("demo.s2.t", "Tout commence ici"),
+        body: T("demo.s2.b", "L'onglet « Visualisation » ouvre le flux en quatre étapes : projet, sélection des tests, saisie des scores, puis le graphique."),
         before: () => goToPage("page-home")
       },
       {
         target: "#projectTitle",
-        title: "1 · Le projet",
-        body: "On donne un nom au projet — regardez, la démo le saisit.",
+        title: T("demo.s3.t", "1 · Le projet"),
+        body: T("demo.s3.b", "On donne un nom au projet — regardez, la démo le saisit."),
         before: () => {
           ensureStep0();
           const cb = $("confirmNoPI"); if (cb) { cb.checked = true; cb.dispatchEvent(new Event("change", { bubbles: true })); }
@@ -3487,22 +3588,22 @@
       },
       {
         target: "#importProjectBtn",
-        title: "Reprendre un projet",
-        body: "Vous terminez une deuxième rencontre et voulez compléter un profil déjà commencé ? Importez le projet enregistré pour continuer exactement là où vous étiez.",
+        title: T("demo.s4.t", "Reprendre un projet"),
+        body: T("demo.s4.b", "Vous terminez une deuxième rencontre et voulez compléter un profil déjà commencé ? Importez le projet enregistré pour continuer exactement là où vous étiez."),
         before: ensureStep0,
         wait: 160
       },
       {
         target: "#templateSelect",
-        title: "Partir d'un modèle",
-        body: "Vous utilisez souvent la même batterie ? Un modèle réutilise les mêmes tests et les mêmes préférences graphiques — pour gagner du temps à chaque évaluation.",
+        title: T("demo.s5.t", "Partir d'un modèle"),
+        body: T("demo.s5.b", "Vous utilisez souvent la même batterie ? Un modèle réutilise les mêmes tests et les mêmes préférences graphiques — pour gagner du temps à chaque évaluation."),
         before: ensureStep0,
         wait: 160
       },
       {
         target: "#step-1-content",
-        title: "2 · Choisir les tests",
-        body: "On cherche un test — ici la démo tape « D-KE » — puis on coche ceux qu'on veut. Quelques tests sont déjà sélectionnés pour la suite.",
+        title: T("demo.s6.t", "2 · Choisir les tests"),
+        body: T("demo.s6.b", "On cherche un test — ici la démo tape « D-KE » — puis on coche ceux qu'on veut. Quelques tests sont déjà sélectionnés pour la suite."),
         before: () => {
           if (!projectInitialized || !currentProject || currentProject.title !== "Démonstration") {
             startProject(buildDemoProject());
@@ -3515,15 +3616,15 @@
       },
       {
         target: () => demoFindCard("WAIS-IV"),
-        title: "3 · Saisir les scores",
-        body: "Chaque test apparaît en carte. La démo a déjà rempli des scores fictifs — ici le WAIS-IV et ses sous-tests, qui alimenteront aussi les indices.",
+        title: T("demo.s7.t", "3 · Saisir les scores"),
+        body: T("demo.s7.b", "Chaque test apparaît en carte. La démo a déjà rempli des scores fictifs — ici le WAIS-IV et ses sous-tests, qui alimenteront aussi les indices."),
         before: () => onStep(2),
         wait: 280
       },
       {
         target: demoLastStroopRow,
-        title: "Ajouter un score",
-        body: "Un même test peut recevoir plusieurs scores. La démo clique « + Ajouter un score » et saisit « Flexibilité (erreurs) » — chaque score se rattache à la fonction de votre choix.",
+        title: T("demo.s8.t", "Ajouter un score"),
+        body: T("demo.s8.b", "Un même test peut recevoir plusieurs scores. La démo clique « + Ajouter un score » et saisit « Flexibilité (erreurs) » — chaque score se rattache à la fonction de votre choix."),
         before: () => {
           onStep(2);
           const arr = currentProject.scores["D-KEFS / DKEFS"]["Color-word interference"];
@@ -3543,78 +3644,78 @@
       },
       {
         target: () => demoFindCondDisplay("Couleurs"),
-        title: "Réassigner la fonction",
-        body: "Chaque score est rattaché à une fonction cognitive, modifiable ici. Par exemple, vous pourriez vouloir classer « Couleurs » et « Mots » sous le langage oral plutôt que les fonctions exécutives — c'est vous qui décidez.",
+        title: T("demo.s9.t", "Réassigner la fonction"),
+        body: T("demo.s9.b", "Chaque score est rattaché à une fonction cognitive, modifiable ici. Par exemple, vous pourriez vouloir classer « Couleurs » et « Mots » sous le langage oral plutôt que les fonctions exécutives — c'est vous qui décidez."),
         before: () => onStep(2),
         wait: 140
       },
       {
         target: "#viewSwitch",
-        title: "4 · Le graphique",
-        body: "Voici le profil cognitif : chaque point est placé selon son rang centile, sur des bandes d'interprétation. Le sélecteur en haut bascule entre quatre visualisations — suivons-les une à une.",
+        title: T("demo.s10.t", "4 · Le graphique"),
+        body: T("demo.s10.b", "Voici le profil cognitif : chaque point est placé selon son rang centile, sur des bandes d'interprétation. Le sélecteur en haut bascule entre quatre visualisations — suivons-les une à une."),
         before: () => { onStep(3); setView("line"); },
         wait: 340
       },
       {
         target: "#viewSwitch",
-        title: "Vue Échelles",
-        body: "La vue « Échelles » présente les indices composites (ICV, IRP, IMT, IVT…) plutôt que les sous-tests individuels.",
+        title: T("demo.s11.t", "Vue Échelles"),
+        body: T("demo.s11.b", "La vue « Échelles » présente les indices composites (ICV, IRP, IMT, IVT…) plutôt que les sous-tests individuels."),
         before: () => { onStep(3); setView("scales"); },
         wait: 300
       },
       {
         target: "#viewSwitch",
-        title: "Vue Radar",
-        body: "La vue « Radar » dispose les fonctions en étoile — pratique pour saisir la forme générale du profil d'un coup d'œil.",
+        title: T("demo.s12.t", "Vue Radar"),
+        body: T("demo.s12.b", "La vue « Radar » dispose les fonctions en étoile — pratique pour saisir la forme générale du profil d'un coup d'œil."),
         before: () => { onStep(3); setView("radar"); },
         wait: 300
       },
       {
         target: "#panelToggle",
-        title: "Personnaliser le graphique",
-        body: "Le bouton « Personnaliser » ouvre un panneau pour ajuster les couleurs, l'ordre des fonctions, les bandes d'interprétation et les axes.",
+        title: T("demo.s13.t", "Personnaliser le graphique"),
+        body: T("demo.s13.b", "Le bouton « Personnaliser » ouvre un panneau pour ajuster les couleurs, l'ordre des fonctions, les bandes d'interprétation et les axes."),
         before: () => { onStep(3); setView("line"); },
         wait: 220
       },
       {
         target: "#vaImageBtn",
-        title: "Exporter — Image (PNG)",
-        body: "Depuis une vue graphique, ce bouton exporte une image PNG haute résolution, prête à être utilisée.",
+        title: T("demo.s14.t", "Exporter — Image (PNG)"),
+        body: T("demo.s14.b", "Depuis une vue graphique, ce bouton exporte une image PNG haute résolution, prête à être utilisée."),
         before: () => { onStep(3); setView("line"); },
         wait: 200
       },
       {
         target: "#viewSwitch",
-        title: "Vue Tableau",
-        body: "La vue « Tableau » liste les scores — regroupés par test ou par fonction — avec, pour chacun, la valeur, le rang centile et la classification.",
+        title: T("demo.s15.t", "Vue Tableau"),
+        body: T("demo.s15.b", "La vue « Tableau » liste les scores — regroupés par test ou par fonction — avec, pour chacun, la valeur, le rang centile et la classification."),
         before: () => { onStep(3); setView("table"); },
         wait: 320
       },
       {
         target: "#vaExcelBtn",
-        title: "Exporter — Excel",
-        body: "En vue Tableau, ce bouton exporte le tableau vers Excel, prêt à intégrer dans un rapport.",
+        title: T("demo.s16.t", "Exporter — Excel"),
+        body: T("demo.s16.b", "En vue Tableau, ce bouton exporte le tableau vers Excel, prêt à intégrer dans un rapport."),
         before: () => { onStep(3); setView("table"); },
         wait: 220
       },
       {
         target: "#vaTemplateBtn",
-        title: "Exporter — Modèle",
-        body: "Enregistre les tests choisis et vos préférences graphiques comme modèle réutilisable, pour gagner du temps aux prochaines évaluations.",
+        title: T("demo.s17.t", "Exporter — Modèle"),
+        body: T("demo.s17.b", "Enregistre les tests choisis et vos préférences graphiques comme modèle réutilisable, pour gagner du temps aux prochaines évaluations."),
         before: () => onStep(3),
         wait: 160
       },
       {
         target: "#vaProjectBtn",
-        title: "Exporter — Projet (.vizea)",
-        body: "Exporte tout le projet dans un fichier .vizea. Une fois Vizéa installée, un double-clic sur ce fichier rouvre le projet; sinon, on le glisse sur la fenêtre ou on l'importe.",
+        title: T("demo.s18.t", "Exporter — Projet (.vizea)"),
+        body: T("demo.s18.b", "Exporte tout le projet dans un fichier .vizea. Une fois Vizéa installée, un double-clic sur ce fichier rouvre le projet; sinon, on le glisse sur la fenêtre ou on l'importe."),
         before: () => onStep(3),
         wait: 160
       },
       {
         target: null,
-        title: "À vous de jouer !",
-        body: "C'est tout ! Explorez librement ce projet de démonstration, ou créez le vôtre via « Visualisation ». Bonne visualisation !",
+        title: T("demo.s19.t", "À vous de jouer !"),
+        body: T("demo.s19.b", "C'est tout ! Explorez librement ce projet de démonstration, ou créez le vôtre via « Visualisation ». Bonne visualisation !"),
         before: () => onStep(3)
       }
     ];
@@ -3644,21 +3745,36 @@
   // NOUVEAUTÉS (changelog) — reads an editable nouveautes.json and renders a
   // vertical timeline. To add an entry, edit the JSON file (date, titre, infos).
   // =========================================================================
-  function frenchNewsDate(iso) {
+  function localizedNewsDate(iso) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
     if (!m) return String(iso || "");
-    const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
-    return Number(m[3]) + " " + (months[Number(m[2]) - 1] || "") + " " + m[1];
+    const lang = (window.VizeaI18n && window.VizeaI18n.getLang) ? window.VizeaI18n.getLang() : "fr";
+    const d = Number(m[3]), mo = Number(m[2]) - 1, y = m[1];
+    if (lang === "en") {
+      const en = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+      return (en[mo] || "") + " " + d + ", " + y;
+    }
+    const fr = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+    return d + " " + (fr[mo] || "") + " " + y;
+  }
+  // A news field may be a plain FR value or a {fr, en} object; resolve by language.
+  function pickNews(v) {
+    const lang = (window.VizeaI18n && window.VizeaI18n.getLang) ? window.VizeaI18n.getLang() : "fr";
+    if (v && typeof v === "object" && !Array.isArray(v)) return (lang === "en" && v.en != null) ? v.en : (v.fr != null ? v.fr : v);
+    return v;
   }
 
+  let _newsEntries = null;
   function renderNews(entries) {
+    if (entries) _newsEntries = entries;
     const host = $("newsTimeline");
     if (!host) return;
     host.innerHTML = "";
-    const items = (Array.isArray(entries) ? entries.slice() : [])
+    const src = _newsEntries || entries;
+    const items = (Array.isArray(src) ? src.slice() : [])
       .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
     if (!items.length) {
-      host.innerHTML = '<p class="news-empty">Aucune nouveauté pour le moment.</p>';
+      host.innerHTML = '<p class="news-empty">' + T("news.empty", "Aucune nouveauté pour le moment.") + '</p>';
       return;
     }
     items.forEach((e) => {
@@ -3667,16 +3783,16 @@
 
       const date = document.createElement("div");
       date.className = "news-date";
-      date.textContent = frenchNewsDate(e.date);
+      date.textContent = localizedNewsDate(e.date);
 
       const card = document.createElement("div");
       card.className = "news-card";
       const h = document.createElement("h3");
       h.className = "news-title";
-      h.textContent = e.titre || e.title || "";
+      h.textContent = pickNews(e.titre || e.title) || "";
       card.appendChild(h);
 
-      const infos = e.infos || e.points || [];
+      const infos = pickNews(e.infos || e.points) || [];
       if (Array.isArray(infos) && infos.length) {
         const ul = document.createElement("ul");
         ul.className = "news-points";

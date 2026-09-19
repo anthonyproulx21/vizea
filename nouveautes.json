@@ -1,80 +1,185 @@
 [
   {
-    "date": "2026-09-14",
-    "titre": "V1.7 : Barre de personnalisation repensée et nouveaux tests",
-    "infos": [
-      "Réorganisation de la barre de personnalisation en sections. Une seule section reste ouverte à la fois, pour trouver les réglages plus rapidement.",
-      "Aperçu plus fluide lors de l'ajustement des réglages, comme la taille du texte ou l'intensité des couleurs.",
-      "Agrandissement des libellés dans le graphique des échelles pour une meilleure lisibilité.",
-      "Ajout de trois tests à la banque : WIAT-IV, Color Trails Test et Brief Test of Attention."
-    ]
+    "date": "2026-09-19",
+    "titre": {
+      "fr": "V1.8 : Interface bilingue (français / anglais)",
+      "en": "V1.8: Bilingual interface (French / English)"
+    },
+    "infos": {
+      "fr": [
+        "L'outil est maintenant offert en français et en anglais. Un bouton en haut de la page permet de basculer entre les deux à tout moment.",
+        "À la première visite, la langue s'adapte automatiquement à celle du navigateur.",
+        "Les noms des tests demeurent en français dans les deux langues. L'ajout de tests anglophones est prévu plus tard, afin d'élargir la portée de l'outil aux professionnels d'ailleurs."
+      ],
+      "en": [
+        "The tool is now available in French and English. A button at the top of the page switches between the two at any time.",
+        "On a first visit, the language adapts automatically to your browser.",
+        "Test names remain in French in both languages. English-language tests are planned for later, to broaden the tool's reach to professionals elsewhere."
+      ]
+    }
   },
   {
-    "date": "2026-07-23",
-    "titre": "V1.6 : Commentaires sur les scores",
-    "infos": [
-      "Possibilité d'ajouter un commentaire à chaque score, à partir de l'entrée des scores, du graphique ou du tableau.",
-      "Les points commentés sont identifiés sur le graphique. Le commentaire s'affiche au survol.",
-      "Un commentaire peut être épinglé pour rester affiché en permanence, et déplacé à l'endroit voulu. Il apparaît alors dans l'image exportée.",
-      "Une colonne « Commentaire » s'ajoute au tableau et à l'exportation Excel lorsque des commentaires ont été écrits.",
-      "Possibilité d'ajuster la taille du texte du graphique, et meilleure lisibilité des noms de tests sous l'axe.",
-      "Correction de l'ouverture des projets et des modèles enregistrés avec une version antérieure."
-    ]
+    "date": "2026-09-14",
+    "titre": {
+      "fr": "V1.7 : Barre de personnalisation repensée et nouveaux tests",
+      "en": "V1.7: Redesigned customization bar and new tests"
+    },
+    "infos": {
+      "fr": [
+        "Réorganisation de la barre de personnalisation en sections. Une seule section reste ouverte à la fois, pour trouver les réglages plus rapidement.",
+        "Aperçu plus fluide lors de l'ajustement des réglages, comme la taille du texte ou l'intensité des couleurs.",
+        "Agrandissement des libellés dans le graphique des échelles pour une meilleure lisibilité.",
+        "Ajout de trois tests à la banque : WIAT-IV, Color Trails Test et Brief Test of Attention."
+      ],
+      "en": [
+        "The customization bar is reorganized into sections. Only one section stays open at a time, to find settings faster.",
+        "Smoother preview when adjusting settings, such as text size or colour intensity.",
+        "Larger labels in the scales chart for better legibility.",
+        "Three tests added to the bank: WIAT-IV, Color Trails Test and Brief Test of Attention."
+      ]
+    }
+  },
+  {
+    "date": "2026-07-16",
+    "titre": {
+      "fr": "V1.6 : Commentaires sur les scores",
+      "en": "V1.6: Comments on scores"
+    },
+    "infos": {
+      "fr": [
+        "Possibilité d'ajouter un commentaire à chaque score, à partir de l'entrée des scores, du graphique ou du tableau.",
+        "Les points commentés sont identifiés sur le graphique. Le commentaire s'affiche au survol.",
+        "Un commentaire peut être épinglé pour rester affiché en permanence, et déplacé à l'endroit voulu. Il apparaît alors dans l'image exportée.",
+        "Une colonne « Commentaire » s'ajoute au tableau et à l'exportation Excel lorsque des commentaires ont été écrits.",
+        "Possibilité d'ajuster la taille du texte du graphique, et meilleure lisibilité des noms de tests sous l'axe.",
+        "Correction de l'ouverture des projets et des modèles enregistrés avec une version antérieure."
+      ],
+      "en": [
+        "You can add a comment to each score, from the score entry, the chart or the table.",
+        "Commented points are marked on the chart. The comment shows on hover.",
+        "A comment can be pinned to stay visible permanently, and moved where you want. It then appears in the exported image.",
+        "A “Comment” column is added to the table and the Excel export when comments have been written.",
+        "You can adjust the chart's text size, and test names below the axis are more legible.",
+        "Fixed opening of projects and templates saved with an earlier version."
+      ]
+    }
   },
   {
     "date": "2026-07-15",
-    "titre": "V1.5 : Intensité des couleurs et libellés des bandes de classification",
-    "infos": [
-      "Possibilité d'ajuster l'intensité des couleurs des bandes de classification, de les renommer, et d'afficher les libellés à la droite du graphique.",
-      "Amélioration de la suppression d'un test en appuyant sur le X dans l'onglet d'entrée des scores."
-    ]
+    "titre": {
+      "fr": "V1.5 : Intensité des couleurs et libellés des bandes de classification",
+      "en": "V1.5: Colour intensity and classification band labels"
+    },
+    "infos": {
+      "fr": [
+        "Possibilité d'ajuster l'intensité des couleurs des bandes de classification, de les renommer, et d'afficher les libellés à la droite du graphique.",
+        "Amélioration de la suppression d'un test en appuyant sur le X dans l'onglet d'entrée des scores."
+      ],
+      "en": [
+        "You can adjust the colour intensity of the classification bands, rename them, and show the labels to the right of the chart.",
+        "Improved removing a test with the X in the score-entry step."
+      ]
+    }
   },
   {
     "date": "2026-07-02",
-    "titre": "V1.4 : Application installable et utilisation hors ligne",
-    "infos": [
-      "Vizéa peut désormais s'installer comme une application, avec sa propre fenêtre et un accès en un clic (Chrome et Edge; ajout au Dock sur Safari Mac).",
-      "Une fois installée, l'application fonctionne hors ligne, sans connexion Internet.",
-      "Les projets s'exportent maintenant au format .vizea et se rouvrent par simple glisser-déposer, ou par double-clic lorsque l'application est installée (Chrome / Edge).",
-      "Les exportations (image, tableau, projet) permettent de choisir le dossier de destination et de renommer le fichier avant l'enregistrement."
-    ]
+    "titre": {
+      "fr": "V1.4 : Application installable et utilisation hors ligne",
+      "en": "V1.4: Installable app and offline use"
+    },
+    "infos": {
+      "fr": [
+        "Vizéa peut désormais s'installer comme une application, avec sa propre fenêtre et un accès en un clic (Chrome et Edge; ajout au Dock sur Safari Mac).",
+        "Une fois installée, l'application fonctionne hors ligne, sans connexion Internet.",
+        "Les projets s'exportent maintenant au format .vizea et se rouvrent par simple glisser-déposer, ou par double-clic lorsque l'application est installée (Chrome / Edge).",
+        "Les exportations (image, tableau, projet) permettent de choisir le dossier de destination et de renommer le fichier avant l'enregistrement."
+      ],
+      "en": [
+        "Vizéa can now be installed as an app, with its own window and one-click access (Chrome and Edge; Add to Dock on Safari Mac).",
+        "Once installed, the app works offline, without an Internet connection.",
+        "Projects now export as .vizea files and reopen by drag-and-drop, or by double-click when the app is installed (Chrome / Edge).",
+        "Exports (image, table, project) let you choose the destination folder and rename the file before saving."
+      ]
+    }
   },
   {
     "date": "2026-06-25",
-    "titre": "V1.3 : Optimisations et précision des bandes de classification",
-    "infos": [
-      "Optimisations internes : la saisie des scores demeure fluide, même dans les projets comportant un grand nombre de tests.",
-      "Réalignement des bandes de classification afin qu'elles correspondent précisément aux seuils attendus, quel que soit le type de score affiché."
-    ]
+    "titre": {
+      "fr": "V1.3 : Optimisations et précision des bandes de classification",
+      "en": "V1.3: Optimizations and classification-band accuracy"
+    },
+    "infos": {
+      "fr": [
+        "Optimisations internes : la saisie des scores demeure fluide, même dans les projets comportant un grand nombre de tests.",
+        "Réalignement des bandes de classification afin qu'elles correspondent précisément aux seuils attendus, quel que soit le type de score affiché."
+      ],
+      "en": [
+        "Internal optimizations: score entry stays smooth, even in projects with many tests.",
+        "Realigned the classification bands so they match the expected thresholds precisely, whatever the displayed score type."
+      ]
+    }
   },
   {
     "date": "2026-06-23",
-    "titre": "V1.2 : Démonstration guidée, vue Tableau et ajouts à la banque",
-    "infos": [
-      "Ajout d'une démonstration guidée présentant l'outil étape par étape.",
-      "Nouvelle vue Tableau : scores regroupés par test ou par fonction, colonnes personnalisables et exportation vers Excel.",
-      "Option permettant d'inverser un score lorsqu'un résultat élevé est défavorable (p. ex. temps de réponse, nombre d'erreurs).",
-      "Ajout de quatre tests à la banque : KABC-II, WNV, Leiter-3 et RBANS.",
-      "Tri des tests par récence : l'édition la plus récente d'une famille apparaît en premier."
-    ]
+    "titre": {
+      "fr": "V1.2 : Démonstration guidée, vue Tableau et ajouts à la banque",
+      "en": "V1.2: Guided demo, Table view and bank additions"
+    },
+    "infos": {
+      "fr": [
+        "Ajout d'une démonstration guidée présentant l'outil étape par étape.",
+        "Nouvelle vue Tableau : scores regroupés par test ou par fonction, colonnes personnalisables et exportation vers Excel.",
+        "Option permettant d'inverser un score lorsqu'un résultat élevé est défavorable (p. ex. temps de réponse, nombre d'erreurs).",
+        "Ajout de quatre tests à la banque : KABC-II, WNV, Leiter-3 et RBANS.",
+        "Tri des tests par récence : l'édition la plus récente d'une famille apparaît en premier."
+      ],
+      "en": [
+        "Added a guided demo presenting the tool step by step.",
+        "New Table view: scores grouped by test or by function, customizable columns and export to Excel.",
+        "Option to invert a score when a high result is unfavourable (e.g. response time, number of errors).",
+        "Added four tests to the bank: KABC-II, WNV, Leiter-3 and RBANS.",
+        "Tests sorted by recency: the most recent edition of a family appears first."
+      ]
+    }
   },
   {
     "date": "2026-06-21",
-    "titre": "V1.1 : Lancement officiel de Vizéa",
-    "infos": [
-      "Première version publique de l'outil.",
-      "Visualisation des profils cognitifs par fonction : vues Profil, Échelles et Radar.",
-      "Banque de tests neuropsychologiques évolutive.",
-      "Personnalisation du graphique et exportation en image.",
-      "Enregistrement de modèles et de projets réutilisables."
-    ]
+    "titre": {
+      "fr": "V1.1 : Lancement officiel de Vizéa",
+      "en": "V1.1: Official launch of Vizéa"
+    },
+    "infos": {
+      "fr": [
+        "Première version publique de l'outil.",
+        "Visualisation des profils cognitifs par fonction : vues Profil, Échelles et Radar.",
+        "Banque de tests neuropsychologiques évolutive.",
+        "Personnalisation du graphique et exportation en image.",
+        "Enregistrement de modèles et de projets réutilisables."
+      ],
+      "en": [
+        "First public version of the tool.",
+        "Cognitive profile visualization by function: Profile, Scales and Radar views.",
+        "An evolving bank of neuropsychological tests.",
+        "Chart customization and image export.",
+        "Saving of reusable templates and projects."
+      ]
+    }
   },
   {
     "date": "2025-09-30",
-    "titre": "V0 : Genèse du projet",
-    "infos": [
-      "Première esquisse du concept : un outil pour visualiser et interpréter plus clairement les profils cognitifs.",
-      "Début du développement, à temps perdu, en parallèle des études."
-    ]
+    "titre": {
+      "fr": "V0 : Genèse du projet",
+      "en": "V0: Genesis of the project"
+    },
+    "infos": {
+      "fr": [
+        "Première esquisse du concept : un outil pour visualiser et interpréter plus clairement les profils cognitifs.",
+        "Début du développement, à temps perdu, en parallèle des études."
+      ],
+      "en": [
+        "First sketch of the concept: a tool to visualize and interpret cognitive profiles more clearly.",
+        "Development began, in spare time, alongside my studies."
+      ]
+    }
   }
 ]
