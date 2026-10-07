@@ -1554,6 +1554,110 @@
     },
     "recency": 2
   },
+  "NAB": {
+    "type": "batterie",
+    "subtests": {
+      "Screening : Orientation": [
+        "Langage oral"
+      ],
+      "Screening : Digits": [
+        "Mémoire de travail"
+      ],
+      "Screening : Numbers & letters": [
+        "Attention"
+      ],
+      "Screening : Auditory comprehension": [
+        "Langage oral"
+      ],
+      "Screening : Naming": [
+        "Langage oral"
+      ],
+      "Screening : Shape learning": [
+        "Mémoire"
+      ],
+      "Screening : Story learning": [
+        "Mémoire"
+      ],
+      "Screening : Visual discrimination": [
+        "Visuospatial"
+      ],
+      "Screening : Design construction": [
+        "Visuospatial"
+      ],
+      "Screening : Mazes": [
+        "Fonctions exécutives"
+      ],
+      "Screening : Word generation": [
+        "Fonctions exécutives",
+        "Langage oral"
+      ],
+      "Digits": [
+        "Mémoire de travail"
+      ],
+      "Dots": [
+        "Mémoire de travail"
+      ],
+      "Numbers & Letters": [
+        "Attention"
+      ],
+      "Driving scenes": [
+        "Attention"
+      ],
+      "Oral production": [
+        "Langage oral"
+      ],
+      "Auditory comprehension": [
+        "Langage oral"
+      ],
+      "Naming": [
+        "Langage oral"
+      ],
+      "Writing": [
+        "Langage écrit"
+      ],
+      "Bill payment": [
+        "Langage oral"
+      ],
+      "List learning": [
+        "Mémoire"
+      ],
+      "Shape learning": [
+        "Mémoire"
+      ],
+      "Story learning": [
+        "Mémoire"
+      ],
+      "Daily living memory": [
+        "Mémoire"
+      ],
+      "Visual discrimination": [
+        "Visuospatial"
+      ],
+      "Design construction": [
+        "Visuospatial"
+      ],
+      "Figure drawing": [
+        "Visuospatial",
+        "Mémoire"
+      ],
+      "Map reading": [
+        "Visuospatial"
+      ],
+      "Mazes": [
+        "Fonctions exécutives"
+      ],
+      "Judgment": [
+        "Fonctions exécutives"
+      ],
+      "Categories": [
+        "Fonctions exécutives"
+      ],
+      "Word generation": [
+        "Fonctions exécutives",
+        "Langage oral"
+      ]
+    }
+  },
   "Matrices de Raven": {
     "type": "test",
     "default_functions": [
@@ -1722,6 +1826,14 @@
     "recency": 3
   },
   "CVLT-C": {
+    "type": "test",
+    "default_functions": [
+      "Mémoire"
+    ],
+    "subtests": {},
+    "recency": 1
+  },
+  "HVLT-R": {
     "type": "test",
     "default_functions": [
       "Mémoire"
