@@ -15,12 +15,12 @@ Vizéa transforme des scores de tests neuropsychologiques en un profil visuel cl
 - **Classifications** (bandes de Guilmette et coll., 2020) calculées par rang centile, cohérentes sur tous les types de score (standard, échelle, T, Z, centile).
 - **Personnalisation** du graphique : couleurs, ordre, bandes, axes, étiquettes.
 - **Inversion de score** lorsque « élevé = défavorable » (temps de réponse, erreurs, etc.).
-- **Exports** : image (PNG), tableau (Excel), modèles et projets réutilisables (.json).
+- **Exports** : image (PNG), tableau (Excel), modèles et projets réutilisables (.vizea).
 - **Démonstration guidée** intégrée pour découvrir l'outil pas à pas.
 
 ## Vie privée
 
-Vizéa est une application **entièrement côté client** (statique). Aucun score n'est envoyé à un serveur ni sauvegardé en ligne — conforme à l'esprit de la **Loi 25**. Les seules données stockées localement (dans le navigateur) sont des préférences sans contenu clinique (thème, modèles, brouillons de banque).
+Vizéa est une application **entièrement côté client** (statique). Aucun score n'est envoyé à un serveur ni sauvegardé en ligne, dans l'esprit de la **Loi 25**. Le navigateur ne conserve localement que des données sans contenu clinique (préférences, modèles de tests). Le détail figure sur la page « Confidentialité » du site.
 
 ## Exécuter le projet localement
 
@@ -48,6 +48,8 @@ python3 -m http.server 8000
 | `tests_bank.json` | Banque de tests (servie à la racine) |
 | `nouveautes.json` | Journal des nouveautés (servi à la racine) |
 | `_headers` | En-têtes Netlify (dont la politique de sécurité) |
+| `tests/` | Vérifications du modèle de données (`node tests/datamodel.test.js`) |
+| `fonts/` | Polices auto-hébergées et leur licence (`OFL.txt`) |
 
 ## Contribuer
 

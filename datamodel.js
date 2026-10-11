@@ -238,22 +238,85 @@ function exportProjectToJSON(project) {
   return JSON.stringify(project, null, 2);
 }
 
+// Keys that could tamper with object prototypes if a crafted file were opened.
+const UNSAFE_KEYS = { "__proto__": 1, "constructor": 1, "prototype": 1 };
+const MAX_PROJECT_BYTES = 5 * 1024 * 1024; // a real project is a few KB
+
+// ---- Shape checks for opened files and saved templates ---------------------
+// A .vizea can come from anywhere (a colleague, an e-mail). Only the fields and
+// types Vizéa knows are kept, so a damaged or crafted file can't break the app
+// or slip unexpected values into the page. Older shapes are upgraded.
+const isObj = (o) => !!o && typeof o === "object" && !Array.isArray(o);
+const text = (v, max) => (typeof v === "string" ? v : (typeof v === "number" && isFinite(v)) ? String(v) : "").slice(0, max);
+const textList = (a, max) => (Array.isArray(a) ? a.filter((x) => typeof x === "string").map((x) => x.slice(0, max || 200)) : []);
+const numOrNull = (v) => (typeof v === "number" && isFinite(v) ? v : null);
+const COLOR_RE = /^#[0-9a-fA-F]{3,8}$/;
+const goodKey = (k) => typeof k === "string" && k.length > 0 && k.length <= 200;
+function mapValues(o, fn) {
+  const out = {};
+  if (isObj(o)) Object.keys(o).forEach((k) => { if (!goodKey(k)) return; const v = fn(o[k]); if (v !== undefined) out[k] = v; });
+  return out;
+}
+
+// Optional fields are copied only when present, so a valid file round-trips unchanged.
+function cleanCondition(c) {
+  if (!isObj(c)) return null;
+  const out = {
+    id: text(c.id, 80) || uid("cond"),
+    name: text(c.name, 200),
+    value: text(c.value, 40),
+    type: DM_SCORE_TYPES.indexOf(c.type) >= 0 ? c.type : "Scale score",
+    functions: textList(c.functions, 120)
+  };
+  if ("comment" in c) out.comment = text(c.comment, 5000);
+  if ("commentPinned" in c) out.commentPinned = !!c.commentPinned;
+  if ("commentAx" in c) out.commentAx = numOrNull(c.commentAx);
+  if ("commentAy" in c) out.commentAy = numOrNull(c.commentAy);
+  if ("inverted" in c) out.inverted = !!c.inverted;
+  return out;
+}
+function cleanScaleRow(r) {
+  if (!isObj(r)) return null;
+  const out = { name: text(r.name, 40), value: text(r.value, 40), scale: r.scale === "Percentile" ? "Percentile" : "Standard score" };
+  if ("comment" in r) out.comment = text(r.comment, 5000);
+  if ("commentPinned" in r) out.commentPinned = !!r.commentPinned;
+  if ("commentAx" in r) out.commentAx = numOrNull(r.commentAx);
+  if ("commentAy" in r) out.commentAy = numOrNull(r.commentAy);
+  return out;
+}
+const cleanList = (a, fn) => (Array.isArray(a) ? a.map(fn).filter(Boolean) : []);
+// Scores: test -> subtest -> array of conditions. A very old file could hold a
+// single condition object instead of an array: it is wrapped, not dropped.
+const cleanScores = (s) => mapValues(s, (subs) => (isObj(subs)
+  ? mapValues(subs, (conds) => cleanList(isObj(conds) ? [conds] : conds, cleanCondition))
+  : undefined));
+const cleanSelected = (s) => mapValues(s, (subs) => textList(subs, 200));
+
+function sanitizeProject(p) {
+  if (!isObj(p) || !text(p.title, 200).trim()) throw new Error("Fichier de projet invalide.");
+  const now = new Date().toISOString();
+  return {
+    id: text(p.id, 80) || uid("proj"),
+    title: text(p.title, 200),
+    createdAt: text(p.createdAt, 40) || now,
+    updatedAt: text(p.updatedAt, 40) || now,
+    selectedTests: cleanSelected(p.selectedTests),
+    scores: cleanScores(p.scores),
+    iqScales: mapValues(p.iqScales, (rows) => cleanList(rows, cleanScaleRow)),
+    customFunctions: textList(p.customFunctions, 80),
+    chartSettings: normalizeChartSettings(p.chartSettings),
+    activeScaleTest: text(p.activeScaleTest, 200) || null
+  };
+}
+
 function importProjectFromJSON(jsonString) {
-  const parsed = JSON.parse(jsonString);
-  // Minimal shape validation
-  if (!parsed || typeof parsed !== "object" || !parsed.title) {
+  if (typeof jsonString !== "string" || jsonString.length > MAX_PROJECT_BYTES) {
     throw new Error("Fichier de projet invalide.");
   }
-  if (!parsed.scores) parsed.scores = {};
-  if (!parsed.iqScales) parsed.iqScales = {};
-  if (!parsed.selectedTests) parsed.selectedTests = {};
-  // Fill in any chart settings the file predates (e.g. a project saved before
-  // band labels, text size or score comments existed). Merging onto the current
-  // defaults means an older .vizea keeps working — and simply gains the new
-  // options at their default value — instead of hitting missing keys.
-  parsed.chartSettings = normalizeChartSettings(parsed.chartSettings);
-  if (!parsed.id) parsed.id = uid("proj");
-  return parsed;
+  let parsed;
+  try { parsed = JSON.parse(jsonString, (k, v) => (UNSAFE_KEYS[k] ? undefined : v)); }
+  catch (e) { throw new Error("Fichier de projet invalide."); }
+  return sanitizeProject(parsed);
 }
 
 // ---- TEMPLATES: test selection + chart preferences, NO scores -------------
@@ -295,8 +358,20 @@ function extractTemplateFromProject(project, templateName) {
     selectedTests: JSON.parse(JSON.stringify(project.selectedTests || {})),
     scores: scoresSkeleton,
     customFunctions: Array.isArray(project.customFunctions) ? project.customFunctions.slice() : [],
-    chartSettings: JSON.parse(JSON.stringify(project.chartSettings || getDefaultChartSettings()))
+    chartSettings: templateSettings(project.chartSettings)
   };
+}
+
+// Chart preferences without anything tied to one evaluation: the comparison
+// value (e.g. an estimated IQ) is clinical, and per-score overrides point to
+// score ids that a template regenerates anyway.
+function templateSettings(cs) {
+  const out = normalizeChartSettings(JSON.parse(JSON.stringify(cs || {})));
+  out.compareValue = "";
+  out.pointOverrides = {};
+  out.pointOrder = [];
+  delete out.tableRowOrder;
+  return out;
 }
 
 /**
@@ -309,18 +384,48 @@ function extractTemplateFromProject(project, templateName) {
 // labels, text size or score comments existed). Merging onto the current
 // defaults keeps older projects and templates working — they simply gain the
 // new options at their default value instead of hitting missing keys.
+const CS_LISTS = ["functionOrder", "pointOrder", "hiddenScales", "scaleOrder", "tableRowOrder"];
+const CS_TEXT_MAPS = ["bandLabels", "functionLabels", "scaleLabels"];
+const CS_LIMITS = { fontScale: [0.5, 3], bandOpacity: [0, 1] };
+const DM_SCORE_TYPES = ["Scale score", "Standard score", "Percentile", "Z-Score", "T-Score"];
+const CS_CHOICES = {
+  displayScale: DM_SCORE_TYPES, compareType: DM_SCORE_TYPES, scalesDisplay: ["Standard score", "Percentile"],
+  chartType: ["line", "radar", "scales", "table"], tableGroupBy: ["test", "function"], tableCommentMode: ["icon", "text"]
+};
 function normalizeChartSettings(cs) {
-  const merged = Object.assign(getDefaultChartSettings(), cs || {});
-  ["bandLabels", "pointOverrides", "functionColors", "functionLabels", "scaleLabels"].forEach((k) => {
-    if (!merged[k] || typeof merged[k] !== "object" || Array.isArray(merged[k])) merged[k] = {};
+  const out = getDefaultChartSettings();
+  if (!isObj(cs)) return out;
+  Object.keys(cs).forEach((k) => {
+    if (UNSAFE_KEYS[k]) return;
+    const v = cs[k], d = out[k];
+    if (CS_CHOICES[k]) { if (CS_CHOICES[k].indexOf(v) >= 0) out[k] = v; }
+    else if (CS_LISTS.indexOf(k) >= 0) out[k] = textList(v, 400);
+    else if (CS_TEXT_MAPS.indexOf(k) >= 0) out[k] = mapValues(v, (x) => (typeof x === "string" ? x.slice(0, 120) : undefined));
+    else if (k === "functionColors") out[k] = mapValues(v, (x) => (COLOR_RE.test(x) ? x : undefined));
+    else if (k === "pointOverrides") out[k] = mapValues(v, (o) => {
+      if (!isObj(o)) return undefined;
+      const r = {};
+      if ("hidden" in o) r.hidden = !!o.hidden;
+      if (typeof o.label === "string") r.label = o.label.slice(0, 200);
+      return r;
+    });
+    else if (k === "tableColumns") out[k] = mapValues(v, (x) => (typeof x === "boolean" ? x : undefined));
+    else if (k === "visibleFunctions") out[k] = Array.isArray(v) ? textList(v, 120) : null;
+    else if (k === "radarColor" || k === "scalesColor") { if (COLOR_RE.test(v)) out[k] = v; }
+    else if (d === null) { if (v === null || v === "" || (["number", "string"].indexOf(typeof v) >= 0 && String(v).length <= 20 && isFinite(Number(v)))) out[k] = v; }
+    else if (typeof d === "boolean") { if (typeof v === "boolean") out[k] = v; }
+    else if (typeof d === "number") {
+      if (typeof v === "number" && isFinite(v)) out[k] = CS_LIMITS[k] ? Math.min(CS_LIMITS[k][1], Math.max(CS_LIMITS[k][0], v)) : v;
+    }
+    else if (typeof d === "string") { if (typeof v === "string") out[k] = v.slice(0, 300); else if (typeof v === "number" && isFinite(v)) out[k] = v; }
+    else if (d === undefined && (typeof v === "boolean" || (typeof v === "number" && isFinite(v)) || (typeof v === "string" && v.length <= 300))) out[k] = v; // settings added later, plain values only
   });
-  if (!Array.isArray(merged.scaleOrder)) merged.scaleOrder = [];
-  return merged;
+  return out;
 }
 
 function applyTemplateToProject(project, template) {
-  project.selectedTests = JSON.parse(JSON.stringify(template.selectedTests || {}));
-  project.chartSettings = normalizeChartSettings(JSON.parse(JSON.stringify(template.chartSettings || {})));
+  project.selectedTests = cleanSelected(template.selectedTests);
+  project.chartSettings = templateSettings(template.chartSettings);
   project.customFunctions = Array.isArray(template.customFunctions) ? template.customFunctions.slice() : [];
   // Restore the score skeleton if the template has one (older templates won't).
   if (template.scores) {
@@ -353,7 +458,14 @@ const TEMPLATES_STORAGE_KEY = "vizea_templates_v1";
 function loadAllLocalTemplates() {
   try {
     const raw = localStorage.getItem(TEMPLATES_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    const all = raw ? JSON.parse(raw, (k, v) => (UNSAFE_KEYS[k] ? undefined : v)) : {};
+    return mapValues(all, (t) => (isObj(t) ? {
+      id: text(t.id, 80), name: text(t.name, 200) || "Modèle", createdAt: text(t.createdAt, 40),
+      selectedTests: cleanSelected(t.selectedTests),
+      scores: cleanScores(t.scores),
+      customFunctions: textList(t.customFunctions, 80),
+      chartSettings: isObj(t.chartSettings) ? t.chartSettings : {}
+    } : undefined));
   } catch (e) {
     console.warn("loadAllLocalTemplates failed", e);
     return {};
@@ -382,64 +494,6 @@ function deleteLocalTemplate(templateId) {
     console.warn("deleteLocalTemplate failed", e);
     return false;
   }
-}
-
-// ---- Custom cognitive functions (user-defined groupings) -------------------
-// Stored locally so clinicians can add terms that suit their practice
-// (e.g. "Lecture", "Inhibition", "Dextérité") without us shipping a huge
-// default list. Contains no clinical data — just function names.
-
-const CUSTOM_FUNCTIONS_KEY = "vizea_custom_functions_v1";
-
-function loadCustomFunctions() {
-  try {
-    const raw = localStorage.getItem(CUSTOM_FUNCTIONS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr.filter(x => typeof x === "string") : [];
-  } catch (e) {
-    console.warn("loadCustomFunctions failed", e);
-    return [];
-  }
-}
-
-function canonicalFunctions() {
-  if (typeof COGNITIVE_FUNCTIONS !== "undefined") return COGNITIVE_FUNCTIONS;
-  if (typeof window !== "undefined" && window.VizeaConstants) return window.VizeaConstants.COGNITIVE_FUNCTIONS || [];
-  return [];
-}
-
-function addCustomFunction(name) {
-  const clean = (name || "").trim();
-  if (!clean) return false;
-  try {
-    const list = loadCustomFunctions();
-    // Avoid duplicates (case-insensitive) and clashes with built-ins.
-    const lower = clean.toLowerCase();
-    const builtinLower = canonicalFunctions().map(f => f.toLowerCase());
-    if (builtinLower.includes(lower) || list.some(f => f.toLowerCase() === lower)) return false;
-    list.push(clean);
-    localStorage.setItem(CUSTOM_FUNCTIONS_KEY, JSON.stringify(list));
-    return true;
-  } catch (e) {
-    console.warn("addCustomFunction failed", e);
-    return false;
-  }
-}
-
-function removeCustomFunction(name) {
-  try {
-    const list = loadCustomFunctions().filter(f => f !== name);
-    localStorage.setItem(CUSTOM_FUNCTIONS_KEY, JSON.stringify(list));
-    return true;
-  } catch (e) {
-    console.warn("removeCustomFunction failed", e);
-    return false;
-  }
-}
-
-// Full working list: canonical functions plus the user's custom ones.
-function getAllFunctions() {
-  return canonicalFunctions().concat(loadCustomFunctions());
 }
 
 // ---- WECHSLER COMPOSITE SCALES (échelles) --------------------------------
@@ -530,10 +584,6 @@ const VizeaDataModel = {
   loadAllLocalTemplates,
   saveLocalTemplate,
   deleteLocalTemplate,
-  loadCustomFunctions,
-  addCustomFunction,
-  removeCustomFunction,
-  getAllFunctions,
   wechslerScalesFor,
   iqScalesForTest,
   isIqBattery,

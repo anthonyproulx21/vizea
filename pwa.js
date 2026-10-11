@@ -16,6 +16,7 @@
   var deferredPrompt = null;
   var DISMISS_KEY = "vizea_install_dismissed";
   var $ = function (id) { return document.getElementById(id); };
+  var T = function (k, fb) { return (window.VizeaI18n && window.VizeaI18n.t) ? window.VizeaI18n.t(k) : fb; };
 
   function isStandalone() {
     try {
@@ -41,7 +42,7 @@
     // No native prompt available (already installed, or the browser hasn't armed
     // installation yet). Explain instead of doing nothing silently.
     if (status) {
-      status.textContent = "Aucune fenêtre d'installation ne s'est ouverte. Vizéa est peut-être déjà installée — vérifiez vos applications (menu Démarrer sur Windows, Dock ou dossier Applications sur Mac). Sinon, cliquez l'icône d'installation à droite de la barre d'adresse, puis « Installer ».";
+      status.textContent = T("install.noPrompt", "Aucune fenêtre d'installation ne s'est ouverte.");
       status.hidden = false;
     }
   }
@@ -80,9 +81,9 @@
     var det = $("installDetected");
     if (det) {
       var labels = {
-        chromium: "Votre navigateur permet l'installation en un clic :",
-        "safari-mac": "Sur Safari (Mac), l'installation se fait par le menu :",
-        ios: "Sur votre appareil (iPhone / iPad) :",
+        chromium: T("install.detChromium", "Votre navigateur permet l'installation en un clic :"),
+        "safari-mac": T("install.detSafari", "Sur Safari (Mac), l'installation se fait par le menu :"),
+        ios: T("install.detIos", "Sur votre appareil (iPhone / iPad) :"),
         firefox: "", other: ""
       };
       var t = labels[key] || "";
@@ -101,6 +102,7 @@
     }
     showSteps();
   }
+  document.addEventListener("vizea:langchange", showSteps);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", wire);
   else wire();
 

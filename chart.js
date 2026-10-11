@@ -47,6 +47,18 @@
   }
   // Translated axis title for a score-type value (data value stays unchanged).
   var SCALE_TITLE_KEYS = { "Percentile": "score.percentile", "Standard score": "score.standard", "Scale score": "score.scaled", "Z-Score": "score.z", "T-Score": "score.t" };
+  function bandOf(pct) {
+    const b = window.ScoringEngine.getBandForPercentile(pct);
+    const name = (window.VizeaConstants && window.VizeaConstants.displayBandField)
+      ? window.VizeaConstants.displayBandField(b.key, "short", b.short) : b.short;
+    return { key: b.key, color: b.color, name };
+  }
+  function pctText(p) { return p < 1 ? "<1" : p > 99 ? ">99" : String(Math.round(p)); }
+  // Card-like hover box: the trace's colour as border, theme surface, Geist.
+  function hoverStyle(color, TC, scale) {
+    return { bgcolor: TC.hoverBg, bordercolor: color, align: "left",
+      font: { family: FONT_BODY, size: Math.round(12 * scale), color: TC.text } };
+  }
   function scaleTitle(v) {
     var k = SCALE_TITLE_KEYS[v];
     return (k && window.VizeaI18n && window.VizeaI18n.t) ? window.VizeaI18n.t(k) : v;
@@ -69,7 +81,7 @@
     return (typeof v === "string" && v.trim()) ? v.trim() : name;
   }
   // loaded by the page). Centralized so all three charts stay consistent.
-  const FONT_BODY = "Inter, system-ui, -apple-system, 'Segoe UI', sans-serif";
+  const FONT_BODY = "Geist, Inter, system-ui, -apple-system, 'Segoe UI', sans-serif";
   const FONT_TITLE = "Fraunces, Georgia, serif";
   const BAND_OPACITY = 0.13;
   // Drawing height of the plot area, used to tell whether a band is tall enough
@@ -124,6 +136,11 @@
   let _forceLight = false;
   // Annotation index -> conditionId for the comment chips/pinned labels.
   let _commentAnnIndex = {};
+  // Annotation index -> cognitive function, for the clickable section titles.
+  let _titleAnnIndex = {};
+  // Translated hover hint on section titles (click = look at that function alone).
+  function colon() { return (window.VizeaI18n && window.VizeaI18n.getLang() === "en") ? ": " : " : "; }
+  function tr(key, fb) { return (window.VizeaI18n && window.VizeaI18n.t) ? window.VizeaI18n.t(key) : fb; }
 
   // Assign a colour to every function in display order: named/override colours
   // first, then the extended cycle (skipping colours already taken) so a profile
@@ -209,10 +226,10 @@
     return dark
       ? { text: "#e8eef4", textSoft: "#9db2c6", grid: "rgba(157,178,198,0.18)",
           gridSoft: "rgba(157,178,198,0.12)", compare: "#aebccb", labelBg: "rgba(20,34,47,0.82)",
-          sep: "rgba(157,178,198,0.28)", markerFill: "#16242f", bandLabel: "#9db2c6" }
+          sep: "rgba(157,178,198,0.28)", markerFill: "#16242f", bandLabel: "#9db2c6", hoverBg: "#14222f" }
       : { text: "#2b3a4a", textSoft: "#5d6b7a", grid: "rgba(20,50,90,0.16)",
           gridSoft: "rgba(20,50,90,0.09)", compare: "#4a5a6a", labelBg: "rgba(255,255,255,0.8)",
-          sep: "rgba(20,50,90,0.22)", markerFill: "#ffffff", bandLabel: "#5d6b7a" };
+          sep: "rgba(20,50,90,0.22)", markerFill: "#ffffff", bandLabel: "#5d6b7a", hoverBg: "#ffffff" };
   }
 
   // Band display helpers ------------------------------------------------------
@@ -280,13 +297,11 @@
   function fitOneLine(str, maxChars) {
     const s = String(str || "").trim();
     if (s.length <= maxChars) return s;
-    return "…" + s.slice(-(maxChars - 1));
+    return "…" + s.slice(-(maxChars - 1)).replace(/^[\s–—-]+/, "");   // no "… – " leftovers
   }
 
-  function colorForFunction(func, chartSettings) {
-    const overrides = (chartSettings && chartSettings.functionColors) || {};
-    return overrides[func] || DEFAULT_COLORS[func] || "#176bb5";
-  }
+  // Chart titles shrink on narrow screens instead of running off the edge.
+  const titleSize = (w) => Math.round(Math.max(14, Math.min(20, (w || 900) / 34)));
 
   // Convert "#rrggbb" to an rgba() string at the given alpha.
   function hexToRgba(hex, alpha) {
@@ -409,6 +424,7 @@
       const ys = [];
       const texts = [];
       const keys = [];                    // conditionId per point (for click-to-edit)
+      const bands = [];                   // band key per point (hover highlight)
 
       const color = colorMap[group.func];
 
@@ -423,8 +439,13 @@
         const hasComment = !!(p.comment && p.comment.trim());
         // The data hover stays clean: the comment gets its OWN hover box, shown
         // from the little bubble icon beside the point.
-        texts.push(`${esc(lbl)}<br>${esc(p.func)}<br>${esc(p.rawValue)} (${esc(p.type)})<br>Percentile: ${p.percentile.toFixed(1)}`);
+        const bd = bandOf(p.percentile);
+        texts.push(`<b>${esc(lbl)}</b><br><span style="color:${color}">●</span> ${esc(displayFunc(p.func, settings))}<br>` +
+          `${esc(p.rawValue)} · ${esc(scaleTitle(p.type))}${p.inverted ? " *" : ""}<br>` +
+          `${esc(scaleTitle("Percentile"))}${colon()}<b>${pctText(p.percentile)}</b><br>` +
+          `<span style="color:${bd.color}">■</span> ${esc(bd.name)}`);
         keys.push(p.conditionId || "");
+        bands.push(bd.key);
         if (hasComment) commentMarks.push({
           x: xIndex, y: yVal, color,
           comment: p.comment.trim(),
@@ -438,8 +459,9 @@
       traces.push({
         x: xs,
         y: ys,
-        customdata: xs.map((_, i) => [texts[i], keys[i]]),
+        customdata: xs.map((_, i) => [texts[i], keys[i], bands[i]]),
         hovertemplate: "%{customdata[0]}<extra></extra>",
+        hoverlabel: hoverStyle(color, TC, fontScale),
         mode: settings.showDataLabels ? "lines+markers+text" : "lines+markers",
         text: settings.showDataLabels ? labelVals.map(v => (typeof v === "number" ? v.toFixed(0) : v)) : undefined,
         textposition: "top center",
@@ -513,7 +535,7 @@
           laneSegments.push({ y0, y1, color: b.color });
           if (txt && bandPx >= size * 1.35) bandLabelAnnotations.push({
             xref: "paper", yref: "y", x: 1, y: (y0 + y1) / 2,
-            text: txt, showarrow: false,
+            text: esc(txt), showarrow: false,
             xanchor: "left", yanchor: "middle", xshift: LANE_GAP + LANE_PAD,
             font: { size, color: bandTextColor(b.color, isDarkTheme()), family: FONT_BODY }
           });
@@ -579,12 +601,19 @@
     const rowsUsed = Math.max(1, rowRights.length);
     // Row spacing must grow with the text, or stacked titles collide vertically.
     const ROW_DY = Math.max(0.052, (TITLE_SIZE * 2.4) / PLOT_AREA_PX);
-    const annotations = groupCenters.map((gc, i) => ({
-      x: gc.center, y: 1.012 + titleRows[i] * ROW_DY, xref: "x", yref: "paper",
-      text: `<b>${esc(gc.display)}</b>`, showarrow: false,
-      font: { size: fs(11, fontScale), color: gc.color }, textangle: 0,
-      yanchor: "bottom", xanchor: "center"
-    })).concat(compareAnnotations).concat(bandLabelAnnotations);
+    const focusable = !(opts && opts.noFocus) && groupCenters.length > 1;
+    const annotations = groupCenters.map((gc, i) => {
+      if (focusable) _titleAnnIndex[i] = gc.func;
+      return {
+        x: gc.center, y: 1.012 + titleRows[i] * ROW_DY, xref: "x", yref: "paper",
+        text: `<b>${esc(gc.display)}</b>`, showarrow: false,
+        font: { size: fs(11, fontScale), color: gc.color }, textangle: 0,
+        yanchor: "bottom", xanchor: "center",
+        captureevents: focusable,
+        hovertext: focusable ? esc(tr("focus.hint", "Cliquer pour voir cette fonction seule")) : undefined,
+        hoverlabel: focusable ? { bgcolor: TC.labelBg, bordercolor: gc.color, font: { color: TC.text, size: fs(11, fontScale), family: FONT_BODY } } : undefined
+      };
+    }).concat(compareAnnotations).concat(bandLabelAnnotations);
 
     // Commented points get a small WHITE bubble with "…" beside them. Hovering
     // that bubble shows the note in its OWN box, separate from the data hover.
@@ -671,30 +700,8 @@
     const LINE_H = TICK_SIZE * 1.25;
     // Always one line; ellipsis at the START (keeps the informative end).
     const MAX_TICK_CHARS = 40;
-    const fittedRaw = xLabels.map((s) => fitOneLine(s, MAX_TICK_CHARS));
-    const xLabelsFit = fittedRaw.map(esc);      // escape AFTER measuring lengths
-    const widestLen = showTestLabels
-      ? fittedRaw.reduce((m, s) => Math.max(m, s.length), 0) : 0;
-    // A -45° label hangs DOWN-LEFT from its tick, so it needs room below…
-    const bottomMargin = showTestLabels
-      ? Math.max(70, Math.round(widestLen * CHAR_EM * TICK_SIZE * ROT + LINE_H) + 24)
-      : 46;
-    // …and to the LEFT. The first labels overhang the y-axis and were being
-    // clipped away entirely (the "missing" labels). Measure the worst overhang.
-    let leftOverflow = 0;
-    if (showTestLabels) {
-      fittedRaw.forEach((s, i) => {
-        const reach = s.length * CHAR_EM * TICK_SIZE * ROT;   // horizontal extent
-        leftOverflow = Math.max(leftOverflow, reach - i * pxPerXUnit);
-      });
-    }
-    // Keep the actual plot drawing area constant; total height grows to fit
-    // labels + title rows. (renderChart applies this to the container.)
-    const figHeight = topMargin + PLOT_AREA_PX + bottomMargin;
-
-    // Y-axis ticks: always show the chosen display scale's values. On a
-    // proportional axis they're placed at their percentile positions (so the
-    // spacing is non-linear but the bands reflect rarity); otherwise linearly.
+    // Y ticks first: the left margin depends only on them, so the plot keeps the
+    // same width whatever the order or the function shown.
     const tickScoreValues = tickValuesFor(displayScale, proportional);
     const yTickVals = proportional
       ? tickScoreValues.map(v => percentileToDisplay(
@@ -702,21 +709,32 @@
           plotScale))
       : tickScoreValues;
     const yTickText = tickScoreValues.map(v => String(v));
-
+    const maxTickW = yTickText.reduce((m, t) => Math.max(m, textWidthPx(t, fs(12, fontScale))), 0);
+    const leftMargin = Math.max(80, Math.round(fs(13, fontScale) * 1.7 + maxTickW + 18)) + (showTestLabels ? 20 : 0);
+    // A -45° label hangs down-left from its tick: the first ones are shortened
+    // (ellipsis at the start, the informative end stays) instead of widening
+    // the margin. The full name is in the hover.
     // Right margin: the band names live here. Widen it to the longest name so
     // nothing is clipped; leave the default when they're off.
     // The key lane lives in the right margin: gap + lane + a little air.
     const laneW = laneWidthFor(bandLabelAnnotations.map((a) => a.text), fs(10, fontScale));
     const rightMargin = laneW ? LANE_GAP + laneW + 8 : 30;
-    // Left margin must clear the axis title + widest y tick AND the first tick
-    // labels, which hang left past the axis (that overhang was silently eating
-    // the leftmost labels).
-    const maxTickW = yTickText.reduce((m, t) => Math.max(m, textWidthPx(t, fs(12, fontScale))), 0);
-    const leftMargin = Math.max(
-      80,
-      Math.round(fs(13, fontScale) * 1.7 + maxTickW + 18),
-      Math.round(leftOverflow) + 10
-    );
+    const charReach = CHAR_EM * TICK_SIZE * ROT;
+    const realPx = Math.max(10, plotWidth - leftMargin - rightMargin) / Math.max(1, totalPoints);
+    const fittedRaw = xLabels.map((s, i) => fitOneLine(s,
+      Math.max(6, Math.min(MAX_TICK_CHARS, Math.floor((leftMargin - 8 + (i + 0.5) * realPx) / charReach)))));
+    const xLabelsFit = fittedRaw.map(esc);      // escape AFTER measuring lengths
+    const widestLen = showTestLabels
+      ? fittedRaw.reduce((m, s) => Math.max(m, s.length), 0) : 0;
+    // A -45° label hangs DOWN-LEFT from its tick, so it needs room below…
+    const bottomMargin = showTestLabels
+      ? Math.max(70, Math.round(widestLen * CHAR_EM * TICK_SIZE * ROT + LINE_H) + 24)
+      : 46;
+    // Keep the actual plot drawing area constant; total height grows to fit
+    // labels + title rows. (renderChart applies this to the container.)
+    const figHeight = topMargin + PLOT_AREA_PX + bottomMargin;
+
+
 
     // Lane rectangles need the final margins to convert px → paper fractions.
     if (laneW && laneSegments.length) {
@@ -733,7 +751,7 @@
         tickvals: xLabels.map((_, i) => i),
         ticktext: showTestLabels ? xLabelsFit : xLabelsFit.map(() => ""),
         tickangle: -45,
-        range: [-0.5, totalPoints - 0.5],
+        range: project._xrange || [-0.5, totalPoints - 0.5],   // _xrange: start of a zoom-out
         showticklabels: showTestLabels,
         ticks: showTestLabels ? "outside" : "",
         tickfont: { color: TC.textSoft, size: TICK_SIZE },
@@ -768,18 +786,21 @@
         text: esc(titleText),
         x: 0.5, xanchor: "center",
         y: 0.97, yanchor: "top", yref: "container",
-        font: { family: FONT_TITLE, size: 20, color: TC.text }
+        font: { family: FONT_TITLE, size: titleSize(plotWidth), color: TC.text }
       };
     }
 
-    return { empty: false, traces, layout, height: figHeight };
+    // x layout per function, for in-chart drag/rename (read by app.js).
+    let k = 0;
+    const lineGroups = groups.map(g => { const r = { func: g.func, start: k, pids: g.points.map(p => p.pid), labels: g.points.map(p => p.label) }; k += g.points.length; return r; });
+    return { empty: false, traces, layout, height: figHeight, edit: { groups: lineGroups } };
   }
 
   /**
    * Build the RADAR chart figure. One spoke per function; value = mean
    * percentile across that function's points, converted to display scale.
    */
-  function buildRadarFigure(project) {
+  function buildRadarFigure(project, opts) {
     const settings = project.chartSettings || {};
     const displayScale = settings.displayScale || "Percentile";
     const proportional = settings.proportionalAxis !== false;
@@ -800,7 +821,9 @@
       theta.push(esc(displayFunc(group.func, settings)));
       r.push(pos);
       labels.push(typeof shown === "number" ? shown.toFixed(0) : shown);
-      hover.push(`${esc(group.func)}<br>Moyenne percentile: ${meanPct.toFixed(1)}<br>(${group.points.length} score(s))`);
+      const rb = bandOf(meanPct);
+      hover.push(`<b>${esc(displayFunc(group.func, settings))}</b><br>${esc(tr("chart.meanPct", "Rang centile moyen"))}${colon()}<b>${pctText(meanPct)}</b><br>` +
+        `<span style="color:${rb.color}">■</span> ${esc(rb.name)}<br><span style="opacity:.7">${group.points.length} score(s)</span>`);
     });
     // Close the loop for a filled polygon
     if (theta.length > 2) {
@@ -847,6 +870,7 @@
       textfont: { size: fs(11, fontScale), color: TC.text },
       customdata: hover,
       hovertemplate: "%{customdata}<extra></extra>",
+      hoverlabel: hoverStyle(radarColor, TC, fontScale),
       fill: settings.radarFill !== false ? "toself" : "none",
       fillcolor: hexToRgba(radarColor, 0.16),
       line: { color: radarColor, width: 2.8 },
@@ -889,11 +913,11 @@
     if (titleText) {
       layout.title = {
         text: esc(titleText), x: 0.5, xanchor: "center",
-        font: { family: FONT_TITLE, size: 20, color: TC.text }
+        font: { family: FONT_TITLE, size: titleSize(opts && opts.plotWidth), color: TC.text }
       };
     }
 
-    return { empty: false, traces, layout, height: 600 };
+    return { empty: false, traces, layout, height: 600, edit: { funcs: groups.map(g => g.func) } };
   }
 
   /**
@@ -986,7 +1010,7 @@
           sLaneSegments.push({ y0, y1, color: b.color });
           if (txt && bandPx >= size * 1.35) sBandLabels.push({
             xref: "paper", yref: "y", x: 1, y: (y0 + y1) / 2,
-            text: txt, showarrow: false, xanchor: "left", yanchor: "middle",
+            text: esc(txt), showarrow: false, xanchor: "left", yanchor: "middle",
             xshift: LANE_GAP + LANE_PAD,
             font: { size, color: bandTextColor(b.color, isDarkTheme()), family: FONT_BODY }
           });
@@ -1003,7 +1027,11 @@
       line: { color: lineColor, width: 2.6 },
       marker: { color: TC.markerFill, size: 9, line: { color: lineColor, width: 2.2 } },
       customdata: rows.map((r) => [r.id || ""]),
-      hovertemplate: "%{x}: %{text}<extra></extra>",
+      hovertext: rows.map((r, i) => { const b = bandOf(percentiles[i]);
+        return `<b>${labels[i]}</b><br>${esc(text[i])} · ${esc(scaleTitle(r.scale === "Percentile" ? "Percentile" : "Standard score"))}<br>` +
+          `${esc(scaleTitle("Percentile"))}${colon()}<b>${pctText(percentiles[i])}</b><br><span style="color:${b.color}">■</span> ${esc(b.name)}`; }),
+      hovertemplate: "%{hovertext}<extra></extra>",
+      hoverlabel: hoverStyle(lineColor, TC, fontScale),
       cliponaxis: false
     }];
 
@@ -1076,8 +1104,8 @@
     };
     if (titleText) layout.title = { text: esc(titleText), x: 0.5, xanchor: "center",
       y: 0.97, yanchor: "top", yref: "container",
-      font: { family: FONT_TITLE, size: 20, color: TC.text } };
-    return { empty: false, traces, layout, height: 560 };
+      font: { family: FONT_TITLE, size: titleSize(plotWidth), color: TC.text } };
+    return { empty: false, traces, layout, height: 560, edit: { names: rows.map(r => r.name) } };
   }
 
   function renderChart(project, elementId) {
@@ -1085,11 +1113,12 @@
     if (!el) return;
     const settings = project.chartSettings || {};
     const plotWidth = el.clientWidth || 900;
+    _titleAnnIndex = {};
     const fig = settings.chartType === "radar"
-      ? buildRadarFigure(project)
+      ? buildRadarFigure(project, { plotWidth })
       : settings.chartType === "scales"
         ? buildScalesFigure(project, { plotWidth })
-        : buildLineFigure(project, { plotWidth });
+        : buildLineFigure(project, { plotWidth, noFocus: !!project._focus });
 
     if (fig.empty) {
       // If a real plot was here, purge it cleanly before showing the message,
@@ -1098,7 +1127,8 @@
         try { window.Plotly.purge(el); } catch (e) { /* noop */ }
       }
       const TC = themeColors();
-      el.innerHTML = "<p style='text-align:center;color:" + TC.textSoft + ";padding:40px'>Aucun score à afficher. Entrez des scores et associez-leur au moins une fonction cognitive.</p>";
+      var msg = (window.VizeaI18n && window.VizeaI18n.t) ? window.VizeaI18n.t("chart.empty") : "Aucun score à afficher.";
+      el.innerHTML = "<p class='viz-empty'>" + esc(msg) + "</p>";
       return;
     }
     // First render builds the plot (newPlot); subsequent renders reuse it via
@@ -1118,10 +1148,16 @@
       // score and leaves the label box immovable.
       edits: { annotationTail: true },
       toImageButtonOptions: { format: "png", filename: "vizea_profil", scale: 2 },
-      displaylogo: false
+      displaylogo: false,
+      // Keep only the useful tools (zoom, pan, reset, PNG); the rest is noise for clinicians.
+      modeBarButtonsToRemove: ["select2d", "lasso2d", "autoScale2d", "zoomIn2d", "zoomOut2d",
+        "toggleSpikelines", "hoverClosestCartesian", "hoverCompareCartesian", "hoverClosestPolar"]
     };
+    // Settings changes glide the points to their new place (same chart type only).
+    if (project._smooth && hadPlot) fig.layout.transition = { duration: 420, easing: "cubic-in-out" };
     const draw = hadPlot && window.Plotly.react ? window.Plotly.react : window.Plotly.newPlot;
     const plotPromise = draw(el, fig.traces, fig.layout, config);
+    el._vizeaEdit = fig.edit || null;   // what in-chart drag/rename maps to (app.js)
     plotPromise.then(() => {
       // The container can change width (e.g. entering step 3 full-width, or the
       // drawer opening/closing). Force a resize so the plot always fits.
@@ -1140,6 +1176,7 @@
     renderChart,
     setForceLight: (v) => { _forceLight = !!v; },
     commentAnnotationId: (i) => _commentAnnIndex[i] || null,
+    functionTitleAt: (i) => _titleAnnIndex[i] || null,
     AXIS_RANGE
   };
 

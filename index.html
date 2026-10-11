@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <script src="theme-init.js?v=20260702"></script>
+  <script src="theme-init.js?v=20261010g"></script>
   <title>Vizéa — Visualisation de profils cognitifs</title>
   <link rel="icon" type="image/svg+xml" sizes="any" href="favicon.svg?v=2">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='11' fill='%230d3b66'/%3E%3Cpath d='M24 11v27' stroke='%237fd9e8' stroke-width='2.4' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='11' r='3' fill='%232fd0e0'/%3E%3Ccircle cx='17' cy='22' r='2.6' fill='%232fd0e0'/%3E%3Ccircle cx='31' cy='26' r='2.6' fill='%232fd0e0'/%3E%3Ccircle cx='24' cy='38' r='2.6' fill='%23eaf6ff'/%3E%3C/svg%3E">
@@ -15,11 +15,9 @@
   <link rel="alternate" hreflang="fr" href="https://vizea.ca/?lang=fr" />
   <link rel="alternate" hreflang="en" href="https://vizea.ca/?lang=en" />
   <link rel="alternate" hreflang="x-default" href="https://vizea.ca/" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Allura&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
+  <link rel="preload" href="fonts/fraunces-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="fonts/fonts.css?v=1">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0d3b66">
   <meta name="application-name" content="Vizéa">
@@ -27,22 +25,25 @@
   <meta name="apple-mobile-web-app-title" content="Vizéa">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=20260702">
+  <link rel="stylesheet" href="style.css?v=20261011g">
 
-  <script defer src="plotly.min.js?v=20260702" charset="utf-8"></script>
-  <script defer src="i18n.js?v=20260914"></script>
-  <script defer src="constants.js?v=20260702"></script>
-  <script defer src="scoring.js?v=20260702"></script>
-  <script defer src="datamodel.js?v=20260702"></script>
-  <script defer src="chart.js?v=20260702"></script>
-  <script defer src="app.js?v=20260702"></script>
-  <script defer src="pwa.js?v=20260702"></script>
+  <script defer src="plotly.min.js?v=3.1.2-strict" charset="utf-8"></script>
+  <script defer src="i18n.js?v=20261011g"></script>
+  <script defer src="constants.js?v=20261010g"></script>
+  <script defer src="scoring.js?v=20261010g"></script>
+  <script defer src="datamodel.js?v=20261011g"></script>
+  <script defer src="chart.js?v=20261011g"></script>
+  <script defer src="app.js?v=20261011g"></script>
+  <script defer src="pwa.js?v=20261010g"></script>
+  <script defer src="gsap.min.js?v=3.13.0"></script>
+  <script defer src="ScrollTrigger.min.js?v=3.13.0"></script>
+  <script defer src="home-anim.js?v=20261010g"></script>
 </head>
 
 <body>
   <canvas class="neural-bg" id="neuralCanvas" aria-hidden="true"></canvas>
   <header>
-    <div class="logo-area" id="homeLogo" role="button" tabindex="0" aria-label="Accueil">
+    <div class="logo-area" id="homeLogo" role="button" tabindex="0" aria-label="Accueil" data-i18n-attr="aria-label:nav.home">
       <!-- Brain mark: a hemisphere built from a folded gyrus line + neural nodes -->
       <svg class="logo-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
         <path class="brain-outline"
@@ -61,7 +62,7 @@
       <span class="logo-word">Viz<span class="logo-x">é</span>a</span>
     </div>
     <div class="header-right">
-      <nav id="topnav" aria-label="Navigation principale">
+      <nav id="topnav" aria-label="Navigation principale" data-i18n-attr="aria-label:nav.mainAria">
         <a data-target="page-home" class="active" data-i18n="nav.home">Accueil</a>
         <a data-target="page-new" data-i18n="nav.viz">Visualisation</a>
         <a id="navDemo" class="nav-demo" role="button" tabindex="0" data-i18n="nav.demo">Démo</a>
@@ -71,7 +72,7 @@
         <a data-target="page-donate" data-i18n="nav.donate">Faire un don</a>
       </nav>
       <button class="lang-toggle" id="langToggle" aria-label="Switch to English" title="Switch to English">EN</button>
-      <button class="theme-toggle" id="themeToggle" aria-label="Basculer le thème clair/sombre" data-i18n-attr="title:theme.toggle" title="Thème clair/sombre">
+      <button class="theme-toggle" id="themeToggle" aria-label="Basculer le thème clair/sombre" data-i18n-attr="title:theme.toggle, aria-label:theme.toggle" title="Thème clair/sombre">
         <svg class="ico-sun" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 1.5v2.5M12 20v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M1.5 12h2.5M20 12h2.5M4.2 19.8l1.8-1.8M18 6l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         <svg class="ico-moon" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       </button>
@@ -91,25 +92,21 @@
             <h1 class="hero-title" data-i18n-html="home.title">Voir un <span class="accent-word">profil</span>,<br>pas seulement des
               chiffres.</h1>
             <p class="slogan" data-i18n="home.slogan">Vizéa présente des scores standardisés en un profil cognitif clair, regroupé par
-              fonction cognitive : Prêt à interpréter, à exporter, à montrer.</p>
+              fonction cognitive : prêt à interpréter, à exporter et à montrer.</p>
             <div class="hero-buttons">
               <a data-target="page-new" class="btn-primary hero-btn">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 20V11M9.5 20V4M15 20v-6M20.5 20V8M3 20h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                <span data-i18n="home.btnStart">Commencer une visualisation</span>
+                <span data-i18n="home.ctaStart">Créer un profil</span>
               </a>
               <button type="button" id="startDemoBtn" class="btn-demo hero-btn">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" /><path d="M10 8.5l5 3.5-5 3.5V8.5Z" fill="currentColor" /></svg>
-                <span data-i18n="home.btnDemo">Commencer une démonstration</span>
-              </button>
-              <a data-target="page-about" class="btn-outline hero-btn">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9-9 4.03-9 9 4.03 9 9 9Z" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
-                <span data-i18n="home.btnDiscover">Découvrir le projet</span>
-              </a>
-              <button type="button" id="installAppBtn" class="btn-outline hero-btn" data-target="page-install">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <span data-i18n="home.btnInstall">Installer l'application</span>
+                <span data-i18n="home.ctaDemo">Essayer la démo</span>
               </button>
             </div>
+            <button type="button" id="installAppBtn" class="hero-install" data-target="page-install">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-i18n="home.btnInstall">Installer l'application</span>
+            </button>
             <p class="hero-note">
               <svg viewBox="0 0 24 24" class="inline-ico" fill="none">
                 <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.7"
@@ -121,43 +118,137 @@
             </p>
           </div>
 
-          <!-- Signature: a self-drawing cognitive profile over the interpretation bands -->
+          <!-- Signature (animated by home-anim.js): the brain mark assembles, then releases its neurons,
+               which become the points of a cognitive profile grouped by function. Static markup = final state. -->
           <div class="hero-visual" aria-hidden="true">
-            <div class="profile-card">
-              <div class="profile-card-head">
-                <span class="pc-dot"></span><span class="pc-dot"></span><span class="pc-dot"></span>
-                <span class="pc-label" data-i18n="home.card.label">Profil cognitif</span>
-              </div>
-              <svg class="profile-svg" viewBox="0 0 420 280" preserveAspectRatio="none">
-                <!-- interpretation bands -->
-                <g class="bands">
-                  <rect x="0" y="0" width="420" height="40" />
-                  <rect x="0" y="40" width="420" height="36" />
-                  <rect x="0" y="76" width="420" height="44" />
-                  <rect x="0" y="120" width="420" height="70" />
-                  <rect x="0" y="190" width="420" height="40" />
-                  <rect x="0" y="230" width="420" height="30" />
-                  <rect x="0" y="260" width="420" height="20" />
-                </g>
-                <!-- profile line -->
-                <polyline class="profile-line"
-                  points="30,150 90,90 150,200 210,110 270,170 330,60 390,130" />
-                <g class="profile-nodes">
-                  <circle cx="30" cy="150" r="5" /><circle cx="90" cy="90" r="5" />
-                  <circle cx="150" cy="200" r="5" /><circle cx="210" cy="110" r="5" />
-                  <circle cx="270" cy="170" r="5" /><circle cx="330" cy="60" r="5" />
-                  <circle cx="390" cy="130" r="5" />
-                </g>
-              </svg>
-              <div class="profile-axis">
-                <span data-i18n="home.card.lang">Langage</span><span data-i18n="home.card.visuo">Visuo.</span><span data-i18n="home.card.mem">Mémoire</span><span data-i18n="home.card.att">Attention</span><span data-i18n="home.card.exec">Exéc.</span>
-              </div>
-            </div>
+            <svg class="pf stage" viewBox="0 0 460 312" role="presentation">
+              <g class="st-chart">
+                <g class="pf-bands"><rect x="44" y="287.3" width="408" height="12.7" fill="#C25A50"/><rect x="44" y="271.0" width="408" height="16.3" fill="#D98E5A"/><rect x="44" y="232.3" width="408" height="38.7" fill="#E3C173"/><rect x="44" y="113.7" width="408" height="118.6" fill="#93C088"/><rect x="44" y="75.0" width="408" height="38.7" fill="#6BA9C4"/><rect x="44" y="58.7" width="408" height="16.3" fill="#8E92C9"/><rect x="44" y="46" width="408" height="12.7" fill="#C285B4"/></g>
+                <g class="pf-grid"><line x1="44" x2="452" y1="287.4" y2="287.4"/><line x1="44" x2="452" y1="254.8" y2="254.8"/><line x1="44" x2="452" y1="173.0" y2="173.0"/><line x1="44" x2="452" y1="91.2" y2="91.2"/><line x1="44" x2="452" y1="58.6" y2="58.6"/></g>
+                <g class="pf-yt"><text x="38" y="290.4">70</text><text x="38" y="257.8">85</text><text x="38" y="176.0">100</text><text x="38" y="94.2">115</text><text x="38" y="61.6">130</text></g>
+                <g class="pf-sep"><line x1="95.0" x2="95.0" y1="46" y2="300"/><line x1="146.0" x2="146.0" y1="46" y2="300"/><line x1="197.0" x2="197.0" y1="46" y2="300"/><line x1="248.0" x2="248.0" y1="46" y2="300"/><line x1="299.0" x2="299.0" y1="46" y2="300"/><line x1="350.0" x2="350.0" y1="46" y2="300"/><line x1="401.0" x2="401.0" y1="46" y2="300"/></g>
+                <g class="pf-titles"><text x="69.5" y="35" fill="#D0604F" data-i18n="home.fn.lang">Langage oral</text><text x="120.5" y="20" fill="#6CA6DF" data-i18n="home.fn.rf">Raisonnement</text><text x="171.5" y="35" fill="#E0A94E" data-i18n="home.fn.vs">Visuospatial</text><text x="222.5" y="20" fill="#4E6FB0" data-i18n="home.fn.mt">Mém. de travail</text><text x="273.5" y="35" fill="#5FB389" data-i18n="home.fn.vt">Vitesse</text><text x="324.5" y="20" fill="#CF6FA6" data-i18n="home.fn.mem">Mémoire</text><text x="375.5" y="35" fill="#3D7EA6" data-i18n="home.fn.att">Attention</text><text x="426.5" y="20" fill="#4E9E79" data-i18n="home.fn.fe">F. exécutives</text></g>
+                <g class="pf-lines"><polyline pathLength="1" points="57.8,104.0 81.2,135.8" style="--fc:#D0604F"/><polyline pathLength="1" points="108.8,147.8 132.2,185.7" style="--fc:#6CA6DF"/><polyline pathLength="1" points="159.8,204.3 183.2,166.6" style="--fc:#E0A94E"/><polyline pathLength="1" points="210.8,258.5 234.2,242.0" style="--fc:#4E6FB0"/><polyline pathLength="1" points="261.8,279.7 285.2,265.2" style="--fc:#5FB389"/><polyline pathLength="1" points="312.8,179.4 336.2,216.0" style="--fc:#CF6FA6"/><polyline pathLength="1" points="363.8,246.5 387.2,271.0" style="--fc:#3D7EA6"/><polyline pathLength="1" points="414.8,232.3 438.2,254.8" style="--fc:#4E9E79"/></g>
+              </g>
+              <!-- brain mark, scaled up: the navy tile (stage coords, so it can morph into the plot area),
+                   the outline, and a small neural network inside (points + links built by home-anim.js) -->
+              <defs><linearGradient id="sbGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a2540"/><stop offset=".6" stop-color="#0d3b66"/><stop offset="1" stop-color="#176bb5"/></linearGradient></defs>
+              <g class="st-brain">
+                <rect class="sb-tile" x="113.6" y="31.6" width="268.8" height="268.8" rx="61.6"/>
+                <g class="sb-outline-wrap"><path class="sb-outline" pathLength="1" transform="translate(248 166) scale(5.6) translate(-24 -22.5)" d="M29 8.5c4.2 0 7.6 2.9 7.6 7 2.4.6 4 2.7 4 5.3 0 1.7-.8 3.3-2 4.3 1.1 1 1.7 2.4 1.7 4 0 3.4-2.9 6-6.6 6-.6 3.1-3.5 5.4-7 5.4-2.6 0-4.9-1.3-6.2-3.3-1 .5-2.2.8-3.4.8-3.7 0-6.7-2.8-6.7-6.4 0-.4 0-.8.1-1.2C8.7 30.9 7 28.6 7 25.8c0-2 .9-3.8 2.4-5C8.5 19.7 8 18.3 8 16.8c0-3.3 2.8-6 6.3-6 .3 0 .7 0 1 .1C16.5 8.4 19 7 21.8 7c2.8 0 5.3 1.4 6.7 3.6"/></g>
+                <g class="sb-links"></g>
+              </g>
+              <g class="st-dust"></g>
+              <g class="pf-pts"><circle cx="57.8" cy="104.0" r="4.2" style="--fc:#D0604F"/><circle cx="81.2" cy="135.8" r="4.2" style="--fc:#D0604F"/><circle cx="108.8" cy="147.8" r="4.2" style="--fc:#6CA6DF"/><circle cx="132.2" cy="185.7" r="4.2" style="--fc:#6CA6DF"/><circle cx="159.8" cy="204.3" r="4.2" style="--fc:#E0A94E"/><circle cx="183.2" cy="166.6" r="4.2" style="--fc:#E0A94E"/><circle cx="210.8" cy="258.5" r="4.2" style="--fc:#4E6FB0"/><circle cx="234.2" cy="242.0" r="4.2" style="--fc:#4E6FB0"/><circle cx="261.8" cy="279.7" r="4.2" style="--fc:#5FB389"/><circle cx="285.2" cy="265.2" r="4.2" style="--fc:#5FB389"/><circle cx="312.8" cy="179.4" r="4.2" style="--fc:#CF6FA6"/><circle cx="336.2" cy="216.0" r="4.2" style="--fc:#CF6FA6"/><circle cx="363.8" cy="246.5" r="4.2" style="--fc:#3D7EA6"/><circle cx="387.2" cy="271.0" r="4.2" style="--fc:#3D7EA6"/><circle cx="414.8" cy="232.3" r="4.2" style="--fc:#4E9E79"/><circle cx="438.2" cy="254.8" r="4.2" style="--fc:#4E9E79"/></g>
+            </svg>
           </div>
         </div>
         <div class="scroll-cue" aria-hidden="true"><span></span></div>
       </div>
 
+      <!-- Faits en bref -->
+      <div class="home-stats reveal" role="list">
+        <div class="stat" role="listitem"><span class="stat-v"><span class="stat-n" data-count="100">100</span>&nbsp;%</span><span class="stat-l" data-i18n="home.stat1">local : rien ne quitte votre appareil</span></div>
+        <div class="stat" role="listitem"><span class="stat-v"><span class="stat-n" id="statTests" data-count="590">590</span></span><span class="stat-l" id="statTestsLabel">épreuves dans la banque : 47 tests et 543 sous-tests de 43 batteries</span></div>
+        <div class="stat" role="listitem"><span class="stat-v"><span class="stat-n" data-count="4">4</span></span><span class="stat-l" data-i18n="home.stat3">vues : profil, échelles, radar, tableau</span></div>
+        <div class="stat" role="listitem"><span class="stat-v" data-i18n="home.stat4v">0&nbsp;$</span><span class="stat-l" data-i18n="home.stat4">gratuit, sans inscription ni publicité</span></div>
+      </div>
+
+      <!-- Comment ça marche -->
+      <section class="home-section reveal" aria-labelledby="howTitle">
+        <div class="home-head">
+          <span class="about-kicker" data-i18n="home.how.kicker">Comment ça marche</span>
+          <h2 id="howTitle" data-i18n="home.how.title">De la feuille de cotation au profil, en quatre étapes.</h2>
+        </div>
+        <!-- Démonstration au défilement (story-anim dans home-anim.js). Sans JS : les 4 étapes et l'écran final. -->
+        <div class="story">
+          <ol class="story-steps"><li class="story-step" data-i="0"><h3 data-i18n="wiz.tab.project">Projet</h3><p data-i18n="home.how.s1">Nommez la séance, sans aucune donnée nominative.</p></li><li class="story-step" data-i="1"><h3 data-i18n="wiz.tab.tests">Tests</h3><p data-i18n="home.how.s2">Choisissez vos tests dans la banque, ou ajoutez les vôtres.</p></li><li class="story-step" data-i="2"><h3 data-i18n="wiz.tab.scores">Scores</h3><p data-i18n="home.how.s3">Entrez les valeurs, dans n'importe quel type de score.</p></li><li class="story-step" data-i="3"><h3 data-i18n="wiz.tab.chart">Graphique</h3><p data-i18n="home.how.s4">Interprétez, personnalisez, puis exportez.</p></li></ol>
+          <div class="mock" aria-hidden="true">
+            <div class="mock-bar"><div class="mock-stepnav"><span class="mock-step on" data-i="0"><span class="mock-num">1</span><span data-i18n="wiz.tab.project">Projet</span></span><span class="mock-sep"></span><span class="mock-step" data-i="1"><span class="mock-num">2</span><span data-i18n="wiz.tab.tests">Tests</span></span><span class="mock-sep"></span><span class="mock-step" data-i="2"><span class="mock-num">3</span><span data-i18n="wiz.tab.scores">Scores</span></span><span class="mock-sep"></span><span class="mock-step" data-i="3"><span class="mock-num">4</span><span data-i18n="wiz.tab.chart">Graphique</span></span></div></div>
+            <div class="mock-body">
+              <div class="mock-screen ms-1"><div class="mock-card">
+                  <h4 class="mock-h" data-i18n="wiz.new.title">Nouveau projet</h4>
+                  <div class="info-msg mock-info"><svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="wiz.new.privacy">N'inscrivez aucun renseignement permettant d'identifier la personne évaluée (nom, date de naissance, initiales). Utilisez un code interne si nécessaire.</span></div>
+                  <div class="field-label" data-i18n="wiz.new.nameLabel">Nom du projet</div>
+                  <div class="mock-input"><span class="ms-typed" data-i18n="home.story.projName">Évaluation 2026-014</span></div>
+                  <div class="field-label" data-i18n="wiz.new.startLabel">Point de départ</div>
+                  <div class="mock-input mock-select"><span data-i18n="wiz.new.blankNoTemplates">Aucun modèle enregistré — projet vierge</span></div>
+                  <div class="confirm-box mock-confirm"><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span data-i18n="wiz.new.confirm">Je confirme que ce titre ne contient aucune donnée nominative.</span></div>
+                  <div class="btn-primary btn-lg btn-block mock-create"><span data-i18n="wiz.new.create">Créer le projet</span><span aria-hidden="true">→</span></div>
+                </div></div>
+              <div class="mock-screen ms-2"><div class="mock-card">
+                  <h4 class="mock-h" data-i18n="wiz.tests.title">Sélection des tests</h4>
+                  <div class="mock-input">WISC</div>
+                  <div class="test-list mock-tests">
+                    <div class="test"><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>WISC-V</label></div>
+                    <div class="subtests"><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Similitudes</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Vocabulaire</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Compréhension</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Matrices</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Balances</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Concepts en images</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Blocs</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Casse-têtes visuels</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Séquences de chiffres</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Séquences d'images</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Code</label></div><div><label><span class="mock-cb"><span class="ms-fill"></span><svg viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Repérage de symboles</label></div></div>
+                  </div>
+                </div></div>
+              <div class="mock-screen ms-3"><div class="mock-card mock-scroll"><div class="mock-scroller">
+                  <div class="test-card-head"><h4 class="mock-h">WISC-V</h4><span class="test-card-count">12 <span data-i18n="scores.enteredMany">saisis</span></span></div>
+                  <div class="subtest-card"><div class="subtest-title">Similitudes</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>13</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Langage oral">Langage oral</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Vocabulaire</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>14</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Langage oral">Langage oral</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Compréhension</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>12</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Langage oral">Langage oral</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Matrices</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>10</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Raisonnement fluide">Raisonnement fluide</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Balances</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>9</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Raisonnement fluide">Raisonnement fluide</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Concepts en images</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>11</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Raisonnement fluide">Raisonnement fluide</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Blocs</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>8</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Visuospatial">Visuospatial</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Casse-têtes visuels</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>9</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Visuospatial">Visuospatial</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Séquences de chiffres</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>6</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Mémoire de travail">Mémoire de travail</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Séquences d'images</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>7</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Mémoire de travail">Mémoire de travail</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Code</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>4</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Vitesse de traitement">Vitesse de traitement</span></div></div>
+                    </div></div><div class="subtest-card"><div class="subtest-title">Repérage de symboles</div><div class="condition-row mock-row">
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldScore">Score</span><div class="mock-input mock-val"><b>5</b></div></div>
+                      <div class="field"><span class="field-label" data-i18n="common.type">Type</span><div class="mock-input mock-select"><span data-i18n="score.scaled">Score pondéré</span></div></div>
+                      <div class="field"><span class="field-label" data-i18n="scores.fieldFunctions">Fonctions</span><div class="mock-input"><span data-fn="Vitesse de traitement">Vitesse de traitement</span></div></div>
+                    </div></div>
+                </div></div></div>
+              <div class="mock-screen ms-4"><div class="mock-card mock-chartcard">
+                  <div class="view-switch mock-views"><button type="button" tabindex="-1" class="active" data-i18n="view.line">Profil</button><button type="button" tabindex="-1" data-i18n="view.scales">Échelles</button><button type="button" tabindex="-1" data-i18n="view.radar">Radar</button><button type="button" tabindex="-1" data-i18n="view.table">Tableau</button></div>
+                  <div class="mock-plotwrap"><div id="storyPlot" class="mock-plot"></div></div>
+                </div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="home-head home-head--why reveal">
+        <span class="about-kicker" data-i18n="home.why.kicker">Pourquoi Vizéa</span>
+        <h2 data-i18n="home.why.title">Pensé par un futur clinicien, pour les cliniciens.</h2>
+      </div>
       <div class="home-features reveal">
         <div class="feature">
           <span class="feature-icon">
@@ -213,6 +304,10 @@
 
     <!-- ============ VISUALISATION (4 STEPS) ============ -->
     <section id="page-new" class="page">
+      <div id="demoReturn" class="demo-return" hidden>
+        <span data-i18n="demo.returnNote">Vous explorez le projet fictif de la démonstration.</span>
+        <button type="button" id="demoReturnBtn" class="btn-ghost" data-i18n="demo.returnBtn">Retrouver mon projet</button>
+      </div>
       <div id="stepnav" class="stepnav" style="display:none;">
         <div class="stepnav-inner">
           <button data-step="0" class="btn-step active"><span class="step-num">1</span> <span data-i18n="wiz.tab.project">Projet</span></button>
@@ -322,6 +417,13 @@
                 <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 <span data-i18n="panel.open">Personnaliser</span>
               </button>
+              <div id="fnFocusBar" class="fn-focus" hidden>
+                <div class="fn-focus-head">
+                  <button type="button" id="fnFocusBack" class="fn-focus-back"><span aria-hidden="true">←</span> <span data-i18n="focus.back">Profil global</span></button>
+                  <h3 class="fn-focus-title" aria-live="polite"></h3>
+                </div>
+                <div class="fn-focus-pills" role="group" data-i18n-attr="aria-label:focus.pillsAria" aria-label="Fonctions cognitives"></div>
+              </div>
               <div id="vizPlot" class="viz-plot"></div>
               <div id="vizTableWrap" class="viz-table-wrap" hidden></div>
 
@@ -340,7 +442,7 @@
             </div>
 
             <div id="panelScrim" class="panel-scrim" hidden></div>
-            <aside class="viz-panel" id="vizPanel" aria-label="Options du graphique">
+            <aside class="viz-panel" id="vizPanel" aria-label="Options du graphique" data-i18n-attr="aria-label:panel.title">
               <div class="viz-panel-head">
                 <h3 data-i18n="panel.title">Personnaliser</h3>
                 <button id="panelClose" class="panel-close" aria-label="Fermer" data-i18n-attr="aria-label:common.close">&times;</button>
@@ -501,9 +603,9 @@
                </div>
 
                 <hr>
-                <button id="exportImageBtn" class="btn-soft btn-block">Exporter en image (PNG)</button>
-                <button id="saveTemplateBtn" class="btn-soft btn-block">Enregistrer comme modèle</button>
-                <button id="exportProjectBtn" class="btn-ghost btn-block">Exporter le projet (.vizea)</button>
+                <button id="exportImageBtn" class="btn-soft btn-block" data-i18n="export.imageLong">Exporter en image (PNG)</button>
+                <button id="saveTemplateBtn" class="btn-soft btn-block" data-i18n="export.template">Enregistrer comme modèle</button>
+                <button id="exportProjectBtn" class="btn-ghost btn-block" data-i18n="export.project">Exporter le projet (.vizea)</button>
               </div>
             </aside>
           </div>
@@ -519,6 +621,16 @@
         <p class="about-lede" data-i18n-html="about.lede"><span class="brand">Vizéa</span> rend la visualisation des profils cognitifs claire, rapide et accessible, gratuitement, et sans dépendre des grandes compagnies.</p>
       </div>
 
+      <ul class="about-pillars reveal" role="list">
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M7 7.5h7a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><strong data-i18n="about.p1t">Gratuit</strong><span data-i18n="about.p1d">Aucun abonnement, aucune publicité.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><strong data-i18n="about.p2t">Confidentiel</strong><span data-i18n="about.p2d">Les scores ne quittent jamais votre appareil.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><strong data-i18n="about.p3t">Ouvert</strong><span data-i18n="about.p3d">Code source public, sous licence AGPL.</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9.5" r="2.4" stroke="currentColor" stroke-width="1.6"/></svg><strong data-i18n="about.p4t">D'ici</strong><span data-i18n="about.p4d">Conçu au Québec, par un futur clinicien.</span></li>
+      </ul>
+      <figure class="about-quote reveal">
+        <blockquote data-i18n="about.quote">Il me semble évident qu'un tel outil devrait déjà exister. Et pourtant, ce n'est pas le cas.</blockquote>
+        <figcaption><span class="q-name">Anthony Proulx</span><span class="q-role" data-i18n="about.quoteRole">Créateur de Vizéa</span></figcaption>
+      </figure>
       <div class="about-grid">
         <article class="card about-card reveal">
           <div class="about-card-head">
@@ -607,50 +719,88 @@
     </section>
 
     <!-- ============ SUGGEST ============ -->
-    <section id="page-suggest" class="page page-narrow">
-      <div class="card">
-        <h2 data-i18n="suggest.title">Suggérer un test</h2>
-        <p class="muted" data-i18n="suggest.desc">Aidez la banque à grandir. Proposez un test ou une batterie à ajouter.</p>
-        <form id="suggestForm">
-          <label for="testName" data-i18n="suggest.nameLabel">Nom du test ou de la batterie</label>
-          <input id="testName" type="text" placeholder="Ex : WISC-V, Figure de Rey…" data-i18n-attr="placeholder:suggest.namePh" />
-
-          <label data-i18n="suggest.fnLabel">Fonctions cognitives associées</label>
-          <div id="functions" class="fn-checks"></div>
-
-          <label for="description" data-i18n="suggest.descLabel">Description (optionnel)</label>
-          <textarea id="description" rows="4" placeholder="Conditions, scores utilisés, etc." data-i18n-attr="placeholder:suggest.descPh"></textarea>
-
-          <label for="contactName" data-i18n="suggest.yourName">Votre nom (optionnel)</label>
-          <input id="contactName" type="text" />
-
-          <label for="contactEmail" data-i18n="suggest.yourEmail">Votre courriel (optionnel)</label>
-          <input id="contactEmail" type="email" />
-
-          <div class="form-actions">
-            <button id="suggestSend" type="button" class="btn-primary" data-i18n="suggest.send">Envoyer la suggestion</button>
-          </div>
-          <div id="suggestSuccess" class="success" style="display:none;" data-i18n="suggest.success">Merci, votre suggestion a été acheminée.</div>
-          <div id="suggestError" class="warning" style="display:none;"></div>
-        </form>
+    <section id="page-suggest" class="page page-split">
+      <div class="split-intro">
+        <span class="about-kicker" data-i18n="suggest.kicker">Suggérer un test</span>
+        <h2 data-i18n="suggest.h2">Aidez la banque à grandir.</h2>
+        <p class="about-lede" data-i18n="suggest.lede">Un test manque? Proposez-le. Chaque suggestion est revue avant d'être ajoutée, puis offerte à toute la communauté.</p>
+        <ul class="split-notes">
+          <li data-i18n-html="suggest.note1"><strong>Aucune donnée sur un patient</strong> : décrivez le test, jamais une personne évaluée.</li>
+          <li data-i18n-html="suggest.note2"><strong>Nom et courriel facultatifs</strong> : seulement pour vous joindre au besoin.</li>
+          <li data-i18n-html="suggest.note3">Les suggestions sont conservées dans une feuille Google privée. <a data-target="page-legal" href="#">En savoir plus</a></li>
+        </ul>
       </div>
+      <form id="suggestForm" class="split-panel form" novalidate>
+        <div class="f-field">
+          <label for="testName"><span data-i18n="suggest.nameLabel">Nom du test ou de la batterie</span> <span class="f-req" aria-hidden="true">*</span></label>
+          <input id="testName" type="text" maxlength="200" required autocomplete="off" placeholder="Ex : WISC-V, Figure de Rey…" data-i18n-attr="placeholder:suggest.namePh" aria-describedby="testNameErr">
+          <p class="f-err" id="testNameErr" data-i18n="suggest.errName">Indiquez le nom du test.</p>
+        </div>
+        <fieldset class="f-field">
+          <legend><span data-i18n="suggest.fnLabel">Fonctions cognitives associées</span> <span class="f-req" aria-hidden="true">*</span></legend>
+          <div id="functions" class="fn-checks"></div>
+          <p class="f-err" id="functionsErr" data-i18n="suggest.errFn">Choisissez au moins une fonction.</p>
+        </fieldset>
+        <div class="f-field">
+          <label for="description"><span data-i18n="suggest.descLabel">Description (optionnel)</span></label>
+          <textarea id="description" rows="4" maxlength="2000" placeholder="Conditions, scores utilisés, etc." data-i18n-attr="placeholder:suggest.descPh"></textarea>
+        </div>
+        <div class="f-row">
+          <div class="f-field">
+            <label for="contactName" data-i18n="suggest.yourName">Votre nom (optionnel)</label>
+            <input id="contactName" type="text" maxlength="120" autocomplete="name">
+          </div>
+          <div class="f-field">
+            <label for="contactEmail" data-i18n="suggest.yourEmail">Votre courriel (optionnel)</label>
+            <input id="contactEmail" type="email" maxlength="200" autocomplete="email" aria-describedby="contactEmailErr">
+            <p class="f-err" id="contactEmailErr" data-i18n="suggest.errEmail">Ce courriel ne semble pas valide.</p>
+          </div>
+        </div>
+        <!-- Piège à robots : invisible pour les humains, rempli par les robots (envoi ignoré). -->
+        <div class="f-hp" aria-hidden="true"><label for="website">Site web</label><input id="website" type="text" tabindex="-1" autocomplete="off"></div>
+        <div class="f-actions">
+          <button id="suggestSend" type="submit" class="btn-primary btn-lg"><span data-i18n="suggest.send">Envoyer la suggestion</span></button>
+          <p id="suggestError" class="f-status is-error" role="alert" hidden></p>
+        </div>
+        <div id="suggestSuccess" class="f-done" role="status" hidden>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/><path d="M7.5 12.5l3 3 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div><strong data-i18n="suggest.successTitle">Merci, c'est reçu.</strong><p data-i18n="suggest.success">Votre suggestion a été acheminée. Elle sera revue avant d'être ajoutée à la banque.</p>
+          <button type="button" id="suggestAgain" class="btn-ghost btn-sm" data-i18n="suggest.again">Suggérer un autre test</button></div>
+        </div>
+      </form>
     </section>
 
     <!-- ============ DONATE ============ -->
-    <section id="page-donate" class="page page-narrow">
-      <div class="card donate-card">
-        <h2 data-i18n="donate.title">Soutenir Vizéa</h2>
-        <p class="muted" data-i18n="donate.desc">Vizéa est un projet bénévole. Votre contribution aide à le maintenir et à l'améliorer. Merci !</p>
-        <div class="donate-options">
-          <label><input type="radio" name="donation-amount" value="5" checked><span>5 $</span></label>
-          <label><input type="radio" name="donation-amount" value="10"><span>10 $</span></label>
-          <label><input type="radio" name="donation-amount" value="20"><span>20 $</span></label>
-          <label class="donate-custom"><input type="radio" name="donation-amount" value="autre"><span data-i18n="donate.other">Autre</span>
-            <input type="number" id="customAmount" min="1" step="1" placeholder="$" class="donate-input"></label>
+    <section id="page-donate" class="page page-split">
+      <div class="split-intro">
+        <span class="about-kicker" data-i18n="donate.kicker">Faire un don</span>
+        <h2 data-i18n="donate.h2">Gratuit, et ça le restera.</h2>
+        <p class="about-lede" data-i18n="donate.lede">Vizéa est un projet bénévole, sans publicité ni abonnement. Un don, même petit, aide à couvrir les frais et le temps consacré à l'outil.</p>
+        <ul class="split-notes">
+          <li data-i18n-html="donate.note1"><strong>Paiement sécurisé par PayPal</strong> : Vizéa ne voit ni ne conserve vos informations de paiement.</li>
+          <li data-i18n-html="donate.note2"><strong>Aucune contrepartie</strong> : l'outil reste entièrement accessible, avec ou sans don.</li>
+        </ul>
+      </div>
+      <div class="split-panel donate-panel">
+        <p class="f-legend" id="donateAmountLabel" data-i18n="donate.amount">Montant (CAD)</p>
+        <div class="donate-options" role="radiogroup" aria-labelledby="donateAmountLabel">
+          <label><input type="radio" name="donation-amount" value="5" checked><span>5&nbsp;$</span></label>
+          <label><input type="radio" name="donation-amount" value="10"><span>10&nbsp;$</span></label>
+          <label><input type="radio" name="donation-amount" value="20"><span>20&nbsp;$</span></label>
+          <label><input type="radio" name="donation-amount" value="50"><span>50&nbsp;$</span></label>
+          <label class="donate-custom"><input type="radio" name="donation-amount" value="autre"><span data-i18n="donate.other">Autre</span></label>
+        </div>
+        <div class="donate-custom-row" id="customAmountRow" hidden>
+          <label for="customAmount" class="visually-hidden" data-i18n="donate.customLabel">Montant personnalisé</label>
+          <div class="money-input"><input type="number" id="customAmount" min="1" max="1000" step="1" inputmode="numeric" placeholder="25"><span aria-hidden="true">$</span></div>
+          <p class="f-err" id="customAmountErr" data-i18n="donate.errAmount">Entrez un montant entre 1 $ et 1 000 $.</p>
         </div>
         <div id="paypal-button-container" class="paypal-container"></div>
-        <p id="paypalLoading" class="muted small" data-i18n="donate.loading">Chargement du module de paiement…</p>
-        <div id="donate-thanks" class="success" style="display:none;" data-i18n="donate.thanks">Merci infiniment pour votre soutien.</div>
+        <p id="paypalLoading" class="f-status" data-i18n="donate.loading">Chargement du module de paiement…</p>
+        <div id="donate-thanks" class="f-done" role="status" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <div><strong data-i18n="donate.thanksTitle">Merci infiniment.</strong><p data-i18n="donate.thanks">Votre soutien aide Vizéa à rester libre et gratuit.</p></div>
+        </div>
       </div>
     </section>
 
@@ -741,24 +891,49 @@
 
       <p class="install-privacy-note" data-i18n="install.privacy">Confidentialité : installée ou non, Vizéa fonctionne entièrement sur votre appareil. Aucun score ni projet n'est envoyé à un serveur.</p>
     </section>
+
+    <!-- ============ CONFIDENTIALITÉ ET CONDITIONS ============ -->
+    <section id="page-legal" class="page page-narrow legal">
+      <div class="about-hero">
+        <span class="about-kicker" data-i18n="legal.kicker">Confidentialité et conditions</span>
+        <h2 data-i18n="legal.h2">Vos données restent chez vous.</h2>
+        <p class="about-lede" data-i18n="legal.lede">Vizéa a été conçu pour qu'aucune donnée clinique ne quitte votre appareil. Voici précisément ce qui est conservé, où, et par qui.</p>
+        <p class="legal-date" data-i18n="legal.updated">Dernière mise à jour : 11 octobre 2026</p>
+      </div>
+      <ul class="legal-summary">
+        <li><strong data-i18n="legal.s1t">Aucune donnée clinique transmise</strong><span data-i18n="legal.s1d">Les scores restent dans votre navigateur, le temps de la séance.</span></li>
+        <li><strong data-i18n="legal.s2t">Aucun témoin ni pistage</strong><span data-i18n="legal.s2d">Vizéa ne dépose aucun témoin (cookie) et ne fait ni mesure d'audience ni publicité.</span></li>
+        <li><strong data-i18n="legal.s3t">Code ouvert et vérifiable</strong><span data-i18n="legal.s3d">Tout le fonctionnement est public, sous licence AGPL-3.0.</span></li>
+      </ul>
+      <article class="legal-body">
+        <h3 data-i18n="legal.h_device">Ce qui reste sur votre appareil</h3>
+        <p data-i18n="legal.p_device">Les scores et les commentaires saisis vivent uniquement dans la mémoire de l'onglet et disparaissent quand vous le fermez. Le navigateur conserve aussi localement, sans aucune information clinique : vos préférences (thème, langue, affichage), vos modèles de tests, l'heure de votre dernière suggestion (pour éviter les envois en double) et les fichiers de l'outil (pour l'usage hors ligne). Pour tout effacer, videz les données du site dans votre navigateur.</p>
+        <h3 data-i18n="legal.h_files">Vos projets exportés (.vizea)</h3>
+        <p data-i18n="legal.p_files">Un projet exporté contient les scores et les commentaires saisis. Il devient alors votre fichier, enregistré où vous le choisissez : conservez-le selon les règles de votre ordre professionnel et de votre milieu. N'inscrivez aucun renseignement nominatif (nom, date de naissance, numéro de dossier) dans le titre ni dans les commentaires; utilisez un code interne.</p>
+        <h3 data-i18n="legal.h_out">Ce qui quitte votre appareil, seulement si vous le choisissez</h3>
+        <ul>
+          <li data-i18n-html="legal.li_suggest"><strong>Suggérer un test</strong> : le nom du test, les fonctions, la description et, si vous les indiquez, votre nom et votre courriel sont envoyés à une feuille Google privée (Google Apps Script). Ils servent uniquement à évaluer la suggestion et, au besoin, à vous répondre; seul le responsable du projet y a accès. Vos coordonnées sont supprimées une fois la suggestion traitée.</li>
+          <li data-i18n-html="legal.li_donate"><strong>Faire un don</strong> : le module PayPal n'est chargé que sur la page de dons, où PayPal peut utiliser ses propres témoins. Le paiement est traité par PayPal, selon sa propre politique de confidentialité; Vizéa ne voit jamais vos données de carte ou de compte bancaire, seulement le nom et le courriel que PayPal associe au don. Les dons ne donnent pas droit à un reçu fiscal.</li>
+          <li data-i18n-html="legal.li_host"><strong>Hébergement</strong> : le site est hébergé par Netlify, qui conserve des journaux techniques usuels (comme l'adresse IP) pour assurer le service. Les polices de caractères sont servies par le site lui-même : aucune requête vers Google lors d'une visite.</li>
+        </ul>
+        <p data-i18n="legal.p_outside">Ces fournisseurs (Google, PayPal, Netlify) peuvent conserver ces renseignements sur des serveurs situés à l'extérieur du Québec, notamment aux États-Unis.</p>
+        <h3 data-i18n="legal.h_clin">Avertissement clinique</h3>
+        <p data-i18n="legal.p_clin">Vizéa est un outil d'aide à la visualisation, pas un instrument diagnostique ni une source normative officielle. L'utilisateur demeure responsable de l'exactitude des scores saisis et de leur interprétation. Vérifiez toujours les valeurs par rapport aux manuels des tests. Les bandes de classification suivent Guilmette et coll. (2020), telles qu'adoptées par l'AQNP. Les noms de tests appartiennent à leurs éditeurs respectifs; Vizéa n'est affilié à aucun d'eux et ne reproduit aucun contenu protégé des tests (items, normes).</p>
+        <h3 data-i18n="legal.h_lic">Licences</h3>
+        <p data-i18n-html="legal.p_lic">Vizéa est distribué sous licence <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noopener">GNU AGPL-3.0</a>; toute version dérivée doit rester ouverte et créditer le projet d'origine. Composants tiers : Plotly.js (MIT), GSAP (licence standard de GreenSock), polices Fraunces, Geist, Geist Mono et Allura (SIL Open Font License).</p>
+        <h3 data-i18n="legal.h_contact">Responsable et contact</h3>
+        <p data-i18n-html="legal.p_contact">Le responsable de la protection des renseignements personnels est Anthony Proulx, créateur de Vizéa. Écrivez-lui pour toute question ou pour accéder à vos renseignements, les faire corriger ou supprimer, ou retirer votre consentement : <a href="mailto:anthonyproulx21@gmail.com">anthonyproulx21@gmail.com</a>. Une réponse vous sera donnée dans les 30 jours. Vous pouvez aussi vous adresser à la <a href="https://www.cai.gouv.qc.ca" target="_blank" rel="noopener noreferrer">Commission d'accès à l'information du Québec</a>.</p>
+      </article>
+    </section>
   </main>
 
   <footer>
-    <div class="footer-brand">
-      <svg class="footer-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-        <path
-          d="M29 8.5c4.2 0 7.6 2.9 7.6 7 2.4.6 4 2.7 4 5.3 0 1.7-.8 3.3-2 4.3 1.1 1 1.7 2.4 1.7 4 0 3.4-2.9 6-6.6 6-.6 3.1-3.5 5.4-7 5.4-2.6 0-4.9-1.3-6.2-3.3-1 .5-2.2.8-3.4.8-3.7 0-6.7-2.8-6.7-6.4 0-.4 0-.8.1-1.2C8.7 30.9 7 28.6 7 25.8c0-2 .9-3.8 2.4-5C8.5 19.7 8 18.3 8 16.8c0-3.3 2.8-6 6.3-6 .3 0 .7 0 1 .1C16.5 8.4 19 7 21.8 7c2.8 0 5.3 1.4 6.7 3.6"
-          stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M24 11v27" stroke="currentColor" stroke-width="2" opacity=".45" stroke-linecap="round" />
-      </svg>
-      <span>Vizéa</span>
-    </div>
+    <div class="footer-sig" aria-hidden="true">Viz<span>é</span>a</div>
     <div class="footer-links">
       <a id="installFooterLink" data-target="page-install" href="#" data-i18n="footer.install">Installer l'application</a>
-      <span class="footer-dot" aria-hidden="true">·</span>
+      <a data-target="page-legal" href="#" data-i18n="footer.legal">Confidentialité</a>
       <a href="https://github.com/anthonyproulx21/vizea" target="_blank" rel="noopener" data-i18n="footer.source">Code source</a>
-      <span class="footer-dot" aria-hidden="true">·</span>
-      <a href="https://www.netlify.com" target="_blank" rel="noopener" data-i18n="footer.netlify">Propulsé par Netlify</a>
+      <a class="footer-netlify" href="https://www.netlify.com" target="_blank" rel="noopener" data-i18n="footer.netlify">Propulsé par Netlify</a>
     </div>
   </footer>
 
@@ -777,25 +952,25 @@
   <div id="dropHint" class="drop-hint" aria-hidden="true">
     <div class="drop-hint-card">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Déposez un fichier de projet <strong>.vizea</strong> pour l'ouvrir
+      <span data-i18n-html="drop.hint">Déposez un fichier de projet <strong>.vizea</strong> pour l'ouvrir</span>
     </div>
   </div>
 
   <div id="installPopup" class="install-popup" hidden role="dialog" aria-labelledby="installPopupTitle" aria-describedby="installPopupDesc">
-    <button id="installCloseBtn" class="install-close" type="button" aria-label="Fermer">&times;</button>
+    <button id="installCloseBtn" class="install-close" type="button" aria-label="Fermer" data-i18n-attr="aria-label:common.close">&times;</button>
     <div class="install-popup-main">
       <span class="install-popup-icon" aria-hidden="true">
         <svg viewBox="0 0 48 48"><rect width="48" height="48" rx="11" fill="#0d3b66"/><path d="M24 11v27" stroke="#7fd9e8" stroke-width="2.4" stroke-linecap="round"/><circle cx="24" cy="11" r="3" fill="#2fd0e0"/><circle cx="17" cy="22" r="2.6" fill="#2fd0e0"/><circle cx="31" cy="26" r="2.6" fill="#2fd0e0"/><circle cx="24" cy="38" r="2.6" fill="#eaf6ff"/></svg>
       </span>
       <div class="install-popup-text">
-        <h3 id="installPopupTitle">Installer Vizéa</h3>
-        <p id="installPopupDesc">Installez Vizéa comme application pour l'ouvrir en un clic et l'utiliser <strong>hors ligne</strong>, même sans connexion Internet.</p>
-        <p class="install-privacy">Confidentialité : aucune donnée clinique n'est collectée ni transmise. L'application fonctionne entièrement sur votre appareil; seuls les fichiers de l'outil sont mis en cache pour l'usage hors ligne.</p>
+        <h3 id="installPopupTitle" data-i18n="install.installNow">Installer Vizéa</h3>
+        <p id="installPopupDesc" data-i18n-html="install.popupDesc">Installez Vizéa comme application pour l'ouvrir en un clic et l'utiliser <strong>hors ligne</strong>, même sans connexion Internet.</p>
+        <p class="install-privacy" data-i18n="install.popupPrivacy">Confidentialité : aucune donnée clinique n'est collectée ni transmise. L'application fonctionne entièrement sur votre appareil; seuls les fichiers de l'outil sont mis en cache pour l'usage hors ligne.</p>
       </div>
     </div>
     <div class="install-popup-actions">
-      <button id="installPopupBtn" class="btn-primary" type="button">Installer</button>
-      <button id="installLaterBtn" class="btn-ghost" type="button">Plus tard</button>
+      <button id="installPopupBtn" class="btn-primary" type="button" data-i18n="install.install">Installer</button>
+      <button id="installLaterBtn" class="btn-ghost" type="button" data-i18n="install.later">Plus tard</button>
     </div>
   </div>
 

@@ -1,0 +1,13 @@
+/* Vizéa — polices hébergées sur le site (aucune requête vers Google : rien n'est
+   transmis à un tiers lors d'une visite). Toutes sous licence SIL Open Font License 1.1.
+   Fraunces (Undercase Type), Geist et Geist Mono (Vercel), Allura (TypeSETit). */
+@font-face { font-family: "Fraunces"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("fraunces-latin-opsz-normal.woff2") format("woff2-variations"), url("fraunces-latin-opsz-normal.woff2") format("woff2"); }
+@font-face { font-family: "Fraunces"; font-style: italic; font-weight: 100 900; font-display: swap;
+  src: url("fraunces-latin-opsz-italic.woff2") format("woff2-variations"), url("fraunces-latin-opsz-italic.woff2") format("woff2"); }
+@font-face { font-family: "Geist"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("geist-latin-wght-normal.woff2") format("woff2-variations"), url("geist-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Geist Mono"; font-style: normal; font-weight: 100 900; font-display: swap;
+  src: url("geist-mono-latin-wght-normal.woff2") format("woff2-variations"), url("geist-mono-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Allura"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("allura-latin-400-normal.woff2") format("woff2"); }

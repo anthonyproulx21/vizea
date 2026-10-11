@@ -1,5 +1,34 @@
 [
   {
+    "date": "2026-10-10",
+    "titre": {
+      "fr": "V2.0 : Un look repensé",
+      "en": "V2.0: A redesigned look"
+    },
+    "infos": {
+      "fr": [
+        "Allure améliorée sur tout le site, en mode clair comme en mode sombre.",
+        "Page d'accueil plus dynamique.",
+        "Graphiques plus vivants : animation à l'affichage et infobulles plus claires.",
+        "Démonstration guidée améliorée.",
+        "Vue par fonction : cliquez sur le nom d'une fonction dans le graphique pour la voir seule.",
+        "Glissez les points, les fonctions, les tests et les échelles directement dans les graphiques et le tableau; cliquez sur un nom pour le renommer.",
+        "Nouvelle page « Confidentialité ».",
+        "Sécurité renforcée : les fichiers ouverts sont vérifiés, et un avertissement évite de perdre un projet non exporté."
+      ],
+      "en": [
+        "An improved look across the whole site, in light and dark modes.",
+        "A more dynamic home page.",
+        "Livelier charts: an entrance animation and clearer tooltips.",
+        "An improved guided demo.",
+        "Function view: click a function's name on the chart to see it on its own.",
+        "Drag points, functions, tests and scales right on the charts and in the table; click a name to rename it.",
+        "New “Privacy” page.",
+        "Stronger security: opened files are checked, and a warning keeps you from losing an unexported project."
+      ]
+    }
+  },
+  {
     "date": "2026-09-19",
     "titre": {
       "fr": "V1.8 : Interface bilingue (français / anglais)",

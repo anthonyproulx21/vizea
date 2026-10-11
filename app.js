@@ -25,7 +25,8 @@
   let dirty = false; // unsaved-changes flag (scores entered)
   let openFnMenu = null; // the single currently-open function multiselect (O(1) outside-click close)
 
-  function markDirty() { dirty = true; }
+  let lossAccepted = false; // "continue without saving" was chosen; reset by the next edit
+  function markDirty() { dirty = true; lossAccepted = false; }
 
   // Translation helper for dynamically-built strings. Falls back to the given
   // French text if i18n isn't available or the key is missing.
@@ -158,6 +159,7 @@
     setupNeuralCanvas();
     setupThemeToggle();
     setupDemo();
+    setupChartDirectEdit();
     setupNews();
     setupFileOpen();
     // Close the open function menu on an outside click. O(1): we only touch the
@@ -503,6 +505,7 @@
       if (!saved) return; // save cancelled → stay on the project
     }
     // Leaving discards the in-memory project's scores by design.
+    if (choice === "discard") lossAccepted = true;
     proceed();
   }
 
@@ -514,14 +517,16 @@
       navToggle.setAttribute("aria-expanded", open ? "true" : "false");
     });
 
-    $$("[data-target]").forEach((el) => {
-      el.addEventListener("click", () => {
-        const target = el.dataset.target;
-        if (!target) return;
-        goToPage(target);
-        nav?.classList.remove("open");
-        navToggle?.setAttribute("aria-expanded", "false");
-      });
+    // Delegated: also works for links inside translated (re-rendered) text.
+    document.addEventListener("click", (e) => {
+      const el = e.target && e.target.closest ? e.target.closest("[data-target]") : null;
+      if (!el || el.closest(".mock")) return;
+      const target = el.dataset.target;
+      if (!target || !$(target)) return;
+      if (el.tagName === "A") e.preventDefault();
+      goToPage(target);
+      nav?.classList.remove("open");
+      navToggle?.setAttribute("aria-expanded", "false");
     });
 
     const logo = $("homeLogo");
@@ -559,7 +564,7 @@
     if (window.__vizeaNeuralSetActive) window.__vizeaNeuralSetActive(isHome);
     if (isHome && window.__vizeaResizeNeural) setTimeout(window.__vizeaResizeNeural, 60);
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo(0, 0);
   }
 
   // =========================================================================
@@ -573,7 +578,7 @@
         const step = parseInt(btn.dataset.step, 10);
         if (!projectInitialized && step > 0) return;
         if (step >= 2 && Object.keys(currentProject?.selectedTests || {}).length === 0) {
-          toast("Sélectionnez au moins un test d'abord.");
+          toast(T("msg.selectTestFirst", "Sélectionnez au moins un test d'abord."));
           return;
         }
         // Going back to the Projet step (step 0) from a working step is where
@@ -623,6 +628,7 @@
       updateScalesViewAvailability();
       syncViewSwitch();
       applyEgqiCompare();
+      animateNext = true;
       renderChart();
     }
     currentStep = stepIndex;
@@ -651,21 +657,22 @@
 
     createBtn?.addEventListener("click", () => {
       const title = titleInput.value.trim();
-      if (!title) { toast("Donnez un nom au projet."); return; }
+      if (!title) { toast(T("msg.nameProject", "Donnez un nom au projet.")); return; }
+      if (!okToReplace()) return;
 
       const tmplId = $("templateSelect") ? $("templateSelect").value : "";
       if (tmplId) {
         const templates = DM.loadAllLocalTemplates();
         const tmpl = templates[tmplId];
-        if (!tmpl) { toast("Modèle introuvable."); return; }
+        if (!tmpl) { toast(T("msg.templateNotFound", "Modèle introuvable.")); return; }
         const proj = DM.createEmptyProject(title);
         DM.applyTemplateToProject(proj, tmpl);
         DM.syncScoresWithSelectedTests(proj, testsBank);
         startProject(proj);
-        toast(`Projet « ${title} » créé à partir du modèle « ${tmpl.name} ».`);
+        toast(T("msg.projectFromTemplate", "Projet « {title} » créé à partir du modèle « {tmpl} ».").replace("{title}", title).replace("{tmpl}", tmpl.name));
       } else {
         startProject(DM.createEmptyProject(title));
-        toast(`Projet « ${title} » créé.`);
+        toast(T("msg.projectCreated", "Projet « {title} » créé.").replace("{title}", title));
       }
     });
 
@@ -681,7 +688,7 @@
       if (!confirm(T("dialog.deleteTemplate", "Supprimer ce modèle ? Cette action est définitive."))) return;
       DM.deleteLocalTemplate(id);
       refreshTemplateSelect();
-      toast("Modèle supprimé.");
+      toast(T("msg.templateDeleted", "Modèle supprimé."));
     });
 
     // Import project (.vizea or legacy .json)
@@ -699,18 +706,20 @@
   function loadProjectFromText(text) {
     try {
       const proj = DM.importProjectFromJSON(text);
+      if (!okToReplace()) return false;
       DM.syncScoresWithSelectedTests(proj, testsBank);
       startProject(proj);
-      toast(`Projet « ${proj.title} » importé.`);
+      toast(T("msg.projectImported", "Projet « {title} » importé.").replace("{title}", proj.title));
       showStep(1);
       return true;
     } catch (err) {
-      toast("Fichier invalide : " + (err && err.message ? err.message : err));
+      toast(T("msg.invalidFile", "Fichier invalide : ") + (err && err.message ? err.message : err));
       return false;
     }
   }
   function loadProjectFromFile(file) {
     if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast(T("msg.invalidFile", "Fichier invalide : ") + file.name); return; }
     const reader = new FileReader();
     reader.onload = () => loadProjectFromText(reader.result);
     reader.readAsText(file);
@@ -748,11 +757,18 @@
       document.body.classList.remove("dragging-file");
       const file = e.dataTransfer.files && e.dataTransfer.files[0];
       if (file && /\.(vizea|json)$/i.test(file.name)) loadProjectFromFile(file);
-      else if (file) toast("Déposez un fichier de projet .vizea.");
+      else if (file) toast(T("msg.dropVizea", "Déposez un fichier de projet .vizea."));
     });
   }
 
+  // Never drop unexported work silently (new project, opened file, dropped file).
+  function okToReplace() {
+    const pending = (projectInitialized && dirty && !lossAccepted && currentProject && !currentProject._demo) || (demoStash && demoStash.dirty);
+    return !pending || confirm(T("dialog.replaceProject", "Le projet en cours contient des changements qui n'ont pas été exportés. Le remplacer quand même ?"));
+  }
   function startProject(project) {
+    focusFn = null;
+    if (!project._demo && typeof demoReturnShow === "function") demoReturnShow(null);
     currentProject = project;
     projectInitialized = true;
     dirty = false;
@@ -814,7 +830,7 @@
       const input = $("manualTestInput");
       const name = input.value.trim();
       if (!name) return;
-      if (!currentProject) { toast("Créez d'abord un projet."); return; }
+      if (!currentProject) { toast(T("msg.createFirst", "Créez d'abord un projet.")); return; }
       if (!selectedTests[name]) selectedTests[name] = [];
       input.value = "";
       renderTestList($("testSearch").value);
@@ -879,7 +895,7 @@
       if (testData.superseded) {
         const tag = document.createElement("span");
         tag.className = "test-legacy";
-        tag.textContent = "version antérieure";
+        tag.textContent = T("tests.legacy", "version antérieure");
         label.appendChild(tag);
       }
       label.prepend(checkbox);
@@ -1047,7 +1063,7 @@
       const count = document.createElement("span");
       count.className = "test-card-count";
       const nScores = Object.values(subtestsMap).reduce((a, arr) => a + (arr ? arr.length : 0), 0);
-      count.textContent = nScores + (nScores > 1 ? " saisis" : " saisi");
+      count.textContent = nScores + " " + (nScores > 1 ? T("scores.enteredMany", "saisis") : T("scores.enteredOne", "saisi"));
       head.appendChild(arrow);
       head.appendChild(h);
       head.appendChild(count);
@@ -1503,7 +1519,7 @@
       const lo = rule.hard ? rule.hard.min : (rule.warn ? rule.warn.min : 0);
       const hi = rule.hard ? rule.hard.max : (rule.warn ? rule.warn.max : 100);
       valueInput.min = lo; valueInput.max = hi; valueInput.step = rule.step || 1;
-      valueInput.title = `Plage attendue : ${(rule.warn || rule.hard).min} à ${(rule.warn || rule.hard).max}`;
+      valueInput.title = T("scores.rangeTitle", "Plage attendue : {min} à {max}").replace("{min}", (rule.warn || rule.hard).min).replace("{max}", (rule.warn || rule.hard).max);
       applyScoreValidation(valueInput, warnEl, type);
     }
 
@@ -1608,10 +1624,10 @@
           if (!cond.functions) cond.functions = [];
           if (!cond.functions.includes(name)) cond.functions.push(name);
           markDirty();
-          toast(`Fonction « ${name} » ajoutée à ce projet.`);
+          toast(T("msg.fnAdded", "Fonction « {name} » ajoutée à ce projet.").replace("{name}", name));
           renderStep2(); // rebuild all rows from currentProject (values preserved)
         } else if (res === "exists") {
-          toast("Cette fonction existe déjà.");
+          toast(T("msg.fnExists", "Cette fonction existe déjà."));
         }
         addInput.value = "";
       };
@@ -1688,7 +1704,7 @@
     invLab.textContent = T("scores.direction", "Sens");
     const invToggle = document.createElement("label");
     invToggle.className = "invert-toggle";
-    invToggle.title = "Élevé = défavorable (ex. temps de réponse, nombre d'erreurs). Le score est miroité autour de la moyenne.";
+    invToggle.title = T("scores.invertHelp", "Élevé = défavorable (ex. temps de réponse, nombre d'erreurs). Le score est miroité autour de la moyenne.");
     const invCb = document.createElement("input");
     invCb.type = "checkbox";
     invCb.checked = !!cond.inverted;
@@ -1796,6 +1812,7 @@
         $$("#opt-chartType button").forEach((pb) =>
           pb.classList.toggle("active", pb.dataset.type === type));
         buildPanelDynamicControls();
+        animateNext = true;
         renderChart();
       });
       seg.appendChild(b);
@@ -1824,6 +1841,8 @@
 
   function renderChart() {
     if (!currentProject) return;
+    cancelZoom();                                   // any other redraw ends a zoom in flight
+    renderFocusBar();
     const plotEl = $("vizPlot");
     const tableEl = $("vizTableWrap");
     const actions = document.querySelector("#step-3-content .viz-actions");
@@ -1855,7 +1874,7 @@
     // instead of failing. Poll briefly, then render.
     if (typeof window.Plotly === "undefined") {
       const el = $("vizPlot");
-      if (el) el.innerHTML = '<p style="text-align:center;color:#888;padding:40px">Chargement du moteur graphique…</p>';
+      if (el) el.innerHTML = '<p class="viz-empty">' + T("chart.loading", "Chargement du moteur graphique…") + '</p>';
       let tries = 0;
       const timer = setInterval(() => {
         tries++;
@@ -1864,7 +1883,7 @@
           drawChartWithComments();
         } else if (tries > 40) { // ~10s
           clearInterval(timer);
-          if (el) el.innerHTML = '<p style="text-align:center;color:#c0392b;padding:40px">Le moteur graphique (Plotly) n\'a pas pu être chargé. Vérifiez votre connexion, puis rouvrez cette étape.</p>';
+          if (el) el.innerHTML = '<p class="viz-empty">' + T("chart.loadFail", "Le moteur graphique n\'a pas pu être chargé. Vérifiez votre connexion, puis rouvrez cette étape.") + '</p>';
         }
       }, 250);
       return;
@@ -1874,14 +1893,206 @@
 
   // Render the chart, then wire "click a point to add/edit its comment" (profile
   // view only — that's where each marker maps to exactly one score condition).
-  function drawChartWithComments() {
-    const p = CHART.renderChart(currentProject, "vizPlot");
-    if (p && p.then) p.then(bindChartComments); else bindChartComments();
+  // ---- Focus on one cognitive function (view only, never saved) ----------
+  let focusFn = null;
+  // Next draw is a "fresh" one (entering the chart, switching view/function):
+  // play the draw-in animation instead of a smooth transition.
+  let animateNext = false;
+  const REDUCED_MOTION = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  // Lines trace themselves, then the points appear, one function after another.
+  function animatePlotIn(el) {
+    if (REDUCED_MOTION || !el) return;
+    const traces = Array.from(el.querySelectorAll(".scatterlayer .trace"));
+    traces.forEach((tr, i) => {
+      const d = i * 0.07;
+      tr.querySelectorAll(".js-line").forEach((p) => {
+        const L = p.getTotalLength ? p.getTotalLength() : 0;
+        if (!L) return;
+        p.style.strokeDasharray = L + " " + L;
+        p.style.strokeDashoffset = L;
+        p.getBoundingClientRect();
+        p.style.transition = "stroke-dashoffset .7s cubic-bezier(.2,.7,.2,1) " + d + "s";
+        p.style.strokeDashoffset = "0";
+        setTimeout(() => { p.style.strokeDasharray = ""; p.style.strokeDashoffset = ""; p.style.transition = ""; }, (d + 0.8) * 1000);
+      });
+      tr.querySelectorAll(".js-fill, .points path, .textpoint").forEach((n, j) => {
+        n.style.opacity = "0";
+        n.getBoundingClientRect();
+        n.style.transition = "opacity .35s ease " + (d + 0.25 + j * 0.025) + "s";
+        n.style.opacity = "";
+        setTimeout(() => { n.style.transition = ""; }, (d + 0.7 + j * 0.025) * 1000);
+      });
+    });
+  }
+  function chartFunctions() {
+    if (!currentProject) return [];
+    const groups = CHART.groupPointsByFunction(DM.flattenScores(currentProject), currentProject.chartSettings);
+    return groups.map((g) => g.func);
+  }
+  // The project as drawn: in focus mode, a shallow copy restricted to one function,
+  // with values on the points. currentProject itself is never modified.
+  function chartProject() {
+    const cs = currentProject.chartSettings;
+    if (!focusFn || cs.chartType !== "line") return currentProject;
+    if (chartFunctions().indexOf(focusFn) < 0) { focusFn = null; return currentProject; }
+    return Object.assign({}, currentProject, {
+      _focus: focusFn,
+      chartSettings: Object.assign({}, cs, { visibleFunctions: [focusFn], showDataLabels: true, title: "" })
+    });
+  }
+  function fnColor(f) {
+    const cs = currentProject.chartSettings || {};
+    return (cs.functionColors && cs.functionColors[f]) ||
+      (window.VizeaConstants && window.VizeaConstants.DEFAULT_FUNCTION_COLORS[f]) || "#6b7c8f";
+  }
+  function fnLabel(f) {
+    const m = currentProject.chartSettings && currentProject.chartSettings.functionLabels;
+    return (m && typeof m[f] === "string" && m[f].trim()) ? m[f].trim() : funcDisplay(f);
+  }
+  document.addEventListener("click", (e) => {
+    if (e.target && e.target.closest && e.target.closest("#fnFocusBack")) setFocus(null);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !focusFn || document.body.classList.contains("demo-on")) return;
+    if ($("vizPanel")?.classList.contains("open") || document.querySelector(".comment-pop, .modal-overlay:not([hidden])")) return;
+    if (!$("step-3-content")?.classList.contains("active")) return;
+    setFocus(null);
+  });
+  // Entering / leaving a function view zooms: the profile's x axis glides onto
+  // the function (or opens back up from it), then the other view takes over.
+  const ZOOM_MS = 480;
+  var settleNext = false, zoomSeq = 0;
+  // Frame-by-frame range change (Plotly.animate could hang after an interrupted
+  // transition); stops as soon as a newer focus change comes in.
+  function cancelZoom() {
+    zoomSeq++;
+    $("vizPlot")?.classList.remove("is-zooming");
+  }
+  function zoomRange(el, a, b, stale) {
+    return new Promise((resolve) => {
+      const r0 = (el._fullLayout.xaxis.range || [a, b]).slice(), t0 = performance.now();
+      const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+      const step = (now) => {
+        if (stale()) return resolve();
+        const t = Math.min(1, (now - t0) / ZOOM_MS), k = ease(t);
+        try { window.Plotly.relayout(el, { "xaxis.range": [r0[0] + (a - r0[0]) * k, r0[1] + (b - r0[1]) * k] }); } catch (e) { return resolve(); }
+        if (t < 1) requestAnimationFrame(step); else resolve();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  function globalGroups() {
+    return CHART.groupPointsByFunction(DM.flattenScores(currentProject), currentProject.chartSettings);
+  }
+  function groupSpan(f) {
+    let k = 0;
+    for (const g of globalGroups()) {
+      if (g.func === f) return [k - 0.5, k + g.points.length - 0.5];
+      k += g.points.length;
+    }
+    return null;
+  }
+  // The focus bar appears / disappears above the chart: scroll by the same
+  // amount so the plot itself stays put (the bar stays in view).
+  const plotTop = (el) => el.getBoundingClientRect().top + ((el._fullLayout && el._fullLayout._size.t) || 0);
+  function keepPlotStill(el, before) {
+    let d = plotTop(el) - before;
+    const bar = $("fnFocusBar");
+    if (d > 0 && bar && !bar.hidden) d = Math.min(d, bar.getBoundingClientRect().top - 84);
+    if (Math.abs(d) > 1) window.scrollBy({ top: d, behavior: "instant" });
+  }
+  function setFocus(f) {
+    const seq = ++zoomSeq, stale = () => seq !== zoomSeq;   // a newer call wins over a zoom in flight
+    const el = $("vizPlot");
+    if (el) {
+      try { window.Plotly && window.Plotly.Fx && window.Plotly.Fx.unhover(el); } catch (e) {}
+    }
+    const prev = focusFn;
+    const canZoom = !REDUCED_MOTION && el && el._fullLayout && window.Plotly &&
+      currentProject.chartSettings.chartType === "line";
+    const span = canZoom ? groupSpan(f || prev) : null;
+    const done = () => {
+      if (stale()) return;
+      try { window.Plotly.Fx.unhover(el); } catch (e) {}
+      el.classList.remove("is-zooming");
+    };
+    if (el) el.classList.remove("is-zooming");
+    if (span && f && !prev) {                       // zoom in
+      el.classList.add("is-zooming");
+      zoomRange(el, span[0], span[1], stale).then(() => {
+        if (stale()) return;
+        const before = plotTop(el);
+        focusFn = f; settleNext = true;
+        return drawChartWithComments().then(() => keepPlotStill(el, before));
+      }).then(done, done);
+      return;
+    }
+    focusFn = f || null;
+    if (span && !f && prev) {                       // zoom out
+      const before = plotTop(el);
+      const total = globalGroups().reduce((n, g) => n + g.points.length, 0);
+      settleNext = true;
+      drawChartWithComments(span)
+        .then(() => { if (stale()) return; keepPlotStill(el, before); el.classList.add("is-zooming"); return zoomRange(el, -0.5, total - 0.5, stale); })
+        .then(done, done);
+      return;
+    }
+    animateNext = true;
+    drawChartWithComments();
+    if (!focusFn) $("vizPlot")?.scrollIntoView({ block: "nearest" });
+  }
+  function renderFocusBar() {
+    const bar = $("fnFocusBar");
+    if (!bar) return;
+    const on = !!focusFn && currentProject && currentProject.chartSettings.chartType === "line";
+    bar.hidden = !on;
+    // Keep the bar right under the Profile/Scales/Radar/Table switcher.
+    const vs = $("viewSwitch");
+    if (vs && vs.parentNode === bar.parentNode && vs.nextElementSibling !== bar) vs.after(bar);
+    document.querySelector("#step-3-content .viz-main")?.classList.toggle("is-focused", on);
+    if (!on) return;
+    bar.querySelector(".fn-focus-title").textContent = fnLabel(focusFn);
+    bar.querySelector(".fn-focus-title").style.setProperty("--c", fnColor(focusFn));
+    const pills = bar.querySelector(".fn-focus-pills");
+    pills.innerHTML = "";
+    chartFunctions().forEach((f) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "fn-pill" + (f === focusFn ? " is-on" : "");
+      b.style.setProperty("--c", fnColor(f));
+      b.setAttribute("aria-pressed", f === focusFn ? "true" : "false");
+      b.textContent = fnLabel(f);
+      b.addEventListener("click", () => setFocus(f));
+      pills.appendChild(b);
+    });
+  }
+
+  function drawChartWithComments(xrange) {
+    const fresh = animateNext, settle = settleNext;
+    animateNext = false; settleNext = false;
+    const proj = Object.assign({}, chartProject(), { _smooth: !fresh && !settle && !REDUCED_MOTION, _xrange: xrange || null });
+    renderFocusBar();
+    const p = CHART.renderChart(proj, "vizPlot");
+    const plotEl = $("vizPlot");
+    if (plotEl) plotEl.classList.toggle("can-edit", ["line", "scales", "radar"].indexOf(proj.chartSettings.chartType) >= 0);
+    const after = () => {
+      bindChartComments();
+      if (fresh) animatePlotIn($("vizPlot"));
+      if (settle && plotEl) {                       // values on the points fade in after a zoom
+        plotEl.classList.remove("zoom-settle"); void plotEl.offsetWidth; plotEl.classList.add("zoom-settle");
+      }
+    };
+    if (p && p.then) return p.then(after);
+    after();
+    return Promise.resolve();
   }
   function bindChartComments() {
     const el = $("vizPlot");
     if (!el || typeof el.on !== "function") return;
     const ct = currentProject.chartSettings.chartType;
+    el._vizeaHover = null;
+    el._vizeaUnlit = null;
     if (ct !== "line" && ct !== "scales") return;
     try {
       if (el.removeAllListeners) {
@@ -1902,6 +2113,48 @@
       });
     };
 
+    // Hover a point: its interpretation band lights up a little.
+    try { el.removeAllListeners && (el.removeAllListeners("plotly_hover"), el.removeAllListeners("plotly_unhover")); } catch (e) {}
+    if (ct === "line") {
+      let lit = null;
+      const bandShape = (key) => {
+        const b = (window.ScoringEngine.CLASSIFICATION_BANDS || []).find((x) => x.key === key);
+        const shapes = (el.layout && el.layout.shapes) || [];
+        if (!b) return -1;
+        return shapes.findIndex((s) => s.type === "rect" && s.xref === "paper" && s.yref === "y" && s.fillcolor === b.color);
+      };
+      const restore = () => {
+        if (!lit) return;
+        const u = {}; u["shapes[" + lit.i + "].opacity"] = lit.o; lit = null;
+        try { window.Plotly.relayout(el, u); } catch (e) {}
+      };
+      el.on("plotly_hover", (data) => {
+        if (document.body.classList.contains("chart-dragging")) return;
+        const pt = data && data.points && data.points[0];
+        const key = pt && Array.isArray(pt.customdata) ? pt.customdata[2] : null;
+        const i = key ? bandShape(key) : -1;
+        if (lit && lit.i === i) return;
+        restore();
+        if (i < 0) return;
+        const o = el.layout.shapes[i].opacity;
+        lit = { i, o };
+        const u = {}; u["shapes[" + i + "].opacity"] = Math.min(0.55, o * 2.4 + 0.04);
+        try { window.Plotly.relayout(el, u); } catch (e) {}
+      });
+      el.on("plotly_unhover", restore);
+      el._vizeaUnlit = restore;            // a drag starting on a point turns the band back off
+    }
+
+    // Remember the hovered data point: pressing it starts a drag (see setupChartDirectEdit).
+    el.on("plotly_hover", (d) => {
+      const pt = d && d.points && d.points[0], cd = pt && pt.customdata;
+      el._vizeaHover = Array.isArray(cd)
+        ? { idx: typeof pt.x === "number" ? Math.round(pt.x) : pt.pointNumber, id: cd.length > 1 ? cd[1] : cd[0] }
+        : null;
+      el.classList.toggle("on-point", !!el._vizeaHover);
+    });
+    el.on("plotly_unhover", () => { el._vizeaHover = null; el.classList.remove("on-point"); });
+
     // Click a POINT: add or edit its comment (and pin it from the editor).
     el.on("plotly_click", (data) => {
       const pt = data && data.points && data.points[0];
@@ -1914,8 +2167,12 @@
       editAt(cond, ev.clientX || 0, ev.clientY || 0);
     });
 
-    // Click the "···" bubble or a pinned label: edit that same comment.
+    // Click a function's title: look at that function alone. Otherwise the
+    // "···" bubble or a pinned label: edit that same comment.
     el.on("plotly_clickannotation", (ev) => {
+      if (chartDragEnded) return;           // that "click" was the end of a drag
+      const fn = CHART.functionTitleAt(ev && ev.index);
+      if (fn) { setFocus(fn); return; }
       const id = CHART.commentAnnotationId(ev && ev.index);
       if (!id) return;
       const cond = findConditionById(id);
@@ -1929,7 +2186,7 @@
     // comments (section titles, band names) are snapped back to their computed
     // spot — only comments are meant to be movable.
     el.on("plotly_relayout", (ed) => {
-      if (!ed) return;
+      if (!ed || el.classList.contains("is-zooming")) return;   // the zoom animation relays out too
       const moved = {};
       let foreign = false;
       Object.keys(ed).forEach((k) => {
@@ -1954,6 +2211,340 @@
       if (foreign) drawChartWithComments();
     });
   }
+
+  // ---- Edit straight from the charts and the table (view-only settings) ----
+  // Drag a name to reorder it; click a name in a chart to rename it. Same
+  // settings as the panel (functionOrder, pointOrder, pointOverrides,
+  // scaleOrder, scaleLabels, functionLabels), so both always agree.
+  let chartDragEnded = false;
+  function chartEdited() {
+    markDirty();
+    renderChart();
+    if ($("opt-functions")) buildPanelDynamicControls();
+    if (typeof renderScalesVisibilityControls === "function") renderScalesVisibilityControls();
+  }
+  function moveItem(arr, from, slot) {
+    const a = arr.slice(), [it] = a.splice(from, 1);
+    a.splice(slot > from ? slot - 1 : slot, 0, it);
+    return a;
+  }
+  // Rebuild an object with its keys in a new order (tests are ordered by key).
+  function reorderKeys(obj, keys) {
+    if (!obj) return;
+    const all = keys.filter((k) => k in obj).concat(Object.keys(obj).filter((k) => keys.indexOf(k) < 0));
+    const copy = {}; all.forEach((k) => { copy[k] = obj[k]; });
+    Object.keys(obj).forEach((k) => delete obj[k]);
+    all.forEach((k) => { obj[k] = copy[k]; });
+  }
+  // Pointer drag: a floating label follows the cursor and a line marks the
+  // nearest drop slot. slots() → [{ px, py, x, y, len, angle }] in client px:
+  // (px, py) is where the slot sits; the marker runs from (x, y), len long,
+  // rotated by angle (deg, 0 = downward). A press without movement = click.
+  function pointerDrag(e, o) {
+    const x0 = e.clientX, y0 = e.clientY;
+    let ghost = null, line = null, slot = -1;
+    const noSelect = (ev) => ev.preventDefault();      // no blue text selection while dragging
+    const move = (ev) => {
+      if (!ghost) {
+        if (Math.abs(ev.clientX - x0) < 6 && Math.abs(ev.clientY - y0) < 6) return;
+        ghost = document.createElement("div");
+        ghost.className = "chart-drag-ghost";
+        ghost.textContent = o.label;
+        line = document.createElement("div");
+        line.className = "chart-drop-line";
+        [ghost, line].forEach((n) => n.style.setProperty("--c", o.color || "var(--cyan-deep)"));
+        document.body.append(ghost, line);
+        document.body.classList.add("chart-dragging");
+        document.addEventListener("selectstart", noSelect);
+        try { window.getSelection().removeAllRanges(); } catch (er) {}
+        if (o.src) o.src.classList.add("is-drag-src");
+        if (o.onStart) o.onStart();
+      }
+      ev.preventDefault();
+      ghost.style.transform = "translate(" + ev.clientX + "px," + ev.clientY + "px)";
+      const slots = o.slots();
+      const d = (q) => o.axis === "x" ? Math.abs(q.px - ev.clientX) : o.axis === "y" ? Math.abs(q.py - ev.clientY) : Math.hypot(q.px - ev.clientX, q.py - ev.clientY);
+      slot = 0;
+      slots.forEach((q, i) => { if (d(q) < d(slots[slot])) slot = i; });
+      const q = slots[slot];
+      line.style.height = q.len + "px";
+      line.style.transform = "translate(" + q.x + "px," + q.y + "px) rotate(" + (q.angle || 0) + "deg)";
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      if (!ghost) { if (o.onClick) o.onClick(); return; }
+      ghost.remove(); line.remove();
+      document.body.classList.remove("chart-dragging");
+      document.removeEventListener("selectstart", noSelect);
+      try { window.getSelection().removeAllRanges(); } catch (er) {}
+      if (o.src) o.src.classList.remove("is-drag-src");
+      chartDragEnded = true;                 // swallow the click that ends a drag
+      setTimeout(() => { chartDragEnded = false; }, 0);
+      if (slot >= 0) o.onDrop(slot);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }
+  // Small floating field to rename a label in place. Empty or the original
+  // name = back to the original.
+  function renameInline(anchor, current, ariaLabel, commit) {
+    const r = anchor.getBoundingClientRect();
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "chart-rename";
+    input.maxLength = 120;
+    input.value = current;
+    input.setAttribute("aria-label", ariaLabel);
+    input.style.left = (r.left + r.width / 2 + window.scrollX) + "px";
+    input.style.top = (r.top + r.height / 2 + window.scrollY) + "px";
+    document.body.appendChild(input);
+    input.focus(); input.select();
+    let done = false;
+    const close = (save) => {
+      if (done) return; done = true;
+      const v = input.value.trim();
+      input.remove();
+      if (save && v !== current) commit(v);
+    };
+    input.addEventListener("keydown", (e) => {
+      e.stopPropagation();                   // keep Escape from leaving the focus view
+      if (e.key === "Enter") { e.preventDefault(); close(true); }
+      else if (e.key === "Escape") { e.preventDefault(); close(false); }
+    });
+    input.addEventListener("blur", () => close(true));
+  }
+  function plotGeom(el) {
+    const fl = el._fullLayout, r = el.getBoundingClientRect();
+    return { x: (v) => r.left + fl._size.l + fl.xaxis.l2p(v), top: r.top + fl._size.t, h: fl._size.h };
+  }
+  function openCommentFor(id, x, y) {
+    const cond = findConditionById(id);
+    if (!cond) return;
+    const anchor = { getBoundingClientRect: () => ({ left: x, right: x, top: y, bottom: y, width: 0, height: 0 }), contains: () => false };
+    openCommentEditor(cond, anchor, { onPin: () => drawChartWithComments(), onClose: () => drawChartWithComments() });
+  }
+  function setupChartDirectEdit() {
+    const el = $("vizPlot");
+    if (!el) return;
+    el.addEventListener("pointerdown", (e) => {
+      const ed = el._vizeaEdit;
+      if (e.button !== 0 || !el.classList.contains("can-edit") || !ed || !el._fullLayout || !e.target.closest) return;
+      const cs = currentProject.chartSettings;
+      const tick = e.target.closest(".xtick"), ann = e.target.closest(".annotation"), ang = e.target.closest(".angularaxistick");
+      const node = tick || ann || ang;
+      // A press on the hovered data point (profile / scales) drags that score,
+      // so reordering works even when the names aren't shown under the axis.
+      const hv = !node && (ed.groups || ed.names) ? el._vizeaHover : null;
+      if (!node && !hv) return;
+      if (hv) e.preventDefault();                 // keeps Plotly's zoom box out of it
+      const src = node ? (node.querySelector("text") || node) : null;
+      const idx = hv ? hv.idx : Math.round(node.__data__ && node.__data__.x);   // Plotly binds each tick's x value
+      const asTick = tick || hv;
+      const comment = () => openCommentFor(hv.id, e.clientX, e.clientY);
+      // Vertical marker lines at x positions (line + scales views).
+      const vSlots = (xs) => () => { const G = plotGeom(el); return xs.map((v) => { const X = G.x(v); return { px: X, py: 0, x: X, y: G.top, len: G.h }; }); };
+      const range = (a, n) => Array.from({ length: n + 1 }, (_, k) => a + k - 0.5);
+
+      if (ed.groups && (asTick || ann)) {                    // ---- profile
+        const groups = ed.groups;
+        let gi, j = -1;
+        if (asTick) {
+          gi = groups.findIndex((g) => idx >= g.start && idx < g.start + g.pids.length);
+          if (gi < 0) return;
+          j = idx - groups[gi].start;
+        } else {
+          const fn = CHART.functionTitleAt(Number(ann.getAttribute("data-index")));
+          gi = groups.findIndex((g) => g.func === fn);
+          if (!fn || gi < 0) return;
+        }
+        const g = groups[gi];
+        pointerDrag(e, {
+          label: asTick ? (((cs.pointOverrides || {})[g.pids[j]] || {}).label || g.labels[j]) : fnLabel(g.func),
+          color: fnColor(g.func), src, axis: "x",
+          onStart: () => { try { window.Plotly.Fx.unhover(el); } catch (er) {} if (el._vizeaUnlit) el._vizeaUnlit(); },
+          slots: asTick ? vSlots(range(g.start, g.pids.length))
+            : vSlots(groups.map((q) => q.start - 0.5).concat(groups[groups.length - 1].start + groups[groups.length - 1].pids.length - 0.5)),
+          onClick: hv ? comment : tick ? () => {
+            const pid = g.pids[j], orig = g.labels[j];
+            if (!cs.pointOverrides) cs.pointOverrides = {};
+            const ov = cs.pointOverrides[pid] || {};
+            renameInline(src, ov.label || orig, T("chart.renameTest", "Nom du test dans le graphique"), (v) => {
+              const o = cs.pointOverrides[pid] || {};
+              if (!v || v === orig) delete o.label; else o.label = v;
+              cs.pointOverrides[pid] = o;
+              chartEdited();
+            });
+          } : null,                                           // a title click = focus view (Plotly event)
+          onDrop: (slot) => {
+            if (asTick) {
+              if (slot === j || slot === j + 1) return;
+              const all = groups.map((q, k) => k === gi ? moveItem(q.pids, j, slot) : q.pids).flat();
+              cs.pointOrder = all.concat((cs.pointOrder || []).filter((p) => all.indexOf(p) < 0));
+            } else {
+              if (slot === gi || slot === gi + 1) return;
+              const order = moveItem(groups.map((q) => q.func), gi, slot);
+              cs.functionOrder = order.concat((cs.functionOrder || []).filter((f) => order.indexOf(f) < 0));
+            }
+            chartEdited();
+          }
+        });
+      } else if (ed.names && asTick) {                        // ---- global scales
+        const names = ed.names, name = names[idx];
+        if (!name) return;
+        pointerDrag(e, {
+          label: (cs.scaleLabels && cs.scaleLabels[name]) || name, src, axis: "x",
+          onStart: () => { try { window.Plotly.Fx.unhover(el); } catch (er) {} if (el._vizeaUnlit) el._vizeaUnlit(); },
+          slots: vSlots(range(0, names.length)),
+          onClick: hv ? comment : () => {
+            if (!cs.scaleLabels) cs.scaleLabels = {};
+            renameInline(src, cs.scaleLabels[name] || name, T("chart.renameScale", "Nom de l'échelle dans le graphique"), (v) => {
+              if (!v || v === name) delete cs.scaleLabels[name]; else cs.scaleLabels[name] = v;
+              chartEdited();
+            });
+          },
+          onDrop: (slot) => {
+            if (slot === idx || slot === idx + 1) return;
+            const order = moveItem(names, idx, slot);
+            cs.scaleOrder = order.concat((cs.scaleOrder || []).filter((n) => order.indexOf(n) < 0));
+            chartEdited();
+          }
+        });
+      } else if (ed.funcs && ang) {                           // ---- radar
+        const funcs = ed.funcs, f = funcs[idx];
+        if (!f) return;
+        pointerDrag(e, {
+          label: fnLabel(f), color: fnColor(f), src, axis: "xy",
+          onStart: () => { try { window.Plotly.Fx.unhover(el); } catch (er) {} if (el._vizeaUnlit) el._vizeaUnlit(); },
+          slots: () => {
+            // The marker follows the radar's own spokes (Plotly's polar geometry).
+            const sp = el._fullLayout.polar._subplot, aa = sp.angularAxis, r = el.getBoundingClientRect();
+            const cx = r.left + sp.cx, cy = r.top + sp.cy, R = sp.radius;
+            return funcs.map((_, i) => {
+              const g = aa.c2g(i), dx = Math.cos(g), dy = -Math.sin(g);
+              return { px: cx + dx * R, py: cy + dy * R, x: cx, y: cy, len: R, angle: Math.atan2(dy, dx) * 180 / Math.PI - 90 };
+            });
+          },
+          onClick: () => {
+            const def = funcDisplay(f);
+            renameInline(src, fnLabel(f), T("focus.rename", "Nom de la fonction dans le graphique"), (v) => {
+              if (!cs.functionLabels) cs.functionLabels = {};
+              if (!v || v === def || v === f) delete cs.functionLabels[f]; else cs.functionLabels[f] = v;
+              chartEdited();
+            });
+          },
+          onDrop: (slot) => {                                 // dropped on a spoke = take its place
+            if (slot === idx) return;
+            const order = moveItem(funcs, idx, slot > idx ? slot + 1 : slot);
+            cs.functionOrder = order.concat((cs.functionOrder || []).filter((x) => order.indexOf(x) < 0));
+            chartEdited();
+          }
+        });
+      }
+    });
+  }
+
+  // Table: drag a group header (function or test) or, grouped by function, a
+  // test row. The grip button also moves with the keyboard (↑ / ↓).
+  function bindTableDrag(table, model) {
+    const s = currentProject.chartSettings;
+    const keys = model.groups.map((g) => g.key);
+    const moveGroup = (from, slot) => {
+      if (slot === from || slot === from + 1) return;
+      const order = moveItem(keys, from, slot);
+      if (model.groupBy === "function") {
+        s.functionOrder = order.concat((s.functionOrder || []).filter((x) => order.indexOf(x) < 0));
+      } else {
+        reorderKeys(currentProject.selectedTests, order);
+        reorderKeys(currentProject.scores, order);
+      }
+      markDirty();
+      renderTableView();
+    };
+    const moveRow = (gi, from, slot) => {
+      if (slot === from || slot === from + 1) return;
+      // By function: the chart's per-function order. By test: a table-only order.
+      const field = model.groupBy === "function" ? "pid" : "conditionId";
+      const all = model.groups.map((g, k) => k === gi ? moveItem(g.rows.map((r) => r[field]), from, slot) : g.rows.map((r) => r[field])).flat();
+      const key = model.groupBy === "function" ? "pointOrder" : "tableRowOrder";
+      s[key] = all.concat((Array.isArray(s[key]) ? s[key] : []).filter((p) => all.indexOf(p) < 0));
+      markDirty();
+      renderTableView();
+    };
+    const hLine = (Y) => { const tb = table.getBoundingClientRect(); return { px: 0, py: Y, x: tb.left, y: Y, len: tb.width, angle: -90 }; };
+    table.addEventListener("keydown", (e) => {
+      const grip = e.target.closest && e.target.closest(".group-grip");
+      if (!grip || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
+      e.preventDefault();
+      const gi = Number(grip.closest("tr").dataset.gi);
+      moveGroup(gi, e.key === "ArrowUp" ? gi - 1 : gi + 2);
+      const again = $("vizTableWrap").querySelector('tr.group-row[data-gi="' + Math.max(0, Math.min(keys.length - 1, gi + (e.key === "ArrowUp" ? -1 : 1))) + '"] .group-grip');
+      if (again) again.focus();
+    });
+    table.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0 || !e.target.closest) return;
+      if (e.target.closest("button:not(.group-grip), input, a, .comment-inline")) return;
+      const tr = e.target.closest("tr");
+      if (!tr || !tr.dataset.gi) return;
+      e.preventDefault();                    // no text selection: this press may become a drag
+      const gi = Number(tr.dataset.gi), g = model.groups[gi];
+      if (tr.classList.contains("group-row")) {
+        if (keys.length < 2) return;
+        pointerDrag(e, {
+          label: g.title, color: g.color, src: tr, axis: "y",
+          slots: () => {
+            const heads = Array.from(table.querySelectorAll("tr.group-row"));
+            return heads.map((h) => hLine(h.getBoundingClientRect().top)).concat(hLine(table.tBodies[0].getBoundingClientRect().bottom));
+          },
+          onDrop: (slot) => moveGroup(gi, slot)
+        });
+      } else if (tr.dataset.ri && g.rows.length > 1) {
+        const ri = Number(tr.dataset.ri);
+        pointerDrag(e, {
+          label: g.rows[ri].label, color: g.color, src: tr, axis: "y",
+          slots: () => {
+            const rows = Array.from(table.querySelectorAll('tr[data-gi="' + gi + '"][data-ri]'));
+            return rows.map((r) => hLine(r.getBoundingClientRect().top)).concat(hLine(rows[rows.length - 1].getBoundingClientRect().bottom));
+          },
+          onDrop: (slot) => moveRow(gi, ri, slot)
+        });
+      }
+    });
+  }
+
+  // Rename the focused function from the focus bar title.
+  document.addEventListener("click", (e) => {
+    const h = e.target && e.target.closest && e.target.closest(".fn-focus-title");
+    if (!h || !focusFn || h.querySelector("input")) return;
+    const cs = currentProject.chartSettings, f = focusFn, def = funcDisplay(f);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "fn-focus-rename";
+    input.maxLength = 80;
+    input.value = fnLabel(f);
+    input.setAttribute("aria-label", T("focus.rename", "Nom de la fonction dans le graphique"));
+    h.textContent = "";
+    h.appendChild(input);
+    input.focus(); input.select();
+    let done = false;
+    const close = (save) => {
+      if (done) return; done = true;
+      const v = input.value.trim();
+      if (save && v !== fnLabel(f)) {
+        if (!cs.functionLabels) cs.functionLabels = {};
+        if (!v || v === def || v === f) delete cs.functionLabels[f]; else cs.functionLabels[f] = v;
+        chartEdited();
+      } else renderFocusBar();
+    };
+    input.addEventListener("keydown", (ev) => {
+      ev.stopPropagation();
+      if (ev.key === "Enter") { ev.preventDefault(); close(true); }
+      else if (ev.key === "Escape") { ev.preventDefault(); close(false); }
+    });
+    input.addEventListener("blur", () => close(true));
+  });
 
   // Coalesce rapid input events (dragging a colour picker, typing in a text
   // field) into a single redraw, so the Plotly chart isn't rebuilt on every
@@ -2028,13 +2619,14 @@
       return {
         label,
         value: String(p.rawValue),
-        type: p.type,
+        type: scoreTypeLabel(p.type),
         percentile: tableFmtPct(p.percentile),
         classification: bandFieldDisplay(band.key, "label", band.label),
         color: band.color,
         inverted: !!p.inverted,
         comment: p.comment || "",
-        conditionId: p.conditionId
+        conditionId: p.conditionId,
+        pid: p.pid
       };
     };
 
@@ -2046,13 +2638,17 @@
         if (!map[p.func]) { map[p.func] = []; present.push(p.func); }
         map[p.func].push(rowFromPoint(p, false));
       });
+      // Tests inside a function follow the chart's order (pointOrder).
+      const rank = {}; (s.pointOrder || []).forEach((pid, i) => { rank[pid] = i; });
+      const rk = (r) => (r.pid in rank ? rank[r.pid] : Infinity);
+      Object.keys(map).forEach((f) => { map[f].sort((a, b) => rk(a) - rk(b)); });
       // Follow the same function order as the panel / chart (drag-to-reorder),
       // then canonical order — so the table isn't in random score-entry order.
       const orderPref = (s.functionOrder || []).concat(COGNITIVE_FUNCTIONS);
       const ordered = [], seen = {};
       orderPref.forEach((f) => { if (map[f] && !seen[f]) { ordered.push(f); seen[f] = 1; } });
       present.forEach((f) => { if (!seen[f]) ordered.push(f); });
-      ordered.forEach((k) => groups.push({ title: displayFunc(k), rows: map[k], key: k }));
+      ordered.forEach((k) => groups.push({ title: displayFunc(k), rows: map[k], key: k, color: fnColor(k) }));
       functionKeys = ordered;
     } else {
       const order = [], map = {}, seen = {};
@@ -2062,7 +2658,10 @@
         if (!map[p.testName]) { map[p.testName] = []; order.push(p.testName); }
         map[p.testName].push(rowFromPoint(p, true));
       });
-      order.forEach((k) => groups.push({ title: k, rows: map[k] }));
+      // Rows inside a test: the order dragged in the table (view only).
+      const trank = {}; (Array.isArray(s.tableRowOrder) ? s.tableRowOrder : []).forEach((id, i) => { trank[id] = i; });
+      const tk = (r) => (r.conditionId in trank ? trank[r.conditionId] : Infinity);
+      order.forEach((k) => { map[k].sort((a, b) => tk(a) - tk(b)); groups.push({ title: k, rows: map[k], key: k }); });
     }
 
     return {
@@ -2114,46 +2713,27 @@
 
     const tbody = document.createElement("tbody");
     const totalCols = 1 + model.colDefs.length + (model.showComments ? 1 : 0);
-    // Move a function up/down directly from the table (writes the shared
-    // functionOrder, so the chart and panel follow the same order).
-    const moveTableFunction = (key, dir) => {
-      const cur = (model.functionKeys || []).slice();
-      const i = cur.indexOf(key), j = i + dir;
-      if (i < 0 || j < 0 || j >= cur.length) return;
-      cur.splice(j, 0, cur.splice(i, 1)[0]);
-      const s = currentProject.chartSettings;
-      const others = (s.functionOrder || []).filter((x) => cur.indexOf(x) === -1);
-      s.functionOrder = cur.concat(others);
-      markDirty();
-      renderTableView();
-    };
     model.groups.forEach((g, gi) => {
       const gtr = document.createElement("tr"); gtr.className = "group-row";
+      gtr.dataset.gi = gi;
       const gtd = document.createElement("td"); gtd.colSpan = totalCols;
-      // When grouped by function, offer inline up/down arrows on the header.
-      if (model.groupBy === "function" && model.functionKeys && model.functionKeys.length > 1) {
+      if (model.groups.length > 1) {
+        // Drag the header (or use ↑ / ↓ on the grip) to move the whole group.
         const wrap = document.createElement("div"); wrap.className = "group-head";
+        const grip = document.createElement("button");
+        grip.type = "button"; grip.className = "group-grip"; grip.textContent = "⠿";
+        grip.title = T("table.dragGroup", "Glisser pour déplacer (ou flèches ↑ ↓)");
+        grip.setAttribute("aria-label", grip.title + " : " + g.title);
         const lab = document.createElement("span"); lab.textContent = g.title;
-        const mv = document.createElement("span"); mv.className = "test-move";
-        const up = document.createElement("button");
-        up.type = "button"; up.className = "test-move-btn"; up.innerHTML = "▲";
-        up.title = T("tests.moveUp", "Monter"); up.setAttribute("aria-label", up.title);
-        up.disabled = gi === 0;
-        up.addEventListener("click", () => moveTableFunction(g.key, -1));
-        const down = document.createElement("button");
-        down.type = "button"; down.className = "test-move-btn"; down.innerHTML = "▼";
-        down.title = T("tests.moveDown", "Descendre"); down.setAttribute("aria-label", down.title);
-        down.disabled = gi === model.groups.length - 1;
-        down.addEventListener("click", () => moveTableFunction(g.key, 1));
-        mv.append(up, down);
-        wrap.append(lab, mv);
+        wrap.append(grip, lab);
         gtd.appendChild(wrap);
       } else {
         gtd.textContent = g.title;
       }
       gtr.appendChild(gtd); tbody.appendChild(gtr);
-      g.rows.forEach((r) => {
+      g.rows.forEach((r, ri) => {
         const tr = document.createElement("tr");
+        tr.dataset.gi = gi; tr.dataset.ri = ri;
         if (model.showColor && r.color) tr.style.background = tableHexToRgba(r.color, 0.10);
         const ltd = document.createElement("td"); ltd.className = "cell-label";
         ltd.textContent = r.label;
@@ -2250,11 +2830,13 @@
     if (!model.groups.length) {
       const empty = document.createElement("p");
       empty.className = "table-empty";
-      empty.textContent = "Aucun score saisi pour le moment. Revenez à l'étape « Saisie des scores » pour en ajouter.";
+      empty.textContent = T("table.empty", "Aucun score saisi pour le moment. Revenez à l'étape « Saisie des scores » pour en ajouter.");
       wrap.appendChild(empty);
       return;
     }
-    wrap.appendChild(buildTableElement(model));
+    const table = buildTableElement(model);
+    wrap.appendChild(table);
+    bindTableDrag(table, model);
     if (model.anyInverted) {
       const note = document.createElement("p");
       note.className = "table-footnote";
@@ -2272,7 +2854,7 @@
     h += '<thead><tr style="background:#1b7fb5;color:#ffffff;font-weight:bold">';
     h += '<th align="left">' + esc(model.firstHeader) + '</th>';
     model.colDefs.forEach(([, lab]) => { h += '<th align="left">' + esc(lab) + '</th>'; });
-    if (withComment) h += '<th align="left">Commentaire</th>';
+    if (withComment) h += '<th align="left">' + esc(T("comment.title", "Commentaire")) + '</th>';
     h += '</tr></thead><tbody>';
     model.groups.forEach((g) => {
       h += '<tr style="background:#e7f3fa;font-weight:bold"><td colspan="' + totalCols + '">' + esc(g.title) + '</td></tr>';
@@ -2295,7 +2877,7 @@
     h += '</tbody></table>';
     const title = esc(currentProject.title || "Vizéa");
     const foot = model.anyInverted
-      ? '<p style="font-family:Calibri,Arial,sans-serif;font-size:9pt;color:#555">* Score inversé (élevé = défavorable) : positionné et classé selon son écart inverse à la moyenne.</p>'
+      ? '<p style="font-family:Calibri,Arial,sans-serif;font-size:9pt;color:#555">' + esc(T("scores.invertedNote", "* Score inversé (élevé = défavorable) : positionné et classé selon son écart inverse à la moyenne.")) + '</p>'
       : '';
     return '<html><head><meta charset="utf-8"></head><body>' +
       '<h3 style="font-family:Calibri,Arial,sans-serif">' + title + '</h3>' + h + foot + '</body></html>';
@@ -2389,18 +2971,10 @@
     return true;
   }
 
-  function tableDownload(content, type, filename) {
-    const blob = new Blob([content], { type: type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-  }
   function exportTableExcel() {
     const blob = new Blob(["\ufeff" + tableToOfficeHTML()], { type: "application/vnd.ms-excel" });
     saveBlob(blob, tableProjBase() + ".xls", { description: "Classeur Excel", accept: { "application/vnd.ms-excel": [".xls"] } })
-      .then((saved) => { if (saved) toast("Tableau exporté en Excel (.xls)."); });
+      .then((saved) => { if (saved) toast(T("msg.excelExported", "Tableau exporté en Excel (.xls).")); });
   }
 
 
@@ -2445,7 +3019,7 @@
     if (panel && !panel.querySelector(".viz-panel-resizer")) {
       const grip = document.createElement("div");
       grip.className = "viz-panel-resizer";
-      grip.title = "Glisser pour élargir";
+      grip.title = T("panel.dragWiden", "Glisser pour élargir");
       panel.appendChild(grip);
       let dragging = false, startX = 0, startW = 0;
       const maxW = () => Math.min(window.innerWidth * 0.92, 760);
@@ -2707,17 +3281,17 @@
       // let the user choose where to save it / rename it.
       const finish = () => {
         window.VizeaChart.setForceLight(false);
-        window.VizeaChart.renderChart(currentProject, "vizPlot");
+        drawChartWithComments();
       };
       window.VizeaChart.setForceLight(true);
-      Promise.resolve(window.VizeaChart.renderChart(currentProject, "vizPlot"))
+      Promise.resolve(window.VizeaChart.renderChart(chartProject(), "vizPlot"))
         .then(() => window.Plotly.relayout(el, { paper_bgcolor: "#ffffff", plot_bgcolor: "#ffffff" }))
         .then(() => window.Plotly.toImage(el, { format: "png", scale: 2, width: 1400, height: 800 }))
         .then((dataUrl) => {
           finish(); // restore the on-screen chart right away
           return saveBlob(dataUrlToBlob(dataUrl), tableProjBase() + ".png", { description: "Image PNG", accept: { "image/png": [".png"] } });
         })
-        .then((saved) => { if (saved) toast("Image exportée (PNG)."); })
+        .then((saved) => { if (saved) toast(T("msg.imageExported", "Image exportée (PNG).")); })
         .catch(() => finish());
     });
 
@@ -2726,9 +3300,9 @@
         currentProject.title || "Mon modèle");
       if (!name) return;
       const tmpl = DM.extractTemplateFromProject(currentProject, name);
-      DM.saveLocalTemplate(tmpl);
+      if (!DM.saveLocalTemplate(tmpl)) { toast(T("msg.templateFailed", "Le modèle n'a pas pu être enregistré (stockage du navigateur plein ou bloqué).")); return; }
       refreshTemplateSelect();
-      toast("Modèle enregistré (sans données cliniques).");
+      toast(T("msg.templateSaved", "Modèle enregistré (sans données cliniques)."));
     });
 
     $("exportProjectBtn")?.addEventListener("click", () => exportCurrentProject());
@@ -2748,7 +3322,7 @@
     const blob = new Blob([json], { type: "application/json" });
     return saveBlob(blob, tableProjBase() + ".vizea", { description: "Projet Vizéa", accept: { "application/vizea+json": [".vizea"] } })
       .then((saved) => {
-        if (saved) { dirty = false; toast("Projet exporté."); }
+        if (saved) { dirty = false; toast(T("msg.projectExported", "Projet exporté.")); }
         return saved;
       });
   }
@@ -2919,7 +3493,7 @@
       handle.className = "fn-drag";
       handle.setAttribute("aria-hidden", "true");
       handle.textContent = "⠿";
-      handle.title = "Glisser pour réordonner";
+      handle.title = T("panel.dragReorder", "Glisser pour réordonner");
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -3000,7 +3574,7 @@
 
     const allPoints = DM.flattenScores(currentProject);
     if (!allPoints.length) {
-      list.innerHTML = '<p class="muted small">Aucun test à afficher.</p>';
+      list.innerHTML = '<p class="muted small">' + T("panel.noTests", "Aucun test à afficher.") + '</p>';
       return;
     }
 
@@ -3030,7 +3604,7 @@
       handle.className = "fn-drag";
       handle.setAttribute("aria-hidden", "true");
       handle.textContent = "⠿";
-      handle.title = "Glisser pour réordonner";
+      handle.title = T("panel.dragReorder", "Glisser pour réordonner");
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -3137,7 +3711,7 @@
       if (!name || !hasVal || seen.has(name)) return;
       seen.add(name); names.push(name);
     });
-    if (!names.length) { host.innerHTML = '<p class="fn-subhint">Aucune échelle saisie.</p>'; return; }
+    if (!names.length) { host.innerHTML = '<p class="fn-subhint">' + T("panel.noScales", "Aucune échelle saisie.") + '</p>'; return; }
 
     // Apply the saved display order (drag-to-reorder), then entry order.
     const ordered = [];
@@ -3154,7 +3728,7 @@
       handle.className = "fn-drag";
       handle.setAttribute("aria-hidden", "true");
       handle.textContent = "⠿";
-      handle.title = "Glisser pour réordonner";
+      handle.title = T("panel.dragReorder", "Glisser pour réordonner");
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -3292,63 +3866,94 @@
     });
   }
 
+  // Spreadsheet-safe text: a value starting with = + - @ would run as a formula
+  // in Google Sheets (formula injection). The server script also guards this.
+  function sheetSafe(v, max) {
+    const t = String(v || "").replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").trim().slice(0, max);
+    return /^[=+\-@\t\r]/.test(t) ? "'" + t : t;
+  }
+  const SUGGEST_COOLDOWN_MS = 60 * 1000;
+  const SUGGEST_LAST_KEY = "vizea_suggest_last";
+
   function setupSuggestForm() {
     renderSuggestFunctions();
+    const form = $("suggestForm");
+    if (!form) return;
+    const fieldErr = (inputEl, wrapEl, show) => {
+      (wrapEl || inputEl.closest(".f-field")).classList.toggle("has-error", show);
+      if (inputEl) inputEl.setAttribute("aria-invalid", show ? "true" : "false");
+    };
+    // Clear a field's error as soon as it is corrected.
+    $("testName")?.addEventListener("input", (e) => fieldErr(e.target, null, false));
+    $("contactEmail")?.addEventListener("input", (e) => fieldErr(e.target, null, false));
+    $("functions")?.addEventListener("change", () => $("functions").closest(".f-field").classList.remove("has-error"));
+    $("suggestAgain")?.addEventListener("click", () => {
+      $("suggestSuccess").hidden = true; form.classList.remove("is-done"); $("testName")?.focus();
+    });
 
-    $("suggestSend")?.addEventListener("click", async () => {
-      const testName = $("testName")?.value.trim() || "";
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nameEl = $("testName"), emailEl = $("contactEmail");
+      const testName = nameEl.value.trim();
       const selected = $$('input[name="functions"]:checked').map((cb) => cb.value);
-      const description = $("description")?.value.trim() || "";
-      const contactName = $("contactName")?.value.trim() || "";
-      const contactEmail = $("contactEmail")?.value.trim() || "";
-      const ok = $("suggestSuccess");
+      const email = emailEl.value.trim();
       const err = $("suggestError");
-      ok.style.display = "none";
-      err.style.display = "none";
+      err.hidden = true;
 
-      if (!testName || selected.length === 0) {
-        err.textContent = "Indiquez un nom de test et au moins une fonction cognitive.";
-        err.style.display = "block";
+      const badName = !testName;
+      const badFn = selected.length === 0;
+      const badEmail = !!email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+      fieldErr(nameEl, null, badName);
+      $("functions").closest(".f-field").classList.toggle("has-error", badFn);
+      fieldErr(emailEl, null, badEmail);
+      if (badName || badFn || badEmail) {
+        (badName ? nameEl : badFn ? $("functions").querySelector("input") : emailEl)?.focus();
         return;
       }
-
-      if (!SUGGESTIONS_ENDPOINT) {
-        err.textContent = "Le formulaire n'est pas encore connecté. (Configurez SUGGESTIONS_ENDPOINT dans app.js.)";
-        err.style.display = "block";
+      // Bots fill the hidden field: pretend success, send nothing.
+      if ($("website") && $("website").value) { form.classList.add("is-done"); $("suggestSuccess").hidden = false; return; }
+      // Gentle rate limit: one suggestion per minute from this browser.
+      let last = 0;
+      try { last = +localStorage.getItem(SUGGEST_LAST_KEY) || 0; } catch (x) {}
+      if (Date.now() - last < SUGGEST_COOLDOWN_MS) {
+        err.textContent = T("suggest.wait", "Une suggestion vient d'être envoyée. Patientez une minute avant d'en envoyer une autre.");
+        err.hidden = false;
         return;
       }
 
       const btn = $("suggestSend");
+      const label = btn.querySelector("span");
       const payload = {
-        test_name: testName,
-        cognitive_functions: selected,
-        description,
-        contact_name: contactName,
-        contact_email: contactEmail
+        test_name: sheetSafe(testName, 200),
+        cognitive_functions: selected.map((f) => sheetSafe(f, 80)),
+        description: sheetSafe($("description").value, 2000),
+        contact_name: sheetSafe($("contactName").value, 120),
+        contact_email: sheetSafe(email, 200),
+        lang: (window.VizeaI18n && window.VizeaI18n.getLang()) || "fr"
       };
-
       try {
         btn.disabled = true;
-        btn.textContent = "Envoi…";
-        // Apps Script Web Apps don't return CORS headers, so we use a "simple"
-        // request (text/plain) and no-cors. We can't read the response, but the
-        // row is written; we treat a completed request as success.
+        form.setAttribute("aria-busy", "true");
+        if (label) label.textContent = T("suggest.sending", "Envoi…");
+        // Apps Script Web Apps don't return CORS headers: "simple" request + no-cors.
         await fetch(SUGGESTIONS_ENDPOINT, {
           method: "POST",
           mode: "no-cors",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        $("suggestForm").reset();
-        ok.style.display = "block";
-        setTimeout(() => (ok.style.display = "none"), 6000);
-      } catch (e) {
-        console.warn("suggestion send failed", e);
-        err.textContent = "Erreur lors de l'envoi. Vérifiez votre connexion et réessayez.";
-        err.style.display = "block";
+        try { localStorage.setItem(SUGGEST_LAST_KEY, String(Date.now())); } catch (x) {}
+        form.reset();
+        form.classList.add("is-done");
+        $("suggestSuccess").hidden = false;
+      } catch (x) {
+        console.warn("suggestion send failed", x);
+        err.textContent = T("suggest.error", "Erreur lors de l'envoi. Vérifiez votre connexion et réessayez.");
+        err.hidden = false;
       } finally {
         btn.disabled = false;
-        btn.textContent = "Envoyer la suggestion";
+        form.removeAttribute("aria-busy");
+        if (label) label.textContent = T("suggest.send", "Envoyer la suggestion");
       }
     });
   }
@@ -3358,14 +3963,26 @@
   // =========================================================================
   let paypalInitStarted = false;
 
+  // Returns the chosen amount, or null when the custom amount is invalid
+  // (never silently charge a different amount than the one typed).
   function getDonationAmount() {
     const sel = document.querySelector('input[name="donation-amount"]:checked');
     if (!sel) return 10;
     if (sel.value === "autre") {
-      const v = parseFloat($("customAmount")?.value);
-      return isNaN(v) || v <= 0 ? 10 : v;
+      const v = Math.round(parseFloat($("customAmount")?.value));
+      return (isFinite(v) && v >= 1 && v <= 1000) ? v : null;
     }
     return parseFloat(sel.value);
+  }
+  function syncDonateAmount(showError) {
+    const isCustom = document.querySelector('input[name="donation-amount"]:checked')?.value === "autre";
+    const row = $("customAmountRow"), pp = $("paypal-button-container");
+    if (row) row.hidden = !isCustom;
+    const ok = getDonationAmount() !== null;
+    row?.classList.toggle("has-error", isCustom && !ok && !!showError);
+    // PayPal can't be disabled from outside: hide its buttons until the amount is valid.
+    if (pp) pp.classList.toggle("is-blocked", !ok);
+    return ok;
   }
 
   function renderPayPalButtons() {
@@ -3378,14 +3995,17 @@
     try {
       window.paypal.Buttons({
         style: { shape: "pill", color: "gold", layout: "vertical", label: "donate" },
-        createOrder: (data, actions) =>
-          actions.order.create({ purchase_units: [{ amount: { value: getDonationAmount().toFixed(2) } }] }),
+        createOrder: (data, actions) => {
+          const amount = getDonationAmount();
+          if (amount === null) { syncDonateAmount(true); return Promise.reject(new Error("invalid amount")); }
+          return actions.order.create({ purchase_units: [{ amount: { currency_code: "CAD", value: amount.toFixed(2) } }] });
+        },
         onApprove: (data, actions) =>
-          actions.order.capture().then(() => { if (thanks) thanks.style.display = "block"; })
+          actions.order.capture().then(() => { if (thanks) thanks.style.display = "flex"; })
       }).render("#paypal-button-container");
     } catch (e) {
       console.warn("PayPal render failed", e);
-      if (loading) { loading.textContent = "Le module de paiement n'a pas pu se charger."; loading.style.display = "block"; }
+      if (loading) { loading.textContent = T("donate.failed", "Le module de paiement n'a pas pu se charger (bloqué ou hors-ligne)."); loading.style.display = "block"; }
     }
   }
 
@@ -3419,17 +4039,31 @@
     script.src = "https://www.paypal.com/sdk/js?client-id=BAAI4m0yUdkGit6WfOe6AlMmlvv3rdGM-cxcZ3-DzPT4tQNsHgvHbPVZbg-oIss6ZRmyITRrST5aavZXuk&currency=CAD&locale=" + ppLocale + "&disable-funding=card,credit,paylater";
     script.onload = renderPayPalButtons;
     script.onerror = () => {
-      if (loading) { loading.textContent = "Le module de paiement n'a pas pu se charger (bloqué ou hors-ligne)."; }
+      // Blocked (content blocker, network filter) or offline: explain, and offer a retry.
+      script.remove();
+      try { delete window.paypal; } catch (e) { window.paypal = undefined; }
+      paypalInitStarted = false;
+      if (!loading) return;
+      loading.textContent = T("donate.failed", "Le module de paiement n'a pas pu se charger (bloqué ou hors-ligne).") + " ";
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "btn-link donate-retry";
+      retry.textContent = T("donate.retry", "Réessayer");
+      retry.addEventListener("click", () => { loading.textContent = T("donate.loading", "Chargement du module de paiement…"); initPayPalLazy(); });
+      loading.appendChild(retry);
     };
     document.body.appendChild(script);
   }
 
   function setupDonate() {
-    // Re-render the buttons if the amount selection changes (so the order uses
-    // the latest amount). PayPal reads the amount at order-create time anyway,
-    // but re-rendering keeps custom-amount edits in sync.
     $$('input[name="donation-amount"]').forEach((r) =>
-      r.addEventListener("change", () => { if (typeof window.paypal !== "undefined") renderPayPalButtons(); }));
+      r.addEventListener("change", () => {
+        syncDonateAmount(false);
+        if (r.value === "autre" && r.checked) setTimeout(() => $("customAmount")?.focus(), 0);
+      }));
+    $("customAmount")?.addEventListener("input", () => syncDonateAmount(true));
+    $("customAmount")?.addEventListener("blur", () => syncDonateAmount(true));
+    syncDonateAmount(false);
   }
 
   // =========================================================================
@@ -3437,7 +4071,7 @@
   // =========================================================================
   function setupUnloadWarning() {
     window.addEventListener("beforeunload", (e) => {
-      if (dirty) {
+      if (dirty || (demoStash && demoStash.dirty)) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -3453,7 +4087,7 @@
   let _demo = null;
 
   function buildDemoProject() {
-    const proj = DM.createEmptyProject("Démonstration");
+    const proj = DM.createEmptyProject(T("demo.projTitle", "Démonstration"));
     // WAIS-IV: the 10 core subtests so the four indices (ICV/IRP/IMT/IVT) and
     // the EGQI are credible in the Échelles view.
     proj.selectedTests = {
@@ -3490,6 +4124,7 @@
     const sc = { ICV: 112, IRP: 104, IMT: 88, IVT: 95, EGQI: 102 };
     proj.iqScales["WAIS-IV"].forEach((r) => { if (sc[r.name] != null) r.value = String(sc[r.name]); });
     proj.activeScaleTest = "WAIS-IV";
+    proj._demo = true; // never exported as a real project marker; only used to recognise the tour's project
     return proj;
   }
 
@@ -3543,46 +4178,106 @@
     _demo.typer = setTimeout(tick, 320);
   }
 
-  function demoCleanup(toHome) {
+  function demoPanel(open) {
+    const panel = $("vizPanel");
+    if (!panel) return;
+    const isOpen = panel.classList.contains("open");
+    if (open && !isOpen) $("panelToggle")?.click();
+    if (!open && isOpen) $("panelClose")?.click();
+  }
+
+  // Ends the tour. If the visitor had a project of their own before starting,
+  // it is put back exactly as it was (the demo never replaces real work).
+  function demoCleanup(toHome, keep) {
     if (!_demo) return;
+    const d = _demo;
+    $("vizPlot")?.classList.remove("hint-edit");
     demoClearTyper();
-    window.removeEventListener("resize", _demo.repos);
-    window.removeEventListener("scroll", _demo.repos, true);
-    if (_demo.spot) _demo.spot.remove();
-    if (_demo.bubble) _demo.bubble.remove();
+    window.removeEventListener("resize", d.repos);
+    window.removeEventListener("scroll", d.repos, true);
+    document.removeEventListener("keydown", d.keys, true);
+    if (d.spot) d.spot.remove();
+    if (d.bubble) d.bubble.remove();
+    document.body.classList.remove("demo-on");
     _demo = null;
+    demoPanel(false);
+    if (keep) { demoReturnShow(d.stash); return; }   // "Terminer": stay on the demo chart
+    if (d.stash) {
+      startProject(d.stash.project);
+      dirty = d.stash.dirty;
+      goToPage("page-new");
+      showStep(d.stash.step);
+      try { d.stash.focus && d.stash.focus.focus({ preventScroll: true }); } catch (e) {}
+      return;
+    }
     if (toHome) goToPage("page-home");
   }
 
-  function demoPosition(target) {
+  // After the tour, the visitor's own project waits aside until they ask for it
+  // (or start/open another project).
+  var demoStash = null;
+  function demoReturnShow(stash) {
+    demoStash = stash || null;
+    const b = $("demoReturn");
+    if (b) b.hidden = !demoStash;
+  }
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest || !e.target.closest("#demoReturnBtn") || !demoStash) return;
+    const st = demoStash;
+    demoReturnShow(null);
+    startProject(st.project);
+    dirty = st.dirty;
+    goToPage("page-new");
+    showStep(st.step);
+  });
+
+  // Bubble placement: beside the target when there is room, else above/below,
+  // else pinned to the bottom of the screen (for very large targets).
+  function demoPosition(target, place) {
     if (!_demo) return;
-    const spot = _demo.spot, bubble = _demo.bubble, pad = 8;
+    const spot = _demo.spot, bubble = _demo.bubble, pad = 10, gap = 16, m = 16;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const bw = Math.min(380, vw - m * 2);
+    bubble.style.width = bw + "px";
+    const bh = bubble.offsetHeight || 190;
     if (!target) {
-      spot.style.display = "none";
-      bubble.style.width = "";
-      bubble.style.maxWidth = "380px";
-      bubble.style.left = "50%"; bubble.style.top = "50%";
-      bubble.style.transform = "translate(-50%,-50%)";
+      spot.classList.add("is-hidden");
+      bubble.style.left = Math.round((vw - bw) / 2) + "px";
+      bubble.style.top = Math.round((vh - bh) / 2) + "px";
       return;
     }
     const r = target.getBoundingClientRect();
-    spot.style.display = "block";
+    spot.classList.remove("is-hidden");
     spot.style.left = (r.left - pad) + "px";
     spot.style.top = (r.top - pad) + "px";
     spot.style.width = (r.width + pad * 2) + "px";
     spot.style.height = (r.height + pad * 2) + "px";
-    bubble.style.transform = "none";
-    bubble.style.maxWidth = "";
-    const bw = Math.min(360, window.innerWidth - 24);
-    bubble.style.width = bw + "px";
-    const bh = bubble.offsetHeight || 170;
-    const bx = Math.min(Math.max(12, r.left), window.innerWidth - bw - 12);
-    let by;
-    if (r.bottom + bh + 16 < window.innerHeight) by = r.bottom + 14;
-    else if (r.top - bh - 14 > 8) by = r.top - bh - 14;
-    else by = Math.max(12, (window.innerHeight - bh) / 2);
-    bubble.style.left = bx + "px";
-    bubble.style.top = by + "px";
+    const clampX = (x) => Math.min(Math.max(m, x), vw - bw - m);
+    const clampY = (y) => Math.min(Math.max(m + 68, y), vh - bh - m);
+    let x, y;
+    if (place !== "pin" && r.bottom + pad + gap + bh < vh - m) { x = clampX(r.left); y = r.bottom + pad + gap; }
+    else if (place !== "pin" && r.top - pad - gap - bh > 68 + m) { x = clampX(r.left); y = r.top - pad - gap - bh; }
+    else if (place !== "pin" && r.left - pad - gap - bw > m) { x = r.left - pad - gap - bw; y = clampY(r.top + r.height / 2 - bh / 2); }
+    else if (place !== "pin" && r.right + pad + gap + bw < vw - m) { x = r.right + pad + gap; y = clampY(r.top + r.height / 2 - bh / 2); }
+    else { x = vw - bw - m * 2; y = vh - bh - m * 2; }
+    bubble.style.left = Math.round(x) + "px";
+    bubble.style.top = Math.round(y) + "px";
+  }
+
+  function demoTargetOf(step) {
+    if (!step || !step.target) return null;
+    return typeof step.target === "function" ? step.target() : document.querySelector(step.target);
+  }
+
+  function demoGo(delta) {
+    if (!_demo) return;
+    const step = _demo.steps[_demo.i];
+    if (delta > 0 && step && step.onNext) { try { step.onNext(); } catch (e) {} }
+    const n = _demo.i + delta;
+    if (n < 0) return;
+    if (n >= _demo.steps.length) { demoCleanup(false, true); return; }
+    _demo.i = n;
+    demoRender();
   }
 
   function demoRender() {
@@ -3591,26 +4286,33 @@
     const steps = _demo.steps, i = _demo.i, step = steps[i];
     if (!step) { demoCleanup(false); return; }
     if (step.before) { try { step.before(); } catch (e) {} }
+    const b = _demo.bubble;
+    b.classList.add("is-moving");
     setTimeout(() => {
       if (!_demo) return;
-      const target = typeof step.target === "function"
-        ? step.target()
-        : (step.target ? document.querySelector(step.target) : null);
-      const b = _demo.bubble;
+      const target = demoTargetOf(step);
       b.innerHTML = "";
-      const count = document.createElement("div");
+      const head = document.createElement("div");
+      head.className = "demo-head";
+      const bar = document.createElement("div");
+      bar.className = "demo-progress";
+      bar.setAttribute("aria-hidden", "true");
+      const fill = document.createElement("span");
+      fill.style.transform = "scaleX(" + ((i + 1) / steps.length).toFixed(3) + ")";
+      bar.appendChild(fill);
+      const count = document.createElement("span");
       count.className = "demo-step-count";
-      count.textContent = "Étape " + (i + 1) + " sur " + steps.length;
-      b.appendChild(count);
-      if (step.title) {
-        const title = document.createElement("div");
-        title.className = "demo-bubble-title";
-        title.textContent = step.title;
-        b.appendChild(title);
-      }
-      const body = document.createElement("div");
+      count.textContent = (i + 1) + " / " + steps.length;
+      head.append(bar, count);
+      b.appendChild(head);
+      const title = document.createElement("h2");
+      title.className = "demo-bubble-title";
+      title.id = "demoTitle";
+      title.textContent = typeof step.title === "function" ? step.title() : (step.title || "");
+      b.appendChild(title);
+      const body = document.createElement("p");
       body.className = "demo-bubble-body";
-      body.textContent = step.body || "";
+      body.textContent = typeof step.body === "function" ? step.body() : (step.body || "");
       b.appendChild(body);
       const actions = document.createElement("div");
       actions.className = "demo-bubble-actions";
@@ -3619,205 +4321,183 @@
       quit.className = "demo-btn demo-btn-ghost";
       quit.textContent = T("demo.quit", "Quitter");
       quit.addEventListener("click", () => demoCleanup(true));
+      const nav = document.createElement("div");
+      nav.className = "demo-nav";
+      if (i > 0) {
+        const prev = document.createElement("button");
+        prev.type = "button";
+        prev.className = "demo-btn demo-btn-prev";
+        prev.setAttribute("aria-label", T("demo.prev", "Précédent"));
+        prev.title = T("demo.prev", "Précédent");
+        prev.textContent = "←";
+        prev.addEventListener("click", () => demoGo(-1));
+        nav.appendChild(prev);
+      }
       const next = document.createElement("button");
       next.type = "button";
       next.className = "demo-btn demo-btn-next";
       next.textContent = (i === steps.length - 1) ? T("demo.finish", "Terminer") : T("demo.next", "Suivant");
-      next.addEventListener("click", () => {
-        if (step.onNext) { try { step.onNext(); } catch (e) {} }
-        if (!_demo) return;
-        _demo.i++;
-        demoRender();
-      });
-      actions.appendChild(quit);
-      actions.appendChild(next);
+      next.addEventListener("click", () => demoGo(1));
+      nav.appendChild(next);
+      actions.append(quit, nav);
       b.appendChild(actions);
-      if (target && target.scrollIntoView) { try { target.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {} }
-      setTimeout(() => demoPosition(target), target ? 300 : 20);
-    }, step.wait || 60);
+      if (target && target.scrollIntoView) {
+        try { target.scrollIntoView({ block: step.block || "center", behavior: "smooth" }); } catch (e) {}
+      }
+      setTimeout(() => {
+        demoPosition(target, step.place);
+        b.classList.remove("is-moving");
+        try { next.focus({ preventScroll: true }); } catch (e) {}
+      }, target ? 380 : 30);
+    }, step.wait || 80);
   }
 
   function demoSteps() {
     const onStep = (n) => { if (currentStep !== n) showStep(n); };
-    const ensureStep0 = () => { goToPage("page-new"); showStep(0); };
-    const setView = (v) => { const b = document.querySelector('#viewSwitch button[data-view="' + v + '"]'); if (b) b.click(); };
+    const ensureStep0 = () => { demoPanel(false); goToPage("page-new"); showStep(0); };
+    const setView = (v) => { const b = document.querySelector('#viewSwitch button[data-view="' + v + '"]'); if (b && !b.classList.contains("active")) b.click(); };
+    const atChart = (v) => () => {
+      demoPanel(false); onStep(3);
+      $("vizPlot")?.classList.remove("hint-edit");
+      if (focusFn) setFocus(null);
+      setView(v);
+    };
+    const ensureDemoProject = () => {
+      if (!projectInitialized || !currentProject || !currentProject._demo) startProject(buildDemoProject());
+    };
     return [
-      {
-        target: "#homeLogo",
+      { target: null,
         title: T("demo.s1.t", "Bienvenue dans Vizéa"),
-        body: T("demo.s1.b", "Cette courte visite vous montre l'outil de bout en bout, avec des données fictives. Appuyez sur « Suivant » pour avancer à votre rythme — vous pouvez quitter à tout moment."),
-        before: () => goToPage("page-home"),
-        wait: 120
-      },
-      {
-        target: '#topnav [data-target="page-new"]',
-        title: T("demo.s2.t", "Tout commence ici"),
-        body: T("demo.s2.b", "L'onglet « Visualisation » ouvre le flux en quatre étapes : projet, sélection des tests, saisie des scores, puis le graphique."),
-        before: () => goToPage("page-home")
-      },
-      {
-        target: "#projectTitle",
-        title: T("demo.s3.t", "1 · Le projet"),
-        body: T("demo.s3.b", "On donne un nom au projet — regardez, la démo le saisit."),
+        body: T("demo.s1.b", "En deux minutes, voyez comment des scores deviennent un profil cognitif. Les données sont fictives et rien n'est enregistré. Avancez avec « Suivant » ou les flèches du clavier; Échap pour quitter."),
+        before: () => goToPage("page-home") },
+      { target: "#projectTitle",
+        title: T("demo.s3.t", "Le projet"),
+        body: T("demo.s3.b", "Chaque séance commence par un nom. N'y inscrivez jamais de renseignement nominatif : un code interne suffit."),
         before: () => {
           ensureStep0();
           const cb = $("confirmNoPI"); if (cb) { cb.checked = true; cb.dispatchEvent(new Event("change", { bubbles: true })); }
-          demoType($("projectTitle"), "Démonstration");
+          demoType($("projectTitle"), T("home.story.projName", "Évaluation 2026-014"));
         },
-        wait: 260
-      },
-      {
-        target: "#importProjectBtn",
-        title: T("demo.s4.t", "Reprendre un projet"),
-        body: T("demo.s4.b", "Vous terminez une deuxième rencontre et voulez compléter un profil déjà commencé ? Importez le projet enregistré pour continuer exactement là où vous étiez."),
-        before: ensureStep0,
-        wait: 160
-      },
-      {
-        target: "#templateSelect",
+        wait: 260 },
+      { target: "#templateSelect",
         title: T("demo.s5.t", "Partir d'un modèle"),
-        body: T("demo.s5.b", "Vous utilisez souvent la même batterie ? Un modèle réutilise les mêmes tests et les mêmes préférences graphiques — pour gagner du temps à chaque évaluation."),
-        before: ensureStep0,
-        wait: 160
-      },
-      {
-        target: "#step-1-content",
-        title: T("demo.s6.t", "2 · Choisir les tests"),
-        body: T("demo.s6.b", "On cherche un test — ici la démo tape « D-KE » — puis on coche ceux qu'on veut. Quelques tests sont déjà sélectionnés pour la suite."),
+        body: T("demo.s5.b", "Vous utilisez souvent la même batterie? Enregistrez-la comme modèle : tests, fonctions et préférences du graphique sont repris, sans aucun score."),
+        before: ensureStep0, wait: 160 },
+      { target: "#importProjectBtn",
+        title: T("demo.s4.t", "Reprendre un projet"),
+        body: T("demo.s4.b", "Une deuxième rencontre? Rouvrez le fichier .vizea exporté la dernière fois et continuez exactement là où vous étiez."),
+        before: ensureStep0, wait: 160 },
+      { target: "#step-1-content .step1-grid > .card",
+        title: T("demo.s6.t", "Choisir les tests"),
+        body: T("demo.s6.b", "Cherchez une batterie ou un test (la démo tape « D-KE »), puis cochez les sous-tests administrés. Un test absent de la banque peut être ajouté à la main."),
+        before: () => { demoPanel(false); ensureDemoProject(); goToPage("page-new"); onStep(1); demoType($("testSearch"), "D-KE"); },
+        wait: 320 },
+      { target: () => demoFindCard("WAIS-IV"), block: "start",
+        title: T("demo.s7.t", "Saisir les scores"),
+        body: T("demo.s7.b", "Chaque test devient une carte. Entrez la valeur et son type : pondéré, standard, T, Z ou rang centile. Vizéa ramène tout sur une même échelle."),
+        before: () => { ensureDemoProject(); onStep(2); }, wait: 300 },
+      { target: demoLastStroopRow,
+        title: T("demo.s8.t", "Plusieurs scores par test"),
+        body: T("demo.s8.b", "« + Ajouter un score » crée une condition de plus, ici « Flexibilité (erreurs) ». Un score où un résultat élevé est défavorable (temps, erreurs) peut aussi être marqué « Inversé »."),
         before: () => {
-          if (!projectInitialized || !currentProject || currentProject.title !== "Démonstration") {
-            startProject(buildDemoProject());
-          } else {
-            onStep(1);
-          }
-          demoType($("testSearch"), "D-KE");
-        },
-        wait: 300
-      },
-      {
-        target: () => demoFindCard("WAIS-IV"),
-        title: T("demo.s7.t", "3 · Saisir les scores"),
-        body: T("demo.s7.b", "Chaque test apparaît en carte. La démo a déjà rempli des scores fictifs — ici le WAIS-IV et ses sous-tests, qui alimenteront aussi les indices."),
-        before: () => onStep(2),
-        wait: 280
-      },
-      {
-        target: demoLastStroopRow,
-        title: T("demo.s8.t", "Ajouter un score"),
-        body: T("demo.s8.b", "Un même test peut recevoir plusieurs scores. La démo clique « + Ajouter un score » et saisit « Flexibilité (erreurs) » — chaque score se rattache à la fonction de votre choix."),
-        before: () => {
-          onStep(2);
+          ensureDemoProject(); onStep(2);
           const arr = currentProject.scores["D-KEFS / DKEFS"]["Color-word interference"];
           if (arr.length < 6) { const btn = demoFindStroopAdd(); if (btn) btn.click(); }
           const arr2 = currentProject.scores["D-KEFS / DKEFS"]["Color-word interference"];
           const cond = arr2[arr2.length - 1];
-          if (cond) cond.functions = ["Fonctions exécutives"];
+          if (cond) { cond.functions = ["Fonctions exécutives"]; cond.value = "8"; }
           const row = demoLastStroopRow();
           if (row) {
-            const disp = row.querySelector(".multi-select-display"); if (disp) disp.textContent = "Fonctions exécutives";
+            const disp = row.querySelector(".multi-select-display");
+            if (disp) { disp.textContent = funcDisplay("Fonctions exécutives"); disp.classList.add("has-value"); }
             const valInput = row.querySelector(".condition-value");
             if (valInput) { valInput.value = "8"; valInput.dispatchEvent(new Event("input", { bubbles: true })); }
-            demoType(row.querySelector(".condition-name"), "Flexibilité (erreurs)");
+            demoType(row.querySelector(".condition-name"), T("demo.flexErr", "Flexibilité (erreurs)"));
           }
         },
-        wait: 320
-      },
-      {
-        target: () => demoFindCondDisplay("Couleurs"),
-        title: T("demo.s9.t", "Réassigner la fonction"),
-        body: T("demo.s9.b", "Chaque score est rattaché à une fonction cognitive, modifiable ici. Par exemple, vous pourriez vouloir classer « Couleurs » et « Mots » sous le langage oral plutôt que les fonctions exécutives — c'est vous qui décidez."),
-        before: () => onStep(2),
-        wait: 140
-      },
-      {
-        target: "#viewSwitch",
-        title: T("demo.s10.t", "4 · Le graphique"),
-        body: T("demo.s10.b", "Voici le profil cognitif : chaque point est placé selon son rang centile, sur des bandes d'interprétation. Le sélecteur en haut bascule entre quatre visualisations — suivons-les une à une."),
-        before: () => { onStep(3); setView("line"); },
-        wait: 340
-      },
-      {
-        target: "#viewSwitch",
-        title: T("demo.s11.t", "Vue Échelles"),
-        body: T("demo.s11.b", "La vue « Échelles » présente les indices composites (ICV, IRP, IMT, IVT…) plutôt que les sous-tests individuels."),
-        before: () => { onStep(3); setView("scales"); },
-        wait: 300
-      },
-      {
-        target: "#viewSwitch",
-        title: T("demo.s12.t", "Vue Radar"),
-        body: T("demo.s12.b", "La vue « Radar » dispose les fonctions en étoile — pratique pour saisir la forme générale du profil d'un coup d'œil."),
-        before: () => { onStep(3); setView("radar"); },
-        wait: 300
-      },
-      {
-        target: "#panelToggle",
-        title: T("demo.s13.t", "Personnaliser le graphique"),
-        body: T("demo.s13.b", "Le bouton « Personnaliser » ouvre un panneau pour ajuster les couleurs, l'ordre des fonctions, les bandes d'interprétation et les axes."),
-        before: () => { onStep(3); setView("line"); },
-        wait: 220
-      },
-      {
-        target: "#vaImageBtn",
-        title: T("demo.s14.t", "Exporter — Image (PNG)"),
-        body: T("demo.s14.b", "Depuis une vue graphique, ce bouton exporte une image PNG haute résolution, prête à être utilisée."),
-        before: () => { onStep(3); setView("line"); },
-        wait: 200
-      },
-      {
-        target: "#viewSwitch",
-        title: T("demo.s15.t", "Vue Tableau"),
-        body: T("demo.s15.b", "La vue « Tableau » liste les scores — regroupés par test ou par fonction — avec, pour chacun, la valeur, le rang centile et la classification."),
-        before: () => { onStep(3); setView("table"); },
-        wait: 320
-      },
-      {
-        target: "#vaExcelBtn",
-        title: T("demo.s16.t", "Exporter — Excel"),
-        body: T("demo.s16.b", "En vue Tableau, ce bouton exporte le tableau vers Excel, prêt à intégrer dans un rapport."),
-        before: () => { onStep(3); setView("table"); },
-        wait: 220
-      },
-      {
-        target: "#vaTemplateBtn",
-        title: T("demo.s17.t", "Exporter — Modèle"),
-        body: T("demo.s17.b", "Enregistre les tests choisis et vos préférences graphiques comme modèle réutilisable, pour gagner du temps aux prochaines évaluations."),
-        before: () => onStep(3),
-        wait: 160
-      },
-      {
-        target: "#vaProjectBtn",
-        title: T("demo.s18.t", "Exporter — Projet (.vizea)"),
-        body: T("demo.s18.b", "Exporte tout le projet dans un fichier .vizea. Une fois Vizéa installée, un double-clic sur ce fichier rouvre le projet; sinon, on le glisse sur la fenêtre ou on l'importe."),
-        before: () => onStep(3),
-        wait: 160
-      },
-      {
-        target: null,
-        title: T("demo.s19.t", "À vous de jouer !"),
-        body: T("demo.s19.b", "C'est tout ! Explorez librement ce projet de démonstration, ou créez le vôtre via « Visualisation ». Bonne visualisation !"),
-        before: () => onStep(3)
-      }
+        wait: 340 },
+      { target: () => demoFindCondDisplay("Couleurs"),
+        title: T("demo.s9.t", "Vous décidez du regroupement"),
+        body: T("demo.s9.b", "Chaque score est rattaché à une ou plusieurs fonctions cognitives, modifiables ici. « Couleurs » et « Mots » sont classés en langage oral plutôt qu'en fonctions exécutives : c'est votre lecture du profil qui compte."),
+        before: () => { ensureDemoProject(); onStep(2); }, wait: 160 },
+      { target: "#vizPlot", place: "pin", block: "start",
+        title: T("demo.s10.t", "Le profil"),
+        body: T("demo.s10.b", "Chaque point est placé selon son rang centile, sur les sept bandes d'interprétation (Guilmette et coll., 2020). Les scores sont regroupés par fonction, chacune dans sa couleur."),
+        before: () => { ensureDemoProject(); atChart("line")(); }, wait: 420 },
+      { target: ".viz-main", place: "pin", block: "start",
+        title: T("demo.s20.t", "Zoomer sur une fonction"),
+        body: T("demo.s20.b", "Cliquez sur le nom d'une fonction, au-dessus du graphique, pour la voir seule avec la valeur de chaque score. Cliquez sur son titre pour la renommer; « Profil global » ramène la vue d'ensemble."),
+        before: () => {
+          ensureDemoProject(); atChart("line")();
+          const fs = chartFunctions();
+          setFocus(fs.indexOf("Fonctions exécutives") >= 0 ? "Fonctions exécutives" : fs[0]);
+        }, wait: 760 },
+      { target: "#vizPlot", place: "pin", block: "start",
+        title: T("demo.s21.t", "Modifier dans le graphique"),
+        body: T("demo.s21.b", "Glissez un point ou le nom d'une fonction, d'un test ou d'une échelle pour le déplacer, dans chaque graphique comme dans le tableau. Cliquez sur un nom dans le graphique pour le renommer. Seul l'affichage change : les scores restent intacts."),
+        before: () => { ensureDemoProject(); atChart("line")(); setTimeout(() => $("vizPlot")?.classList.add("hint-edit"), 500); }, wait: 380 },
+      { target: "#vizPlot", place: "pin", block: "start",
+        title: T("demo.s11.t", "Les échelles globales"),
+        body: T("demo.s11.b", "Les échelles du fonctionnement intellectuel (indices composites et indice global), sur les mêmes bandes d'interprétation."),
+        before: atChart("scales"), wait: 360 },
+      { target: "#vizPlot", place: "pin", block: "start",
+        title: T("demo.s12.t", "Vue radar"),
+        body: T("demo.s12.b", "La moyenne de chaque fonction, disposée en étoile : la forme générale du profil, d'un coup d'œil."),
+        before: atChart("radar"), wait: 360 },
+      { target: "#vizTableWrap", place: "pin", block: "start",
+        title: T("demo.s15.t", "Vue tableau"),
+        body: T("demo.s15.b", "Tous les scores avec leur rang centile et leur classification, regroupés par test ou par fonction, prêts pour Excel."),
+        before: atChart("table"), wait: 380 },
+      { target: "#vizPanel",
+        title: T("demo.s13.t", "Personnaliser"),
+        body: T("demo.s13.b", "Couleurs, ordre et noms des fonctions, bandes, axes, ligne de comparaison, taille du texte : chaque réglage s'applique en direct."),
+        before: () => { onStep(3); setView("line"); demoPanel(true); }, wait: 420 },
+      { target: ".viz-actions",
+        title: T("demo.s14.t", "Exporter"),
+        body: T("demo.s14.b", "L'image PNG pour un rapport, le tableau Excel, un modèle réutilisable ou le projet complet (.vizea), que vous conservez dans votre environnement sécurisé."),
+        before: atChart("line"), wait: 340 },
+      { target: null,
+        title: T("demo.s19.t", "À vous de jouer"),
+        body: () => (_demo && _demo.stash)
+          ? T("demo.s19.bRestore", "Le projet fictif reste ouvert pour que vous l'exploriez. Votre projet est mis de côté : « Retrouver mon projet » le rétablit tel que vous l'aviez laissé.")
+          : T("demo.s19.b", "Le projet fictif reste ouvert : explorez-le librement, puis créez le vôtre à l'étape « Projet ». Bonne visualisation!"),
+        before: () => {
+          atChart("line")();
+          $("vizPlot")?.scrollIntoView({ block: "start", behavior: "smooth" });
+        } }
     ];
   }
 
   function startDemo() {
     if (_demo) demoCleanup(false);
+    // Keep the visitor's own project aside: the tour works on a fictional one.
+    const stash = demoStash || ((projectInitialized && currentProject && !currentProject._demo)
+      ? { project: currentProject, step: currentStep, dirty: dirty, focus: document.activeElement }
+      : null);
+    demoReturnShow(null);
     const spot = document.createElement("div");
-    spot.className = "demo-spotlight";
+    spot.className = "demo-spotlight is-hidden";
     const bubble = document.createElement("div");
     bubble.className = "demo-bubble";
+    bubble.setAttribute("role", "dialog");
+    bubble.setAttribute("aria-modal", "false");
+    bubble.setAttribute("aria-labelledby", "demoTitle");
+    bubble.setAttribute("aria-live", "polite");
     document.body.appendChild(spot);
     document.body.appendChild(bubble);
-    _demo = { spot, bubble, i: 0, steps: demoSteps(), repos: null, typer: null };
-    _demo.repos = () => {
+    document.body.classList.add("demo-on");
+    _demo = { spot, bubble, i: 0, steps: demoSteps(), repos: null, keys: null, typer: null, stash };
+    _demo.repos = () => { if (_demo) { const s = _demo.steps[_demo.i]; demoPosition(demoTargetOf(s), s && s.place); } };
+    _demo.keys = (e) => {
       if (!_demo) return;
-      const s = _demo.steps[_demo.i];
-      const t = s && (typeof s.target === "function" ? s.target() : (s.target ? document.querySelector(s.target) : null));
-      demoPosition(t);
+      const tag = (e.target && e.target.tagName) || "";
+      if (e.key === "Escape") { e.preventDefault(); demoCleanup(true); }
+      else if (e.key === "ArrowRight" && !/INPUT|TEXTAREA|SELECT/.test(tag)) { e.preventDefault(); demoGo(1); }
+      else if (e.key === "ArrowLeft" && !/INPUT|TEXTAREA|SELECT/.test(tag)) { e.preventDefault(); demoGo(-1); }
     };
     window.addEventListener("resize", _demo.repos);
     window.addEventListener("scroll", _demo.repos, true);
+    document.addEventListener("keydown", _demo.keys, true);
     demoRender();
   }
 
@@ -3857,21 +4537,29 @@
       host.innerHTML = '<p class="news-empty">' + T("news.empty", "Aucune nouveauté pour le moment.") + '</p>';
       return;
     }
-    items.forEach((e) => {
+    items.forEach((e, idx) => {
       const item = document.createElement("article");
-      item.className = "news-item";
-
-      const date = document.createElement("div");
+      item.className = "news-item" + (idx === 0 ? " is-latest" : "");
+      // "V1.8 : Titre" → version tag + title
+      const full = pickNews(e.titre || e.title) || "";
+      const m = /^\s*(V\d+(?:\.\d+)*)\s*:\s*(.*)$/i.exec(full);
+      const meta = document.createElement("div");
+      meta.className = "news-meta";
+      const ver = document.createElement("span");
+      ver.className = "news-ver";
+      ver.textContent = m ? m[1].toUpperCase() : "";
+      const date = document.createElement("time");
       date.className = "news-date";
+      if (e.date) date.setAttribute("datetime", String(e.date));
       date.textContent = localizedNewsDate(e.date);
+      meta.append(ver, date);
 
       const card = document.createElement("div");
       card.className = "news-card";
       const h = document.createElement("h3");
       h.className = "news-title";
-      h.textContent = pickNews(e.titre || e.title) || "";
+      h.textContent = m ? m[2] : full;
       card.appendChild(h);
-
       const infos = pickNews(e.infos || e.points) || [];
       if (Array.isArray(infos) && infos.length) {
         const ul = document.createElement("ul");
@@ -3881,8 +4569,7 @@
       } else if (typeof infos === "string" && infos) {
         const p = document.createElement("p"); p.className = "news-text"; p.textContent = infos; card.appendChild(p);
       }
-
-      item.append(date, card);
+      item.append(meta, card);
       host.appendChild(item);
     });
   }
@@ -3890,11 +4577,11 @@
   function setupNews() {
     const host = $("newsTimeline");
     if (!host) return;
-    host.innerHTML = '<p class="news-empty">Chargement…</p>';
+    host.innerHTML = '<p class="news-empty">' + T("news.loading", "Chargement…") + '</p>';
     fetch("nouveautes.json", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => renderNews(Array.isArray(data) ? data : (data && data.entries) || []))
-      .catch(() => { host.innerHTML = '<p class="news-empty">Le journal des nouveautés est momentanément indisponible.</p>'; });
+      .catch(() => { host.innerHTML = '<p class="news-empty">' + T("news.error", "Le journal des nouveautés est momentanément indisponible.") + '</p>'; });
   }
 
   function setupDemo() {

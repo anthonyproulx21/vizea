@@ -5,12 +5,14 @@
    clinical/project data — projects live only in memory and in the files you
    export yourself. POST requests (e.g. the "suggest a test" form) and any
    third-party resources are never intercepted. */
-const CACHE = "vizea-v5";
+const CACHE = "vizea-v22";
 const APP_SHELL = [
   "./", "index.html",
   "style.css", "theme-init.js", "constants.js", "scoring.js",
   "datamodel.js", "chart.js", "app.js", "pwa.js", "i18n.js",
   "plotly.min.js",
+  "fonts/fonts.css", "fonts/fraunces-latin-opsz-normal.woff2", "fonts/fraunces-latin-opsz-italic.woff2",
+  "fonts/geist-latin-wght-normal.woff2", "fonts/geist-mono-latin-wght-normal.woff2", "fonts/allura-latin-400-normal.woff2", "gsap.min.js", "ScrollTrigger.min.js", "home-anim.js",
   "tests_bank.json", "nouveautes.json",
   "manifest.webmanifest",
   "favicon.svg", "favicon.ico", "favicon-192.png", "favicon-512.png", "apple-touch-icon.png",
@@ -35,7 +37,7 @@ self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;                 // never touch POST/PUT (suggestion form, etc.)
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;  // third parties (PayPal, fonts…) handled by the browser
+  if (url.origin !== self.location.origin) return;  // third parties (PayPal…) handled by the browser
 
   // Same-origin: network-first (always fresh when online, so updates are
   // automatic), falling back to cache when offline.
