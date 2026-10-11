@@ -5,7 +5,7 @@
    clinical/project data — projects live only in memory and in the files you
    export yourself. POST requests (e.g. the "suggest a test" form) and any
    third-party resources are never intercepted. */
-const CACHE = "vizea-v22";
+const CACHE = "vizea-v23";
 const APP_SHELL = [
   "./", "index.html",
   "style.css", "theme-init.js", "constants.js", "scoring.js",

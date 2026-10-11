@@ -314,6 +314,14 @@
 
   // Convert a percentile to the active display scale value, clamped to the
   // valid data range so the point always lands on-chart.
+  // Values written on the points: Z keeps two decimals (a z of -0.67 must not
+  // read "-1"), other scores are whole numbers, percentiles read "<1" / ">99".
+  function fmtScore(v, scale) {
+    if (typeof v !== "number" || !isFinite(v)) return v;
+    if (scale === "Percentile") return pctText(v);
+    const t = String(scale === "Z-Score" ? Math.round(v * 100) / 100 : Math.round(v));
+    return (window.VizeaI18n && window.VizeaI18n.getLang() === "en") ? t : t.replace(".", ",");
+  }
   function percentileToDisplay(percentile, displayScale) {
     const raw = displayScale === "Percentile"
       ? percentile
@@ -463,7 +471,7 @@
         hovertemplate: "%{customdata[0]}<extra></extra>",
         hoverlabel: hoverStyle(color, TC, fontScale),
         mode: settings.showDataLabels ? "lines+markers+text" : "lines+markers",
-        text: settings.showDataLabels ? labelVals.map(v => (typeof v === "number" ? v.toFixed(0) : v)) : undefined,
+        text: settings.showDataLabels ? labelVals.map(v => fmtScore(v, displayScale)) : undefined,
         textposition: "top center",
         textfont: { size: fs(11, fontScale), color: TC.text, family: FONT_BODY },
         name: group.func,
@@ -820,7 +828,7 @@
       const shown = percentileToDisplay(meanPct, displayScale); // label value
       theta.push(esc(displayFunc(group.func, settings)));
       r.push(pos);
-      labels.push(typeof shown === "number" ? shown.toFixed(0) : shown);
+      labels.push(fmtScore(shown, displayScale));
       const rb = bandOf(meanPct);
       hover.push(`<b>${esc(displayFunc(group.func, settings))}</b><br>${esc(tr("chart.meanPct", "Rang centile moyen"))}${colon()}<b>${pctText(meanPct)}</b><br>` +
         `<span style="color:${rb.color}">■</span> ${esc(rb.name)}<br><span style="opacity:.7">${group.points.length} score(s)</span>`);
