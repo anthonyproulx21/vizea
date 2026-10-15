@@ -2096,3 +2096,7 @@ body.chart-dragging .viz-plot .hoverlayer { display: none; }
 .viz-plot.is-zooming .hoverlayer { display: none; }
 /* Téléphone : « Personnaliser » sur sa propre ligne, au-dessus des vues (il les cachait). */
 @media (max-width: 640px) { .panel-fab { position: static; display: flex; width: fit-content; margin: 0 0 10px auto; } .view-switch button { padding: 7px 12px; } }
+/* « Comment ça marche » est épinglé au défilement : la section prend toute la largeur
+   et son contenu se centre lui-même (épinglée, une marge auto la collait à gauche sur grand écran). */
+.home-section.home-section--story { width: 100%; }
+.home-section--story > .home-head, .home-section--story > .story { width: min(var(--maxw), calc(100% - 40px)); margin-left: auto; margin-right: auto; }
