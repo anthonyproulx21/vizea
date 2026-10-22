@@ -25,7 +25,7 @@
   <meta name="apple-mobile-web-app-title" content="Vizéa">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="stylesheet" href="style.css?v=20261015a">
+  <link rel="stylesheet" href="style.css?v=20261022a">
 
   <script defer src="plotly.min.js?v=3.1.2-strict" charset="utf-8"></script>
   <script defer src="i18n.js?v=20261011g"></script>
@@ -37,7 +37,7 @@
   <script defer src="pwa.js?v=20261010g"></script>
   <script defer src="gsap.min.js?v=3.13.0"></script>
   <script defer src="ScrollTrigger.min.js?v=3.13.0"></script>
-  <script defer src="home-anim.js?v=20261010g"></script>
+  <script defer src="home-anim.js?v=20261022b"></script>
 </head>
 
 <body>
@@ -118,9 +118,10 @@
             </p>
           </div>
 
-          <!-- Signature (animated by home-anim.js): the brain mark assembles, then releases its neurons,
-               which become the points of a cognitive profile grouped by function. Static markup = final state. -->
+          <!-- Signature (animated by home-anim.js): the Vizéa mark forms in particles, then flies apart
+               into this profile grouped by function. Static markup = final state. -->
           <div class="hero-visual" aria-hidden="true">
+            <div class="hero-stage">
             <svg class="pf stage" viewBox="0 0 460 312" role="presentation">
               <g class="st-chart">
                 <g class="pf-bands"><rect x="44" y="287.3" width="408" height="12.7" fill="#C25A50"/><rect x="44" y="271.0" width="408" height="16.3" fill="#D98E5A"/><rect x="44" y="232.3" width="408" height="38.7" fill="#E3C173"/><rect x="44" y="113.7" width="408" height="118.6" fill="#93C088"/><rect x="44" y="75.0" width="408" height="38.7" fill="#6BA9C4"/><rect x="44" y="58.7" width="408" height="16.3" fill="#8E92C9"/><rect x="44" y="46" width="408" height="12.7" fill="#C285B4"/></g>
@@ -130,17 +131,12 @@
                 <g class="pf-titles"><text x="69.5" y="35" fill="#D0604F" data-i18n="home.fn.lang">Langage oral</text><text x="120.5" y="20" fill="#6CA6DF" data-i18n="home.fn.rf">Raisonnement</text><text x="171.5" y="35" fill="#E0A94E" data-i18n="home.fn.vs">Visuospatial</text><text x="222.5" y="20" fill="#4E6FB0" data-i18n="home.fn.mt">Mém. de travail</text><text x="273.5" y="35" fill="#5FB389" data-i18n="home.fn.vt">Vitesse</text><text x="324.5" y="20" fill="#CF6FA6" data-i18n="home.fn.mem">Mémoire</text><text x="375.5" y="35" fill="#3D7EA6" data-i18n="home.fn.att">Attention</text><text x="426.5" y="20" fill="#4E9E79" data-i18n="home.fn.fe">F. exécutives</text></g>
                 <g class="pf-lines"><polyline pathLength="1" points="57.8,104.0 81.2,135.8" style="--fc:#D0604F"/><polyline pathLength="1" points="108.8,147.8 132.2,185.7" style="--fc:#6CA6DF"/><polyline pathLength="1" points="159.8,204.3 183.2,166.6" style="--fc:#E0A94E"/><polyline pathLength="1" points="210.8,258.5 234.2,242.0" style="--fc:#4E6FB0"/><polyline pathLength="1" points="261.8,279.7 285.2,265.2" style="--fc:#5FB389"/><polyline pathLength="1" points="312.8,179.4 336.2,216.0" style="--fc:#CF6FA6"/><polyline pathLength="1" points="363.8,246.5 387.2,271.0" style="--fc:#3D7EA6"/><polyline pathLength="1" points="414.8,232.3 438.2,254.8" style="--fc:#4E9E79"/></g>
               </g>
-              <!-- brain mark, scaled up: the navy tile (stage coords, so it can morph into the plot area),
-                   the outline, and a small neural network inside (points + links built by home-anim.js) -->
-              <defs><linearGradient id="sbGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a2540"/><stop offset=".6" stop-color="#0d3b66"/><stop offset="1" stop-color="#176bb5"/></linearGradient></defs>
-              <g class="st-brain">
-                <rect class="sb-tile" x="113.6" y="31.6" width="268.8" height="268.8" rx="61.6"/>
-                <g class="sb-outline-wrap"><path class="sb-outline" pathLength="1" transform="translate(248 166) scale(5.6) translate(-24 -22.5)" d="M29 8.5c4.2 0 7.6 2.9 7.6 7 2.4.6 4 2.7 4 5.3 0 1.7-.8 3.3-2 4.3 1.1 1 1.7 2.4 1.7 4 0 3.4-2.9 6-6.6 6-.6 3.1-3.5 5.4-7 5.4-2.6 0-4.9-1.3-6.2-3.3-1 .5-2.2.8-3.4.8-3.7 0-6.7-2.8-6.7-6.4 0-.4 0-.8.1-1.2C8.7 30.9 7 28.6 7 25.8c0-2 .9-3.8 2.4-5C8.5 19.7 8 18.3 8 16.8c0-3.3 2.8-6 6.3-6 .3 0 .7 0 1 .1C16.5 8.4 19 7 21.8 7c2.8 0 5.3 1.4 6.7 3.6"/></g>
-                <g class="sb-links"></g>
-              </g>
-              <g class="st-dust"></g>
+              <!-- the logo's brain outline (logo units), sampled by home-anim.js to place the particles -->
+              <g class="pf-ref"><path d="M29 8.5c4.2 0 7.6 2.9 7.6 7 2.4.6 4 2.7 4 5.3 0 1.7-.8 3.3-2 4.3 1.1 1 1.7 2.4 1.7 4 0 3.4-2.9 6-6.6 6-.6 3.1-3.5 5.4-7 5.4-2.6 0-4.9-1.3-6.2-3.3-1 .5-2.2.8-3.4.8-3.7 0-6.7-2.8-6.7-6.4 0-.4 0-.8.1-1.2C8.7 30.9 7 28.6 7 25.8c0-2 .9-3.8 2.4-5C8.5 19.7 8 18.3 8 16.8c0-3.3 2.8-6 6.3-6 .3 0 .7 0 1 .1C16.5 8.4 19 7 21.8 7c2.8 0 5.3 1.4 6.7 3.6"/></g>
               <g class="pf-pts"><circle cx="57.8" cy="104.0" r="4.2" style="--fc:#D0604F"/><circle cx="81.2" cy="135.8" r="4.2" style="--fc:#D0604F"/><circle cx="108.8" cy="147.8" r="4.2" style="--fc:#6CA6DF"/><circle cx="132.2" cy="185.7" r="4.2" style="--fc:#6CA6DF"/><circle cx="159.8" cy="204.3" r="4.2" style="--fc:#E0A94E"/><circle cx="183.2" cy="166.6" r="4.2" style="--fc:#E0A94E"/><circle cx="210.8" cy="258.5" r="4.2" style="--fc:#4E6FB0"/><circle cx="234.2" cy="242.0" r="4.2" style="--fc:#4E6FB0"/><circle cx="261.8" cy="279.7" r="4.2" style="--fc:#5FB389"/><circle cx="285.2" cy="265.2" r="4.2" style="--fc:#5FB389"/><circle cx="312.8" cy="179.4" r="4.2" style="--fc:#CF6FA6"/><circle cx="336.2" cy="216.0" r="4.2" style="--fc:#CF6FA6"/><circle cx="363.8" cy="246.5" r="4.2" style="--fc:#3D7EA6"/><circle cx="387.2" cy="271.0" r="4.2" style="--fc:#3D7EA6"/><circle cx="414.8" cy="232.3" r="4.2" style="--fc:#4E9E79"/><circle cx="438.2" cy="254.8" r="4.2" style="--fc:#4E9E79"/></g>
             </svg>
+            <canvas class="hero-fx"></canvas>
+            </div>
           </div>
         </div>
         <div class="scroll-cue" aria-hidden="true"><span></span></div>

@@ -1340,23 +1340,22 @@ footer { font-size: .84rem; }
 
 @media (min-width: 941px) { .hero-grid { grid-template-columns: 1.05fr .95fr; } }
 
-/* ===== Accueil : scène animée (home-anim.js + GSAP) =====
-   Le logo se forme, puis libère ses neurones qui deviennent les points d'un
-   profil par fonction. Sans JS (ou animations réduites), le profil final s'affiche. */
-.stage { display: block; width: 100%; max-width: 580px; height: auto; margin-left: auto; overflow: visible; font-family: var(--font-ui); }
+/* ===== Accueil : scène animée (home-anim.js, WebGL) =====
+   Le logo se forme en particules, puis se défait pour dessiner ce profil par fonction.
+   Le canevas déborde du SVG (la .hero le rogne) pour laisser voler les particules.
+   Sans JS, sans WebGL ou avec animations réduites, le profil final s'affiche. */
+.hero-stage { position: relative; max-width: 580px; margin-left: auto; }
+.stage { display: block; width: 100%; height: auto; overflow: visible; font-family: var(--font-ui); }
+.hero-fx { position: absolute; left: -15.2174%; top: -19.2308%; width: 130.4348%; height: 138.4615%; pointer-events: none; }
+.pf-ref { visibility: hidden; }
 .pf-bands rect { opacity: .16; }
 [data-theme="dark"] .pf-bands rect { opacity: .2; }
 .pf-grid line { stroke: var(--ink); opacity: .08; }
 .pf-sep line { stroke: var(--ink); opacity: .26; stroke-dasharray: 1.5 3; }
 .pf-yt text { font-size: 9px; fill: var(--ink-soft); text-anchor: end; font-family: var(--font-mono); }
-.pf-titles text { font-size: 10px; font-weight: 650; text-anchor: middle; letter-spacing: -.005em; }
+.pf-titles text { font-size: 10px; font-weight: 650; text-anchor: middle; letter-spacing: -.005em; transform-box: fill-box; }
 .pf-lines polyline { fill: none; stroke: var(--fc); stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
-.pf-pts circle { fill: var(--fc); stroke: var(--white); stroke-width: 1.6; }
-.st-brain { opacity: 0; }
-.sb-tile { fill: url(#sbGrad); filter: drop-shadow(0 24px 40px rgba(10, 37, 64, .32)); }
-.sb-outline { fill: none; stroke: #eaf6ff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; vector-effect: none; }
-.sb-links line { stroke: #7fd9e8; stroke-width: 1.1; stroke-linecap: round; opacity: .5; }
-.st-dust circle { fill: #2fd0e0; }
+.pf-pts circle { fill: var(--fc); stroke: var(--white); stroke-width: 1.6; transform-box: fill-box; transform-origin: center; }
 /* Avant que le script prenne la main : on masque l'état final (évite un flash),
    avec un filet de sécurité qui le réaffiche après 4 s si le script ne s'exécute jamais. */
 .hero-anim .stage .st-chart, .hero-anim .stage .pf-pts { opacity: 0; animation: stageFallback .4s 4s forwards; }
