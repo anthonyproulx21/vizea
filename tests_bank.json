@@ -1806,6 +1806,35 @@
       ]
     }
   },
+  "BQMS": {
+    "type": "batterie",
+    "subtests": {
+      "Association mot - image (oral)": [
+        "Mémoire"
+      ],
+      "Association mot - image (écrit)": [
+        "Mémoire"
+      ],
+      "Association image - image": [
+        "Mémoire"
+      ],
+      "Questionnaire sémantique": [
+        "Mémoire"
+      ],
+      "Assocition mot - mot": [
+        "Mémoire"
+      ],
+      "Caractéristique commune": [
+        "Mémoire"
+      ],
+      "Dénomination d'images (oral)": [
+        "Mémoire"
+      ],
+      "Dénomination d'images (écrit)": [
+        "Mémoire"
+      ]
+    }
+  },
   "CVLT": {
     "type": "test",
     "default_functions": [
@@ -1899,6 +1928,47 @@
         "Fonctions exécutives"
       ],
       "Six part test": [
+        "Fonctions exécutives"
+      ]
+    }
+  },
+  "FÉE": {
+    "type": "batterie",
+    "subtests": {
+      "Stoop": [
+        "Fonctions exécutives"
+      ],
+      "Tapping": [
+        "Fonctions exécutives"
+      ],
+      "Barre-Joe": [
+        "Fonctions exécutives"
+      ],
+      "Mise à jour verbale": [
+        "Mémoire de travail"
+      ],
+      "Mise à jour visuospatiale": [
+        "Mémoire de travail"
+      ],
+      "Double tâche": [
+        "Mémoire de travail"
+      ],
+      "Trail making test": [
+        "Fonctions exécutives"
+      ],
+      "Classement de cartes": [
+        "Fonctions exécutives"
+      ],
+      "Grenouille": [
+        "Fonctions exécutives"
+      ],
+      "Scripts": [
+        "Fonctions exécutives"
+      ],
+      "Figure de Rey avec programme": [
+        "Fonctions exécutives"
+      ],
+      "8 labyrinthes": [
         "Fonctions exécutives"
       ]
     }
@@ -2037,6 +2107,13 @@
     "subtests": {}
   },
   "TDQ-60": {
+    "type": "test",
+    "default_functions": [
+      "Langage oral"
+    ],
+    "subtests": {}
+  },
+  "TDQ-30": {
     "type": "test",
     "default_functions": [
       "Langage oral"
